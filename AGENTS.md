@@ -8,6 +8,18 @@ Never write to `/tmp`, `/private/tmp`, `/var/tmp`, Desktop, Downloads, home-dire
 
 If an external write seems necessary, stop and ask first. State the exact path, why repo-local storage is insufficient, and what data would be written. No explicit approval means no external write.
 
+## Git (agents — read-only)
+
+**Agents must not mutate Git state.** Use Git only for **read-only** inspection (for example: `git status`, `git diff`, `git log`, `git show`, `git ls-files`, `git check-ignore`, viewing refs).
+
+**Never**, unless the human explicitly instructs otherwise:
+
+- stage or unstage (`git add`, `git rm`, restore/stash affecting index)
+- commit, merge, rebase, cherry-pick, reset that changes branches or history
+- push, fetch/pull when it updates refs as part of agent-initiated automation
+
+If untracking files, fixing `.gitignore`, or any repository bookkeeping requires writes, **output the exact commands** for the human to run locally. Do not execute them.
+
 ## Communication
 
 Before broad edits, state the intended files, new folders, and whether the work touches playback, captions, metadata, ads, DRM, accessibility, or platform behavior. After edits, summarize what changed and what should be tested.
@@ -51,4 +63,4 @@ Before creating a protocol, class, enum, file, or fixture format, search for an 
 
 ## Stop and Ask
 
-Stop before external writes, `/tmp` usage, global installs, system setting changes, edits outside this project, private credentials/media, background services, weakened tests, or broad architecture changes.
+Stop before external writes, `/tmp` usage, global installs, system setting changes, edits outside this project, private credentials/media, background services, weakened tests, broad architecture changes, **or any Git command that modifies history, the index, or remote-tracking refs (agents use Git read-only; see Git section above).**

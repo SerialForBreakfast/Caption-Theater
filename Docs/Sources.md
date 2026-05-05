@@ -1,0 +1,232 @@
+
+
+# Caption Theater Source Candidates
+
+This document tracks possible real-world `.m3u8` and subtitle sources for Caption Theater testing.
+
+The goal is to find ultra-widescreen HLS content where the encoded video is actually wider than 16:9, not a 16:9 raster with baked-in letterboxing. We also need subtitle or caption tracks so Caption Theater can test persistent timed-text rendering.
+
+## What We Need
+
+Ideal stream characteristics:
+
+- HLS master playlist (`.m3u8`)
+- ultra-widescreen encoded variant, for example around `1920x800`, `958x408`, or similar
+- subtitle declaration in the manifest, preferably WebVTT
+- not simply a 16:9 video with black bars baked into the image
+- public or otherwise approved for test use
+- suitable for AVFoundation playback testing
+
+## Best Current Candidates
+
+### 1. Tears of Steel — Mux HLS VOD
+
+Stream URL:
+
+```text
+https://stream.mux.com/4XYzhPXzqArkFI8d1vDsScBLD69Gh1b2.m3u8
+```
+
+Supporting references:
+
+- Mux subtitle article: https://www.mux.com/blog/subtitles-captions-webvtt-hls-and-those-magic-flags
+- AVPro Video streaming sample list: https://www.renderheads.com/content/docs/AVProVideo/articles/feature-streaming.html
+
+Why it is useful:
+
+- Public HLS VOD test stream.
+- Reported as Tears of Steel with WebVTT subtitles.
+- Useful as the strongest current hero candidate for Caption Theater.
+- Mux documentation discusses Tears of Steel HLS subtitle behavior.
+
+Validation needed:
+
+- Fetch only the manifest text.
+- Confirm variant resolutions.
+- Confirm whether top variants are non-16:9 encoded, not 16:9 letterboxed.
+- Confirm subtitle group and subtitle playlist URLs.
+- Confirm AVFoundation playback behavior.
+
+Expected use:
+
+- Hero demo candidate.
+- Subtitle persistence candidate.
+- Ultra-widescreen HLS manifest inspection candidate.
+
+---
+
+### 2. Sintel — Bitmovin HLS
+
+Stream URL:
+
+```text
+https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8
+```
+
+Related subtitle URLs:
+
+```text
+https://bitdash-a.akamaihd.net/content/sintel/hls/subtitles_en.m3u8
+https://bitdash-a.akamaihd.net/content/sintel/hls/subtitles_en.vtt
+```
+
+Supporting reference:
+
+- ExoPlayer issue with stream and subtitle URLs: https://github.com/google/ExoPlayer/issues/2546
+
+Why it is useful:
+
+- Public HLS test stream.
+- Documented subtitle playlist and WebVTT URL.
+- Reported in public playback test discussions.
+- Some known Sintel HLS variants are ultra-widescreen-ish rather than 16:9.
+
+Validation needed:
+
+- Fetch only the manifest text.
+- Confirm exact variant resolutions.
+- Confirm subtitle group wiring.
+- Confirm AVFoundation subtitle behavior.
+- Confirm whether the stream is suitable for Caption Theater layout tests or only HLS/subtitle plumbing.
+
+Expected use:
+
+- Secondary HLS/subtitle candidate.
+- Useful for manifest parsing and WebVTT wiring tests.
+
+---
+
+## Candidate-Only Sources
+
+These are interesting but not yet verified as matching all requirements.
+
+### 3. JW Platform Tears of Steel 4K
+
+Candidate URL:
+
+```text
+http://content.jwplatform.com/manifests/vM7nH0Kl.m3u8
+```
+
+Supporting reference:
+
+- Video.js sample index mentioning HLS Tears of Steel 4K: https://github.com/FoxCouncil/videojs-max-quality-selector/blob/master/index.json
+
+Validation needed:
+
+- Confirm the manifest is still reachable.
+- Confirm subtitle availability.
+- Confirm variant resolutions.
+- Confirm whether variants are true ultra-widescreen encodes.
+
+Expected use:
+
+- Possible higher-resolution Tears of Steel candidate.
+- Do not treat as verified until inspected.
+
+---
+
+### 4. Blender PeerTube / Cosmos Laundromat
+
+Candidate page:
+
+```text
+https://video.blender.org/w/wfW3bDTkUhQKRnEfT9Wpeq
+```
+
+Supporting reference:
+
+- Blender video page: https://video.blender.org/w/wfW3bDTkUhQKRnEfT9Wpeq
+
+Validation needed:
+
+- Inspect network/player metadata for direct HLS playlist URL.
+- Confirm subtitle availability.
+- Confirm encoded aspect ratio.
+- Confirm licensing/attribution details.
+
+Expected use:
+
+- Possible additional open-content candidate.
+- Not yet a verified `.m3u8` source.
+
+---
+
+## Apple HLS Control References
+
+Apple sample streams are useful even when they are not ultra-widescreen hero candidates.
+
+Reference:
+
+- Apple HLS example streams: https://developer.apple.com/streaming/examples/
+
+Expected use:
+
+- AVFoundation/HLS control testing.
+- WebVTT rendition behavior.
+- TS/fMP4 behavior.
+- 16:9 native fallback.
+- 4:3 classification.
+- Manifest parser validation.
+
+These should not be treated as the main Caption Theater hero content unless a specific stream is verified to be true ultra-widescreen with captions.
+
+---
+
+## Generated Fixture Recommendation
+
+Public streams may not give us five perfect real-world cases. We should also generate a known-answer HLS fixture.
+
+Recommended generated fixture shape:
+
+```text
+video: 1920x800 or 1920x804
+subtitles: WebVTT
+master playlist: .m3u8 with EXT-X-MEDIA:TYPE=SUBTITLES
+```
+
+Why generated fixtures matter:
+
+- We can guarantee non-16:9 encoded active picture.
+- We can guarantee sidecar WebVTT subtitles.
+- We can guarantee no baked-in letterbox.
+- We can create unsafe variants for detector tests.
+- We can keep all generated content project-local and deterministic.
+
+Generated fixture variants:
+
+- clean ultra-widescreen + WebVTT
+- full-frame 16:9 fallback
+- 4:3 pillarbox stretch goal
+- variable-aspect switch stretch goal
+- burned-in subtitles in proposed reading region
+- logo/watermark in proposed reading region
+- dark-scene false positive
+- legal-text-like lower region
+
+All generated content and generation scripts must stay inside the repository. Do not write to `/tmp`, `/private/tmp`, or `/var/tmp`.
+
+---
+
+## Next Step: Manifest Inspection Report
+
+Add a repo-local manifest inspection script that fetches only manifest text and writes reports to:
+
+```text
+Docs/StreamCandidateReports/
+```
+
+The report should include:
+
+- master playlist URL
+- variant resolutions
+- aspect ratios
+- subtitle groups
+- subtitle playlist URLs
+- closed-caption declarations
+- encryption markers
+- discontinuity/date-range markers
+- whether top variants appear to be non-16:9
+- whether the source is a hero candidate, control reference, or rejected candidate
+
+Do not download media segments as part of this step.

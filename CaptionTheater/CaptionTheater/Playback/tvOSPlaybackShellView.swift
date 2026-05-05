@@ -9,9 +9,8 @@ import SwiftUI
 
 /// Fullscreen playback surface: Caption Theater offer when cues qualify, then optional top-stacked caption column.
 ///
-/// Touches **playback** via ``tvOSCaptionTheaterPlayerContainer`` (``AVLayerVideoGravity/resizeAspect`` only—no aspect-fill),
-/// **layout** via ``CaptionTheaterLayoutEngine``, and **engineering telemetry** via ``CaptionTheaterPlaybackLogger``
-/// (Console category `PlaybackFlow`).
+/// Touches **playback** via ``tvOSCaptionTheaterPlayerContainer`` (``AVPlayerLayer`` + ``AVLayerVideoGravity/resizeAspect``—no aspect-fill),
+/// **layout** via ``CaptionTheaterLayoutEngine``, Play/Pause via the Siri Remote command, and **engineering telemetry** via ``CaptionTheaterPlaybackLogger``.
 struct tvOSPlaybackShellView: View {
 
     @AppStorage(CaptionTheaterCaptionTextPreferences.textSizePresetStorageKey)
@@ -121,6 +120,7 @@ struct tvOSPlaybackShellView: View {
                 model.captionTheaterTopPinnedLayoutEnabled = true
                 captionTheaterOfferResolvedForSession = true
                 model.logCaptionTheaterLayoutPipeline(reason: "After CT alert confirm")
+                model.refreshCaptionTheaterLegiblePipeline(reason: "After CT alert confirm")
             }
             Button("Standard playback", role: .cancel) {
                 CaptionTheaterPlaybackLogger.playbackFlow("User chose standard centered playback")
@@ -128,11 +128,18 @@ struct tvOSPlaybackShellView: View {
                 model.captionTheaterTopPinnedLayoutEnabled = false
                 captionTheaterOfferResolvedForSession = true
                 model.logCaptionTheaterLayoutPipeline(reason: "After CT alert standard")
+                model.refreshCaptionTheaterLegiblePipeline(reason: "After CT alert standard")
             }
         } message: {
             Text(
                 "This title looks scope-friendly or streams over HTTP(S). Pin video to the top and show captions in the dedicated band below?"
             )
+        }
+        .onChange(of: model.captionTheaterOptInAccepted) { _, _ in
+            model.refreshCaptionTheaterLegiblePipeline(reason: "captionTheaterOptInAccepted changed")
+        }
+        .onChange(of: model.captionTheaterTopPinnedLayoutEnabled) { _, _ in
+            model.refreshCaptionTheaterLegiblePipeline(reason: "captionTheaterTopPinnedLayoutEnabled changed")
         }
     }
 
@@ -200,23 +207,54 @@ struct tvOSPlaybackShellView: View {
         .frame(width: containerSize.width, height: containerSize.height, alignment: .top)
     }
 
-    /// Reserved caption surface below the picture; **4 pt blue stroke** for layout debugging until Phase 4 cue rendering lands.
+    /// Scrolling caption band: **newest cue at the top**, older cues below via ``CaptionTheaterPlaybackShellViewModel/captionScrollingCueEntries``.
     private func captionTheaterCaptionColumn(
         model: CaptionTheaterPlaybackShellViewModel,
         width: CGFloat,
         height: CGFloat
     ) -> some View {
-        Text(
-            "Caption Theater — timed cues render in this band (Phase 4). Native legible tracks stay deselected so text is not composited over the picture."
-        )
-        .font(captionTextSizePreset.captionOverlayFont)
-        .foregroundStyle(.primary)
-        .multilineTextAlignment(.center)
-        .minimumScaleFactor(0.65)
-        .lineLimit(12)
+        ScrollViewReader { proxy in
+            ScrollView(.vertical, showsIndicators: true) {
+                VStack(alignment: .center, spacing: 12) {
+                    if model.captionScrollingCueEntries.isEmpty {
+                        Text(
+                            "Waiting for captions…"
+                        )
+                        .font(captionTextSizePreset.captionOverlayFont)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.65)
+                        .lineLimit(8)
+                        .padding(.horizontal, 4)
+                    } else {
+                        ForEach(model.captionScrollingCueEntries) { entry in
+                            Text(entry.text)
+                                .font(captionTextSizePreset.captionOverlayFont)
+                                .foregroundStyle(.primary)
+                                .multilineTextAlignment(.center)
+                                .minimumScaleFactor(0.65)
+                                .lineLimit(8)
+                                .frame(maxWidth: .infinity)
+                                .id(entry.id)
+                        }
+                    }
+                }
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity)
+            }
+            .onChange(of: model.captionScrollingCueEntries.first?.id) { _, newId in
+                guard let newId else {
+                    return
+                }
+                withAnimation(.easeOut(duration: 0.18)) {
+                    proxy.scrollTo(newId, anchor: .top)
+                }
+            }
+        }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .frame(width: width, height: height, alignment: .center)
+        .focusable(false)
+        .frame(width: width, height: height, alignment: .top)
         .background(Color(red: 0.06, green: 0.06, blue: 0.08))
         .overlay {
             Rectangle()

@@ -2,7 +2,8 @@
 //  tvOSCaptionTheaterPlayerContainer.swift
 //  CaptionTheater
 //
-//  AVPlayerLayer hosting with MVP presentation policy: aspect-fit only (no aspect-fill).
+//  AVPlayerLayer hosting for demo-stable subtitle extraction via AVPlayerItemLegibleOutput (embedded AVKit players
+//  fought legible delivery on tvOS in Caption Theater testing).
 //
 
 import AVFoundation
@@ -11,8 +12,7 @@ import UIKit
 
 /// Embedded view that pins ``AVPlayerLayer`` to an explicit sub-rect so SwiftUI can match ``CaptionTheaterLayoutEngine`` math.
 ///
-/// **MVP policy:** ``AVLayerVideoGravity/resizeAspect`` only. Aspect-fill/zoom modes are out of scope—they eliminate
-/// predictable negative space on fixed-aspect displays (see native ultra-wide MVP plan).
+/// **MVP policy:** ``AVLayerVideoGravity/resizeAspect`` only. Aspect-fill/zoom modes are out of scope.
 final class CaptionTheaterPlayerLayerHostingView: UIView {
 
     override static var layerClass: AnyClass { AVPlayerLayer.self }
@@ -37,7 +37,7 @@ final class CaptionTheaterPlayerLayerHostingView: UIView {
     }
 }
 
-/// Positions the player layer inside a container; when ``videoDisplayRect`` is nil the layer fills bounds (default AVKit-like hosting).
+/// Positions the player layer inside a container; when ``videoDisplayRect`` is nil the layer fills bounds.
 final class CaptionTheaterPlayerContainerView: UIView {
 
     private let hosting = CaptionTheaterPlayerLayerHostingView()

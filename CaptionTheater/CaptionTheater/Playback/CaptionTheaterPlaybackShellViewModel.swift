@@ -71,6 +71,26 @@ final class CaptionTheaterPlaybackShellViewModel {
     /// Current playhead in seconds (updates periodically while presented).
     private(set) var currentSeconds: Double = 0
 
+    /// Scrolling subtitle rows (**newest-first**): each distinct legible payload prepends a row; older rows move down.
+    ///
+    /// **Concurrency:** Updated from ``AVPlayerItemLegibleOutput`` on the main queue. Empty deliveries do not trim history;
+    /// ``outputSequenceWasFlushed`` clears the list (seek / discontinuity).
+    private(set) var captionScrollingCueEntries: [CaptionTheaterScrollingCueEntry] = []
+
+    /// Most recently accepted newest-row plain text (mirror of ``captionScrollingCueEntries/first``).
+    ///
+    /// Useful for lightweight logging; primary UI binds to ``captionScrollingCueEntries``.
+    private(set) var captionBandDisplayText: String = ""
+
+    /// Push delegate host for ``AVPlayerItemLegibleOutput`` (must outlive the output).
+    private let legibleCaptionSink = CaptionTheaterLegibleCaptionSink()
+
+    /// Active legible output wired to ``player/currentItem`` while Caption Theater stacking is enabled.
+    private var captionLegibleOutput: AVPlayerItemLegibleOutput?
+
+    /// Player item that currently owns ``captionLegibleOutput`` (used for teardown).
+    private weak var legibleOutputHostItem: AVPlayerItem?
+
     /// Bundled inspector scenarios feeding ``CaptionTheaterPlaybackEvidenceAssembler``.
     var scenarioKind: CaptionTheaterPlaybackScenarioKind = .eligibleUltraWideLetterbox
 
@@ -132,6 +152,8 @@ final class CaptionTheaterPlaybackShellViewModel {
         )
         player = AVPlayer(url: url)
         player.audiovisualBackgroundPlaybackPolicy = .automatic
+        /// Required so tvOS can auto-enable legible media when user prefs ask for captions; explicit ``AVPlayerItem/select(_:in:)`` still overrides stale Off states after Caption Theater attaches.
+        player.appliesMediaSelectionCriteriaAutomatically = true
 
         let interval = CMTime(seconds: 0.25, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
         timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) {
@@ -150,9 +172,151 @@ final class CaptionTheaterPlaybackShellViewModel {
         Task { await loadDuration(for: url) }
         Task { await loadPresentationAspect(for: url) }
         CaptionTheaterPlaybackLogger.playbackFlow(
-            "Skipping automatic native legible-track selection so captions can move to the Caption Theater band (Phase 4)."
+            "Legible captions use AVPlayerLayer + AVPlayerItemLegibleOutput (suppressesPlayerRendering=true) into the Caption Theater band."
         )
+        wireLegibleCaptionSinkHandlers()
         applyScenarioSync(scenarioKind)
+    }
+
+    /// Attaches ``AVPlayerItemLegibleOutput``, selects a default legible media option, and starts vending cues into ``captionScrollingCueEntries``.
+    ///
+    /// **Concurrency:** Main-actor entry point; awaits asset media-selection loads without blocking observers.
+    func refreshCaptionTheaterLegiblePipeline(reason: String) {
+        Task { @MainActor in
+            await attachCaptionTheaterLegibleOutputIfNeeded(reason: reason)
+        }
+    }
+
+    private func wireLegibleCaptionSinkHandlers() {
+        legibleCaptionSink.onAttributedStrings = { [weak self] strings, itemTime in
+            Task { @MainActor in
+                self?.applyLegibleAttributedStrings(strings, itemTime: itemTime)
+            }
+        }
+        legibleCaptionSink.onOutputSequenceFlushed = { [weak self] in
+            Task { @MainActor in
+                self?.handleLegibleOutputSequenceFlush()
+            }
+        }
+    }
+
+    private func applyLegibleAttributedStrings(_ strings: [NSAttributedString], itemTime _: CMTime) {
+        guard !strings.isEmpty else {
+            return
+        }
+
+        var plain = CaptionTheaterLegibleCaptionFormatting.plainCaptionText(from: strings)
+        if plain.isEmpty {
+            plain = CaptionTheaterLegibleCaptionFormatting.resolvedPlainCaptionText(from: strings)
+        }
+        guard !plain.isEmpty else {
+            return
+        }
+
+        guard let updated = CaptionTheaterScrollingCaptionPolicy.entriesByPrependingDistinctCue(
+            previousEntries: captionScrollingCueEntries,
+            incomingPlain: plain
+        ) else {
+            return
+        }
+
+        captionScrollingCueEntries = Array(updated)
+        captionBandDisplayText = captionScrollingCueEntries.first?.text ?? ""
+    }
+
+    private func handleLegibleOutputSequenceFlush() {
+        captionScrollingCueEntries = []
+        captionBandDisplayText = ""
+    }
+
+    private func detachCaptionTheaterLegibleOutput(reason: String) {
+        guard let output = captionLegibleOutput else {
+            return
+        }
+        if let host = legibleOutputHostItem {
+            host.remove(output)
+            CaptionTheaterPlaybackLogger.playbackFlow("Caption Theater legible detached reason=\(reason)")
+        }
+        captionLegibleOutput = nil
+        legibleOutputHostItem = nil
+        legibleCaptionSink.resetLegibleDeliveryTelemetry()
+    }
+
+    private func attachCaptionTheaterLegibleOutputIfNeeded(reason: String) async {
+        guard captionTheaterOptInAccepted, captionTheaterTopPinnedLayoutEnabled else {
+            detachCaptionTheaterLegibleOutput(reason: "\(reason) caption theater layout off")
+            captionScrollingCueEntries = []
+            captionBandDisplayText = ""
+            return
+        }
+
+        guard let item = player.currentItem else {
+            CaptionTheaterPlaybackLogger.playbackFlow("Caption Theater legible: defer \(reason) — nil currentItem")
+            return
+        }
+
+        guard item.status == .readyToPlay else {
+            CaptionTheaterPlaybackLogger.playbackFlow(
+                "Caption Theater legible: defer \(reason) — item not readyToPlay status=\(String(describing: item.status))"
+            )
+            return
+        }
+
+        if captionLegibleOutput != nil, legibleOutputHostItem === item {
+            do {
+                try await selectCaptionTheaterLegibleMediaOption(for: item)
+            } catch {
+                CaptionTheaterPlaybackLogger.playbackFailure(
+                    "Caption Theater legible: media selection refresh failed (\(reason)) error=\(error.localizedDescription)"
+                )
+            }
+            return
+        }
+
+        detachCaptionTheaterLegibleOutput(reason: "reattach before \(reason)")
+        legibleCaptionSink.resetLegibleDeliveryTelemetry()
+
+        let output = AVPlayerItemLegibleOutput()
+        output.suppressesPlayerRendering = true
+        output.textStylingResolution = .default
+        output.setDelegate(legibleCaptionSink, queue: .main)
+        item.add(output)
+        captionLegibleOutput = output
+        legibleOutputHostItem = item
+
+        do {
+            try await selectCaptionTheaterLegibleMediaOption(for: item)
+        } catch {
+            item.remove(output)
+            captionLegibleOutput = nil
+            legibleOutputHostItem = nil
+            CaptionTheaterPlaybackLogger.playbackFailure(
+                "Caption Theater legible: media selection failed (\(reason)) error=\(error.localizedDescription)"
+            )
+            return
+        }
+
+        CaptionTheaterPlaybackLogger.playbackFlow("Caption Theater legible output attached (\(reason))")
+    }
+
+    private func selectCaptionTheaterLegibleMediaOption(for item: AVPlayerItem) async throws {
+        let asset = item.asset
+        guard let group = try await asset.loadMediaSelectionGroup(for: .legible) else {
+            CaptionTheaterPlaybackLogger.playbackFlow("Caption Theater legible: asset has no legible media selection group")
+            return
+        }
+
+        let priorName = item.currentMediaSelection.selectedMediaOption(in: group)?.displayName ?? "nil"
+
+        guard let option = group.defaultOption ?? group.options.first else {
+            CaptionTheaterPlaybackLogger.playbackFlow("Caption Theater legible: legible group has zero options")
+            return
+        }
+
+        item.select(option, in: group)
+        CaptionTheaterPlaybackLogger.playbackFlow(
+            "Caption Theater legible: selected option=\(option.displayName) prior=\(priorName) optionCount=\(group.options.count)"
+        )
     }
 
     /// Registers player/item observers for Console-visible diagnostics and explicit playback starts.
@@ -178,7 +342,9 @@ final class CaptionTheaterPlaybackShellViewModel {
             guard let self else { return }
             Task { @MainActor in
                 CaptionTheaterPlaybackLogger.playbackFlow("AVPlayer.currentItem changed; attaching status observer")
+                self.detachCaptionTheaterLegibleOutput(reason: "AVPlayer.currentItem changed")
                 self.observeCurrentItemStatus(playerItem.currentItem)
+                self.refreshCaptionTheaterLegiblePipeline(reason: "AVPlayer.currentItem changed")
             }
         })
 
@@ -224,6 +390,7 @@ final class CaptionTheaterPlaybackShellViewModel {
                     CaptionTheaterPlaybackLogger.playbackFlow("Issuing player.play() from readyToPlay observer")
                     self.player.play()
                     Task { await self.reloadPresentationAspectFromCurrentItemAsset(reason: "readyToPlay") }
+                    self.refreshCaptionTheaterLegiblePipeline(reason: "readyToPlay")
                 case .failed:
                     let desc = observedItem.error?.localizedDescription ?? "nil"
                     CaptionTheaterPlaybackLogger.playbackFailure("AVPlayerItem.status=failed error=\(desc)")
@@ -426,6 +593,10 @@ final class CaptionTheaterPlaybackShellViewModel {
     /// Removes periodic observers; safe to call multiple times.
     func detachPlaybackObservers() {
         CaptionTheaterPlaybackLogger.playbackFlow("detachPlaybackObservers: removing time observer and KVO tokens")
+        detachCaptionTheaterLegibleOutput(reason: "detachPlaybackObservers")
+        captionScrollingCueEntries = []
+        captionBandDisplayText = ""
+
         if let token = timeObserverToken {
             player.removeTimeObserver(token)
             timeObserverToken = nil

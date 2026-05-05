@@ -122,9 +122,11 @@ struct CaptionTheaterPlaybackEvidenceAssemblerTests {
         #expect(reason == .variableAspectRatio)
     }
 
-    /// Ensures packaged playback scenarios resolve resources shipped beside the sample MP4.
+    /// Ensures packaged playback scenarios resolve resources shipped with the hosted application.
+    ///
+    /// **Testing:** Uses ``Bundle/main`` like the playback shell; fixture lookup tolerates flattened bundle copies.
     @Test func bundledPlaybackScenarioPackLoadsFromMainBundle() throws {
-        let pack = try CaptionTheaterPlaybackScenarioKind.eligibleUltraWideLetterbox.loadPack(bundle: Bundle.main)
+        let pack = try CaptionTheaterPlaybackScenarioKind.eligibleUltraWideLetterbox.loadPack(bundle: .main)
 
         #expect(pack.manifest != nil)
         #expect(pack.provider != nil)

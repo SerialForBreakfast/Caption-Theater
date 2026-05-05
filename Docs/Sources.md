@@ -39,13 +39,12 @@ Why it is useful:
 - Useful as the strongest current hero candidate for Caption Theater.
 - Mux documentation discusses Tears of Steel HLS subtitle behavior.
 
-Validation needed:
+Validation status (repo check, manifest-only fetch):
 
-- Fetch only the manifest text.
-- Confirm variant resolutions.
-- Confirm whether top variants are non-16:9 encoded, not 16:9 letterboxed.
-- Confirm subtitle group and subtitle playlist URLs.
-- Confirm AVFoundation playback behavior.
+- Master playlist reachable from developer network via `curl`.
+- Top video variant **`RESOLUTION=1920x800`** (true ultra-wide encoded raster, not 16:9 plus bars).
+- **`#EXT-X-MEDIA:TYPE=SUBTITLES`** entries present (e.g. English, Française) with signed subtitle playlist URIs.
+- **Remaining:** re-verify periodically if Mux changes asset IDs or drops the public demo; confirm **Apple TV Simulator/device** playback end-to-end.
 
 Expected use:
 
@@ -83,11 +82,9 @@ Why it is useful:
 
 Validation needed:
 
-- Fetch only the manifest text.
-- Confirm exact variant resolutions.
-- Confirm subtitle group wiring.
-- Confirm AVFoundation subtitle behavior.
-- Confirm whether the stream is suitable for Caption Theater layout tests or only HLS/subtitle plumbing.
+- Akamai returned **Access Denied** for `playlist.m3u8` from automated fetch (2026-05); replace or mirror this URL if blocking persists.
+- Confirm exact variant resolutions from a fresh manifest fetch once reachable again.
+- Confirm subtitle group wiring and AVFoundation subtitle behavior once the playlist is reachable again.
 
 Expected use:
 

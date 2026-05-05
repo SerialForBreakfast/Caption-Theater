@@ -16,7 +16,8 @@ nonisolated struct CaptionTheaterPlaybackScenarioPack: Equatable, Sendable {
 
 /// Bundled playback scenarios that exercise real inspectors alongside fixture MP4 playback.
 ///
-/// Resources live under `CaptionTheater/Media/PlaybackScenarios` inside the app bundle.
+/// Resources live under `CaptionTheater/Media/PlaybackScenarios` in source control; Xcode may copy them
+/// into the app bundle with that subdirectory preserved **or** flattened at the bundle root—loaders accept both.
 nonisolated enum CaptionTheaterPlaybackScenarioKind: String, CaseIterable, Identifiable, Sendable {
     /// Trusted letterbox metadata + WebVTT dialogue + clear multivariant manifest.
     case eligibleUltraWideLetterbox
@@ -67,7 +68,8 @@ nonisolated enum CaptionTheaterPlaybackScenarioKind: String, CaseIterable, Ident
         }
     }
 
-    private static let playbackSubdirectory = "PlaybackScenarios"
+    /// Preferred bundle subdirectory mirroring the repo folder; omitted when Xcode flattens resources.
+    static let playbackScenarioResourcesSubdirectory = "PlaybackScenarios"
 
     /// Loads inspector bundles from `Bundle.main`.
     func loadPack(bundle: Bundle = .main) throws -> CaptionTheaterPlaybackScenarioPack {
@@ -161,17 +163,28 @@ nonisolated enum CaptionTheaterPlaybackScenarioKind: String, CaseIterable, Ident
     }
 
     private static func loadData(resource name: String, extension ext: String, bundle: Bundle) throws -> Data {
-        guard let url = bundle.url(forResource: name, withExtension: ext, subdirectory: playbackSubdirectory) else {
+        guard let url = bundle.urlForPlaybackScenarioResource(name: name, extension: ext) else {
             throw CaptionTheaterPlaybackScenarioResourceError.missingFile("\(name).\(ext)")
         }
         return try Data(contentsOf: url)
     }
 
     private static func loadUTF8Text(resource name: String, extension ext: String, bundle: Bundle) throws -> String {
-        guard let url = bundle.url(forResource: name, withExtension: ext, subdirectory: playbackSubdirectory) else {
+        guard let url = bundle.urlForPlaybackScenarioResource(name: name, extension: ext) else {
             throw CaptionTheaterPlaybackScenarioResourceError.missingFile("\(name).\(ext)")
         }
         return try String(contentsOf: url, encoding: .utf8)
+    }
+}
+
+extension Bundle {
+
+    /// Resolves playback demo fixtures whether Xcode copied them under ``PlaybackScenarios`` or flat into the bundle root.
+    fileprivate func urlForPlaybackScenarioResource(name: String, extension ext: String) -> URL? {
+        if let url = url(forResource: name, withExtension: ext, subdirectory: CaptionTheaterPlaybackScenarioKind.playbackScenarioResourcesSubdirectory) {
+            return url
+        }
+        return url(forResource: name, withExtension: ext)
     }
 }
 

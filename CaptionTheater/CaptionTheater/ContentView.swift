@@ -10,6 +10,10 @@ import SwiftUI
 /// Primary shell: playback showcase plus engineering-only debug tooling.
 struct ContentView: View {
 
+    /// Persisted demo media choice so engineers land on the ultra-wide stream after relaunch (network permitting).
+    @AppStorage("CaptionTheater.playbackDemoSource")
+    private var playbackDemoSourceRawValue = CaptionTheaterPlaybackDemoSource.muxTearsOfSteelHLS.rawValue
+
     private enum Tab: Hashable {
         case home
         case debug
@@ -19,10 +23,19 @@ struct ContentView: View {
     /// Cleared when leaving Debug so returning to the tab always lands on the baseline scenario list.
     @State private var debugNavigationPath: [String] = []
 
+    private var playbackDemoSource: CaptionTheaterPlaybackDemoSource {
+        CaptionTheaterPlaybackDemoSource(rawValue: playbackDemoSourceRawValue) ?? .muxTearsOfSteelHLS
+    }
+
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
-                tvOSPlaybackShellView(fixtureURL: CaptionTheaterPlaybackFixture.sampleVideoURL())
+                tvOSPlaybackShellView(
+                    demoSource: playbackDemoSource,
+                    playbackURL: playbackDemoSource.playbackURL()
+                )
+                /// Forces shell `@State` (including the ``AVPlayer``) to reset when switching bundled vs. networked demos.
+                .id(playbackDemoSourceRawValue)
             }
             .tabItem {
                 Label("Playback", systemImage: "play.rectangle.fill")

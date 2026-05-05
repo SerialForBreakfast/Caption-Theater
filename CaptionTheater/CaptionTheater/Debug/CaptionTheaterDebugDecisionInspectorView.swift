@@ -18,6 +18,12 @@ import SwiftUI
 ///   and return you to the baseline scenario list when you come back.
 struct CaptionTheaterDebugDecisionInspectorView: View {
 
+    @AppStorage("CaptionTheater.playbackDemoSource")
+    private var playbackDemoSourceRawValue = CaptionTheaterPlaybackDemoSource.muxTearsOfSteelHLS.rawValue
+
+    @AppStorage("CaptionTheater.playbackDebugHUD")
+    private var playbackDebugHUD = false
+
     /// Plain-language context for stakeholders who do not read the test bundle.
     private static let debugIntroExplanation = """
     Each row is a fake “moment” in playback: we set only what the decision engine cares about right now \
@@ -53,6 +59,20 @@ struct CaptionTheaterDebugDecisionInspectorView: View {
                         .multilineTextAlignment(.leading)
                         .padding(.vertical, 8)
                         .listRowBackground(Color.clear)
+                }
+
+                Section("Playback (engineering)") {
+                    Picker("Demo media", selection: $playbackDemoSourceRawValue) {
+                        ForEach(CaptionTheaterPlaybackDemoSource.allCases) { source in
+                            Text(source.menuTitle).tag(source.rawValue)
+                        }
+                    }
+                    Toggle("Playback debug HUD", isOn: $playbackDebugHUD)
+                    Text(
+                        "Changing demo media recreates the Playback tab player when you return to that tab (bundle ID scoped)."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 }
 
                 Section("Canned playback snapshots") {

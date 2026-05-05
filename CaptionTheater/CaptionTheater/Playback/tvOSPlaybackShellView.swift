@@ -2,391 +2,219 @@
 //  tvOSPlaybackShellView.swift
 //  CaptionTheater
 //
-//  Fixture-driven playback surface with inspector-backed eligibility (CT-0501 / CT-0502).
+//  Fullscreen-first playback shell with ultra-wide Caption Theater offer (CT-0501 / CT-0502).
 //
 
 import SwiftUI
 
-/// Shell that hosts bundled fixture playback plus inspector-backed eligibility and MVP layout (CT-0501 / CT-0502 / CT-0303 slice).
+/// Fullscreen playback surface: native presentation by default, optional ultra-wide Caption Theater layout.
 ///
 /// Touches **playback** via ``tvOSCaptionTheaterPlayerContainer`` (``AVLayerVideoGravity/resizeAspect`` only—no aspect-fill),
-/// **captions/eligibility** via bundled manifests/metadata classifiers, **caption typography** via persisted ``CaptionTheaterCaptionTextSizePreset``, and **layout** via ``CaptionTheaterLayoutEngine``.
+/// **layout** via ``CaptionTheaterLayoutEngine``, and **engineering telemetry** via ``CaptionTheaterPlaybackLogger``
+/// (Console category `PlaybackFlow`).
 struct tvOSPlaybackShellView: View {
-
-    @State private var model: CaptionTheaterPlaybackShellViewModel?
-    @State private var captionTheaterEnablePromptShown = false
 
     @AppStorage(CaptionTheaterCaptionTextPreferences.textSizePresetStorageKey)
     private var captionTextSizeRaw = CaptionTheaterCaptionTextPreferences.defaultTextSizeRawValue
 
-    private let fixtureURL: URL?
+    @AppStorage("CaptionTheater.playbackDebugHUD")
+    private var playbackDebugHUD = false
+
+    @State private var model: CaptionTheaterPlaybackShellViewModel?
+
+    /// After the encoded aspect ratio arrives, non-ultra-wide titles skip the offer permanently for this presentation.
+    @State private var ultraWideOfferResolvedForSession = false
+
+    @State private var showUltraWideCaptionTheaterOffer = false
+
+    private let demoSource: CaptionTheaterPlaybackDemoSource
+    private let playbackURL: URL?
 
     private var captionTextSizePreset: CaptionTheaterCaptionTextSizePreset {
         CaptionTheaterCaptionTextSizePreset.resolved(fromStoredRaw: captionTextSizeRaw)
     }
 
-    init(fixtureURL: URL?) {
-        self.fixtureURL = fixtureURL
+    init(demoSource: CaptionTheaterPlaybackDemoSource, playbackURL: URL?) {
+        self.demoSource = demoSource
+        self.playbackURL = playbackURL
     }
 
     var body: some View {
         Group {
-            if let fixtureURL {
-                playbackBody(url: fixtureURL)
+            if let playbackURL {
+                playbackBody(url: playbackURL)
             } else {
-                missingFixturePlaceholder
+                missingPlaybackPlaceholder
             }
         }
-        .navigationTitle("Playback")
+        .toolbar(.hidden, for: .navigationBar)
     }
 
-    private var missingFixturePlaceholder: some View {
+    private var missingPlaybackPlaceholder: some View {
         ContentUnavailableView(
-            "Sample video missing",
+            "Playback unavailable",
             systemImage: "film.stack",
-            description: Text(
-                "Add \(CaptionTheaterPlaybackFixture.sampleVideoResourceName).\(CaptionTheaterPlaybackFixture.sampleVideoExtension) to the app target Media folder."
-            )
+            description: Text(missingPlaybackGuidance)
         )
+    }
+
+    private var missingPlaybackGuidance: String {
+        switch demoSource {
+        case .bundledSyntheticSample:
+            return "Add \(CaptionTheaterPlaybackFixture.sampleVideoResourceName).\(CaptionTheaterPlaybackFixture.sampleVideoExtension) to the app target Media folder."
+        case .muxTearsOfSteelHLS:
+            return "The Mux demo URL failed to resolve. Use the Debug tab to confirm the networked demo source."
+        }
     }
 
     private func playbackBody(url: URL) -> some View {
         Group {
             if let model {
-                playbackContent(model: model)
+                fullscreenPlayback(model: model)
             } else {
-                ProgressView("Loading player…")
-                    .task {
-                        model = CaptionTheaterPlaybackShellViewModel(url: url)
-                    }
+                ZStack {
+                    Color.black.ignoresSafeArea()
+                    ProgressView("Opening stream…")
+                        .foregroundStyle(.secondary)
+                }
+                .task(id: url.absoluteString) {
+                    CaptionTheaterPlaybackLogger.playbackFlow("tvOSPlaybackShellView creating ViewModel for playbackBody")
+                    model?.detachPlaybackObservers()
+                    model = CaptionTheaterPlaybackShellViewModel(url: url)
+                }
             }
         }
+        .background(Color.black)
         .onDisappear {
             model?.detachPlaybackObservers()
         }
     }
 
-    private func playbackContent(model: CaptionTheaterPlaybackShellViewModel) -> some View {
-        let inspection = model.eligibilityInspection()
-        return ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                videoStage(model: model, inspection: inspection)
+    private func fullscreenPlayback(model: CaptionTheaterPlaybackShellViewModel) -> some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
 
-                transportControls(model: model)
+            if let failure = model.playbackFailureDescription {
+                ContentUnavailableView(
+                    "Playback failed",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text(failure)
+                )
+            } else {
+                GeometryReader { geo in
+                    let layout = model.layoutGeometry(containerSize: geo.size)
+                    ZStack(alignment: .topLeading) {
+                        tvOSCaptionTheaterPlayerContainer(
+                            player: model.player,
+                            videoDisplayRect: layout?.activePictureRect
+                        )
+                        .frame(width: geo.size.width, height: geo.size.height)
 
-                scenarioPicker(model: model)
+                        captionTheaterReadingBand(model: model, layout: layout)
 
-                captionTextSizeMenu
-
-                captionTheaterControls(model: model)
-
-                eligibilitySummary(model: model, inspection: inspection)
+                        debugHudOverlay(model: model)
+                    }
+                }
+                .ignoresSafeArea()
             }
-            .padding()
         }
-        .scrollIndicators(.visible)
-        .confirmationDialog(
-            "Enable Caption Theater for this session?",
-            isPresented: $captionTheaterEnablePromptShown,
-            titleVisibility: .visible
-        ) {
-            Button("Use Caption Theater") {
+        .focusable(true)
+        .onPlayPauseCommand {
+            model.togglePlayPause()
+        }
+        .onChange(of: model.pictureAspectRatioWidthOverHeight) { _, newAspect in
+            reactToPresentationAspectChange(model: model, newAspect: newAspect)
+        }
+        .alert("Ultra-wide picture", isPresented: $showUltraWideCaptionTheaterOffer) {
+            Button("Caption Theater") {
+                CaptionTheaterPlaybackLogger.playbackFlow("User accepted Caption Theater layout for ultra-wide session")
                 model.captionTheaterOptInAccepted = true
+                model.captionTheaterTopPinnedLayoutEnabled = true
+                ultraWideOfferResolvedForSession = true
             }
-            Button("Stay native only", role: .cancel) {
+            Button("Standard", role: .cancel) {
+                CaptionTheaterPlaybackLogger.playbackFlow("User declined Caption Theater; using standard centered presentation")
                 model.captionTheaterOptInAccepted = false
+                model.captionTheaterTopPinnedLayoutEnabled = false
+                ultraWideOfferResolvedForSession = true
             }
         } message: {
             Text(
-                "This demo reserves letterbox space for captions when eligibility allows. Ads and native subtitles keep normal fullscreen behavior."
+                "This encode uses a wider-than-HDTV active picture. Caption Theater pins video to the top and reserves the lower area for captions."
             )
         }
     }
 
-    private func videoStage(
+    private func reactToPresentationAspectChange(
         model: CaptionTheaterPlaybackShellViewModel,
-        inspection: CaptionTheaterDebugDecisionInspection
-    ) -> some View {
-        GeometryReader { geo in
-            let layout = model.layoutGeometry(containerSize: geo.size)
-            ZStack(alignment: .topLeading) {
-                tvOSCaptionTheaterPlayerContainer(
-                    player: model.player,
-                    videoDisplayRect: layout?.activePictureRect
-                )
-                .frame(width: geo.size.width, height: geo.size.height)
-
-                captionPlaceholder(model: model, layout: layout, textSizePreset: captionTextSizePreset)
-
-                if model.showDebugOverlay {
-                    debugOverlay(model: model, inspection: inspection)
-                }
-
-                presentationBadge(model: model, inspection: inspection, optIn: model.captionTheaterOptInAccepted)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+        newAspect: Double?
+    ) {
+        guard let aspect = newAspect else {
+            return
         }
-        .aspectRatio(16 / 9, contentMode: .fit)
-    }
+        guard !ultraWideOfferResolvedForSession else {
+            return
+        }
 
-    /// Chooses caption typography for MVP overlays; persisted for upcoming Phase 4 renderer integration.
-    private var captionTextSizeMenu: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Caption appearance")
-                .font(.headline)
-            Menu {
-                ForEach(CaptionTheaterCaptionTextSizePreset.allCases) { preset in
-                    Button {
-                        captionTextSizeRaw = preset.rawValue
-                    } label: {
-                        HStack {
-                            Text(preset.menuTitle)
-                            if preset.rawValue == captionTextSizeRaw {
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-                }
-            } label: {
-                Label(captionTextSizePreset.menuTitle, systemImage: "textformat.size")
-            }
-            Text(
-                "Extra letterbox space supports larger captions without covering picture; Phase 4 renderer will honor this preset."
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
+        if aspect > Double(CaptionTheaterPlaybackUILayout.ultrawideAspectRatioThresholdWidthOverHeight) {
+            CaptionTheaterPlaybackLogger.playbackFlow("Presentation aspect triggers ultra-wide offer alert aspect=\(aspect)")
+            showUltraWideCaptionTheaterOffer = true
+        } else {
+            CaptionTheaterPlaybackLogger.playbackFlow("Presentation aspect is standard HDTV-shaped; skipping Caption Theater offer aspect=\(aspect)")
+            model.captionTheaterOptInAccepted = false
+            model.captionTheaterTopPinnedLayoutEnabled = false
+            ultraWideOfferResolvedForSession = true
         }
     }
 
     @ViewBuilder
-    private func captionPlaceholder(
+    private func captionTheaterReadingBand(
         model: CaptionTheaterPlaybackShellViewModel,
-        layout: CaptionTheaterLayoutGeometry?,
-        textSizePreset: CaptionTheaterCaptionTextSizePreset
+        layout: CaptionTheaterLayoutGeometry?
     ) -> some View {
-        if model.captionTheaterTopPinnedLayoutEnabled,
+        if model.captionTheaterOptInAccepted,
+           model.captionTheaterTopPinnedLayoutEnabled,
            let layout,
-           layout.captionReadingRect.height > 8
+           layout.captionReadingRect.height > 1
         {
-            Text("Caption Theater captions (MVP placeholder)")
-                .font(textSizePreset.captionOverlayFont)
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.center)
-                .minimumScaleFactor(0.65)
-                .lineLimit(6)
-                .frame(width: layout.captionReadingRect.width, height: layout.captionReadingRect.height)
-                .background(Color.white.opacity(0.14))
-                .position(x: layout.captionReadingRect.midX, y: layout.captionReadingRect.midY)
+            Text(
+                "Caption Theater band — timed text renders here in Phase 4. Native WebVTT may still composite over video until then."
+            )
+            .font(captionTextSizePreset.captionOverlayFont)
+            .foregroundStyle(.primary)
+            .multilineTextAlignment(.center)
+            .minimumScaleFactor(0.65)
+            .lineLimit(8)
+            .padding(.horizontal, 12)
+            .frame(width: layout.captionReadingRect.width, height: layout.captionReadingRect.height)
+            .background(Color(red: 0.06, green: 0.06, blue: 0.08))
+            .position(x: layout.captionReadingRect.midX, y: layout.captionReadingRect.midY)
         }
     }
 
-    private func presentationBadge(
-        model: CaptionTheaterPlaybackShellViewModel,
-        inspection: CaptionTheaterDebugDecisionInspection,
-        optIn: Bool
-    ) -> some View {
-        let text: String
-        let color: Color
-        if !optIn {
-            text = "Native presentation"
-            color = .secondary
-        } else if inspection.outcomeHeadline == "Caption Theater eligible" {
-            if model.captionTheaterTopPinnedLayoutEnabled {
-                text = "Caption Theater (top-pinned MVP, resizeAspect only)"
-                color = .green
-            } else {
-                text = "Caption Theater eligible (centered aspect-fit)"
-                color = .green
+    @ViewBuilder
+    private func debugHudOverlay(model: CaptionTheaterPlaybackShellViewModel) -> some View {
+        if playbackDebugHUD {
+            let inspection = model.eligibilityInspection()
+            VStack(alignment: .leading, spacing: 4) {
+                Text(model.presentationAspectSummary)
+                    .font(.caption2)
+                    .foregroundStyle(Color.white.opacity(0.85))
+                Text(formatClock(model.currentSeconds))
+                    .monospacedDigit()
+                Text("Duration \(formatClock(model.durationSeconds))")
+                    .monospacedDigit()
+                Text(inspection.outcomeHeadline)
+                    .font(.caption2.weight(.semibold))
+                Text(inspection.outcomeDetail)
+                    .font(.caption2)
             }
-        } else {
-            text = "Native presentation (eligibility blocked)"
-            color = .orange
-        }
-
-        return Text(text)
-            .font(.caption.weight(.semibold))
-            .padding(8)
-            .background(.thinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
             .padding(10)
-            .foregroundStyle(color)
-    }
-
-    private func debugOverlay(
-        model: CaptionTheaterPlaybackShellViewModel,
-        inspection: CaptionTheaterDebugDecisionInspection
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(model.presentationAspectSummary)
-                .font(.caption2)
-                .foregroundStyle(Color.white.opacity(0.85))
-            Text(formatClock(model.currentSeconds))
-                .monospacedDigit()
-            Text("Duration \(formatClock(model.durationSeconds))")
-                .monospacedDigit()
-            Text(inspection.outcomeHeadline)
-                .font(.caption2.weight(.semibold))
-            Text(inspection.outcomeDetail)
-                .font(.caption2)
-        }
-        .padding(8)
-        .background(Color.black.opacity(0.55))
-        .foregroundStyle(.white)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .padding(10)
-    }
-
-    private func transportControls(model: CaptionTheaterPlaybackShellViewModel) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Transport")
-                .font(.headline)
-            HStack(spacing: 16) {
-                Button("Back 15s") {
-                    model.seek(by: -15)
-                }
-                Button("Play / Pause") {
-                    model.togglePlayPause()
-                }
-                Button("Ahead 15s") {
-                    model.seek(by: 15)
-                }
-            }
-            // SwiftUI Slider is unavailable on tvOS; coarse jumps plus Siri remote scrubbing from VideoPlayer.
-            HStack(spacing: 16) {
-                Button("Start") {
-                    model.seekToNormalizedProgress(0)
-                }
-                Button("Middle") {
-                    model.seekToNormalizedProgress(0.5)
-                }
-                Button("Near end") {
-                    model.seekToNormalizedProgress(0.92)
-                }
-            }
-            .disabled(model.durationSeconds <= 0)
-        }
-    }
-
-    private func scenarioPicker(model: CaptionTheaterPlaybackShellViewModel) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Evidence scenario")
-                .font(.headline)
-            Picker(
-                "Scenario",
-                selection: Binding(
-                    get: { model.scenarioKind },
-                    set: { newValue in
-                        Task { await model.applyScenario(newValue) }
-                    }
-                )
-            ) {
-                ForEach(CaptionTheaterPlaybackScenarioKind.allCases) { kind in
-                    Text(kind.title).tag(kind)
-                }
-            }
-
-            Text(model.scenarioKind.summary)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            if let loadError = model.scenarioLoadError {
-                Text(loadError)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
-        }
-    }
-
-    private func captionTheaterControls(model: CaptionTheaterPlaybackShellViewModel) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Caption Theater")
-                .font(.headline)
-
-            Toggle(
-                "Caption Theater session",
-                isOn: Binding(
-                    get: { model.captionTheaterOptInAccepted },
-                    set: { newValue in
-                        if newValue {
-                            captionTheaterEnablePromptShown = true
-                        } else {
-                            model.captionTheaterOptInAccepted = false
-                        }
-                    }
-                )
-            )
-
-            Toggle(
-                "Debug overlay",
-                isOn: Binding(
-                    get: { model.showDebugOverlay },
-                    set: { model.showDebugOverlay = $0 }
-                )
-            )
-
-            Toggle(
-                "Top-pin cinematic layout (MVP)",
-                isOn: Binding(
-                    get: { model.captionTheaterTopPinnedLayoutEnabled },
-                    set: { model.captionTheaterTopPinnedLayoutEnabled = $0 }
-                )
-            )
-
-            Text(
-                "Player uses AVPlayerLayer resizeAspect only—aspect-fill/zoom is excluded from this milestone."
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-
-            if model.scenarioKind == .manualLegacyToggles {
-                manualLegacyDemoToggles(model: model)
-            }
-        }
-    }
-
-    private func manualLegacyDemoToggles(model: CaptionTheaterPlaybackShellViewModel) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Manual demo overrides")
-                .font(.subheadline.weight(.semibold))
-
-            Toggle(
-                "Demo: assume WebVTT selected",
-                isOn: Binding(
-                    get: { model.demoAssumeWebVTTSelected },
-                    set: { model.demoAssumeWebVTTSelected = $0 }
-                )
-            )
-            Toggle(
-                "Demo: assume safe letterbox viewport",
-                isOn: Binding(
-                    get: { model.demoAssumeSafeLetterboxViewport },
-                    set: { model.demoAssumeSafeLetterboxViewport = $0 }
-                )
-            )
-
-            Text(
-                "Stub snapshot toggles from CT-0501; bundled scenarios above exercise real inspectors instead."
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-        }
-    }
-
-    private func eligibilitySummary(
-        model: CaptionTheaterPlaybackShellViewModel,
-        inspection: CaptionTheaterDebugDecisionInspection
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Eligibility (same engine as tests)")
-                .font(.headline)
-            Text(inspection.outcomeHeadline)
-                .font(.title3.weight(.semibold))
-            Text(inspection.outcomeDetail)
-                .foregroundStyle(.secondary)
-
-            Text(inspection.lifecycleTransitionNote)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            .background(Color.black.opacity(0.55))
+            .foregroundStyle(.white)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+            .padding(16)
         }
     }
 
@@ -401,6 +229,9 @@ struct tvOSPlaybackShellView: View {
 
 #Preview {
     NavigationStack {
-        tvOSPlaybackShellView(fixtureURL: CaptionTheaterPlaybackFixture.sampleVideoURL())
+        tvOSPlaybackShellView(
+            demoSource: .bundledSyntheticSample,
+            playbackURL: CaptionTheaterPlaybackFixture.sampleVideoURL()
+        )
     }
 }

@@ -115,7 +115,7 @@ struct CaptionTheaterDecisionEngine: Sendable {
 /// Snapshots are value types so playback, ad, subtitle, metadata, and viewport adapters can construct
 /// them on their own actor or thread and pass them into the stateless decision engine without sharing
 /// mutable state.
-struct CaptionTheaterEligibilitySnapshot: Equatable, Sendable {
+struct CaptionTheaterEligibilitySnapshot: Codable, Equatable, Sendable {
     let isEnabledByUser: Bool
     let adPlaybackState: CaptionTheaterAdPlaybackState
     let subtitleState: CaptionTheaterSubtitleState
@@ -149,7 +149,7 @@ enum CaptionTheaterDecision: Equatable, Sendable {
 }
 
 /// Reasons Caption Theater should stay in native playback even though the evidence is understood.
-enum CaptionTheaterIneligibilityReason: Equatable, Sendable {
+enum CaptionTheaterIneligibilityReason: String, Codable, Equatable, Sendable {
     case disabledByUser
     case adPlaybackActive
     case promoPlaybackActive
@@ -161,7 +161,7 @@ enum CaptionTheaterIneligibilityReason: Equatable, Sendable {
 }
 
 /// Reasons Caption Theater should fail closed because the evidence is incomplete or unknown.
-enum CaptionTheaterUncertaintyReason: Equatable, Sendable {
+enum CaptionTheaterUncertaintyReason: String, Codable, Equatable, Sendable {
     case unknownAdPlaybackState
     case unknownSubtitleFormat
     case unknownViewportSafety
@@ -170,7 +170,7 @@ enum CaptionTheaterUncertaintyReason: Equatable, Sendable {
 }
 
 /// Current ad or promo state supplied by the host playback integration.
-enum CaptionTheaterAdPlaybackState: Equatable, Sendable {
+enum CaptionTheaterAdPlaybackState: String, Codable, Equatable, Sendable {
     case content
     case linearAd
     case pausePromo
@@ -178,7 +178,7 @@ enum CaptionTheaterAdPlaybackState: Equatable, Sendable {
 }
 
 /// Current subtitle-track eligibility supplied by subtitle metadata or fixture adapters.
-enum CaptionTheaterSubtitleState: Equatable, Sendable {
+enum CaptionTheaterSubtitleState: String, Codable, Equatable, Sendable {
     case webVTT
     case noneSelected
     case unsupported
@@ -186,7 +186,7 @@ enum CaptionTheaterSubtitleState: Equatable, Sendable {
 }
 
 /// Current viewport safety classification supplied by metadata, fixtures, or future pixel analysis.
-enum CaptionTheaterViewportState: Equatable, Sendable {
+enum CaptionTheaterViewportState: String, Codable, Equatable, Sendable {
     case safeCinematicLetterbox
     case fullFrame
     case unsafe
@@ -195,7 +195,7 @@ enum CaptionTheaterViewportState: Equatable, Sendable {
 }
 
 /// Current protected-content policy state supplied by playback and provider metadata adapters.
-enum CaptionTheaterProtectedContentState: Equatable, Sendable {
+enum CaptionTheaterProtectedContentState: String, Codable, Equatable, Sendable {
     case clearContent
     case trustedMetadataAllowed
     case protectedWithoutTrustedMetadata
@@ -206,7 +206,7 @@ enum CaptionTheaterProtectedContentState: Equatable, Sendable {
 ///
 /// Evidence stores sanitized, non-frame diagnostic text only. It must not contain credentials,
 /// private stream URLs, FairPlay keys, raw protected frames, or unsanitized production manifests.
-struct CaptionTheaterEvidence: Equatable, Sendable {
+struct CaptionTheaterEvidence: Codable, Equatable, Sendable {
     let source: CaptionTheaterEvidenceSource
     let polarity: CaptionTheaterEvidencePolarity
     let message: String
@@ -239,7 +239,7 @@ struct CaptionTheaterEvidence: Equatable, Sendable {
 }
 
 /// Source area that produced a piece of Caption Theater evidence.
-enum CaptionTheaterEvidenceSource: Equatable, Sendable {
+enum CaptionTheaterEvidenceSource: String, Codable, Equatable, Sendable {
     case hlsManifest
     case avFoundationMetadata
     case subtitleCueMetadata
@@ -252,7 +252,7 @@ enum CaptionTheaterEvidenceSource: Equatable, Sendable {
 }
 
 /// Direction of a piece of evidence in the final eligibility decision.
-enum CaptionTheaterEvidencePolarity: Equatable, Sendable {
+enum CaptionTheaterEvidencePolarity: String, Codable, Equatable, Sendable {
     case positive
     case negative
     case uncertain

@@ -26,3 +26,11 @@
 - Added `Sendable` domain models for decisions, evidence, ad state, subtitle state, viewport state, and protected-content policy.
 - Replaced the generated empty unit test with decision-engine tests for eligible, user-disabled, ad, unknown-ad, unsupported-subtitle, unsafe-viewport, and DRM-uncertainty cases.
 - Verified the full `CaptionTheater` scheme with repo-local derived data, then removed the generated build artifacts.
+
+## 2026-05-05 Fixture Update
+
+- Added decision scenario fixtures under `CaptionTheater/CaptionTheaterTests/Fixtures/DecisionScenarios`.
+- Added fixture documentation with expected outcomes for eligible, native fallback, and uncertain decisions.
+- Added a fixture-driven unit test that loads the JSON scenario matrix from the test bundle.
+- Made decision snapshot and evidence value types `Codable` so sanitized fixtures can exercise the engine without playback dependencies.
+- Verified the full `CaptionTheater` scheme again, then removed repo-local build artifacts.

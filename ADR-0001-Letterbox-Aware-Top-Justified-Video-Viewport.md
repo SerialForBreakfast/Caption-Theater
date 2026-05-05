@@ -24,7 +24,8 @@ Date: 2026-05-04
 Status: Proposed  
 Platforms: iOS, tvOS, macOS  
 Owners: Playback, Accessibility, Captioning, Client Platform  
-Related Areas: AVFoundation, AVKit, HLS/TS playback, subtitle rendering, accessibility, localization
+Related Areas: AVFoundation, AVKit, HLS/TS playback, subtitle rendering, accessibility, localization  
+**Implementation alignment (2026-05-05):** The Caption Theater Xcode project currently ships **tvOS-only** targets. ADR integration guidance remains platform-neutral; the first integrated shell should assume **tvOS** unless/until additional targets are added.
 
 ---
 

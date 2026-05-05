@@ -1,1 +1,7 @@
 CaptionTheater/CaptionTheater.xcodeproj/project.xcworkspace/xcuserdata/josephmccraw.xcuserdatad/UserInterfaceState.xcuserstate
+
+# Repo-local derived data and scratch builds (see AGENTS.md). Root only.
+# Note: files already committed stay tracked until removed from the index:
+#   git rm -r --cached Scratch/
+/Scratch/
+/scratch/

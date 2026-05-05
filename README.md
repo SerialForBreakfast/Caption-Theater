@@ -10,6 +10,8 @@ The result is a cleaner caption experience for fast dialogue, translated subtitl
 
 The project explores how to build this as a modular playback add-on for native iOS, tvOS, and macOS players using AVFoundation, AVKit-adjacent integrations, HLS metadata, timed-text analysis, active-picture layout, and runtime safety guardrails.
 
+**Implementation note:** The Xcode repository currently ships **tvOS-only** targets. Cross-platform goals below remain valid; new playback and showcase code should land on **tvOS** first until additional targets are added.
+
 ---
 
 ## Product Thesis
@@ -105,9 +107,26 @@ Caption Theater should not:
 
 ## Platform Goals
 
-### iOS
+### tvOS (current Xcode target)
 
-The iOS proof of concept should demonstrate the full user journey first:
+The repository begins with **tvOS** because living-room viewing is a primary readability scenario.
+
+Near-term engineering goals:
+
+- SwiftUI host shell with stable playback controls on Siri Remote;
+- integrate modular Caption Theater components behind fixture-backed eligibility decisions;
+- VoiceOver and focus-safe overlays;
+- overscan-aware layout;
+- pause promo and native-control coexistence policies validated against fixtures.
+
+Longer-term validation (may overlap Phase 7):
+
+- remote ergonomics;
+- avoiding unintended focus traps in caption surfaces unless intentionally designed.
+
+### iOS (roadmap)
+
+The **iOS** proof of concept remains the strongest handheld stakeholder demo path:
 
 - local video playback;
 - custom `AVPlayerLayer` container;
@@ -117,21 +136,7 @@ The iOS proof of concept should demonstrate the full user journey first:
 - pause/resume/seek behavior;
 - native fallback for unsafe fixtures.
 
-### tvOS
-
-tvOS is a high-value target because subtitles are often read from a living-room distance.
-
-tvOS validation must focus on:
-
-- Siri Remote behavior;
-- focus stability;
-- VoiceOver smoke testing;
-- overscan-safe layout;
-- player controls;
-- pause promo behavior;
-- avoiding focusable caption overlays unless intentionally designed.
-
-### macOS
+### macOS (roadmap)
 
 macOS validation should focus on:
 
@@ -143,8 +148,13 @@ macOS validation should focus on:
 
 ---
 
-## Technical Strategy
+### Documentation alignment
 
+Earlier drafts described iOS as the first integrated POC host. **Repository reality is tvOS-first.** Shared parsing and eligibility logic stay platform-neutral so iOS and macOS targets can adopt the same modules later.
+
+---
+
+## Technical Strategy
 Caption Theater should be built as modular playback infrastructure rather than a monolithic custom player.
 
 ```text
@@ -155,8 +165,9 @@ Caption Theater should be built as modular playback infrastructure rather than a
                            v
 +---------------------------------------------------------------+
 |                 CaptionTheaterCoordinator                     |
-|  - Owns state machine                                         |
+|  - Owns lifecycle wiring across playback sources               |
 |  - Consumes playback state, ad state, subtitle state           |
+|  - Applies eligibility snapshots / decision-engine outputs      |
 |  - Publishes layout mode and caption mode                      |
 +-----+-------------------+-------------------+-----------------+
       |                   |                   |
@@ -189,11 +200,11 @@ Caption Theater should be built as modular playback infrastructure rather than a
 
 ### `CaptionTheaterCoordinator`
 
-Owns the decision state machine.
+Coordinates playback-facing presentation from **stateless eligibility decisions** (for example `CaptionTheaterDecisionEngine` outputs), timers, and host-player events—not an internal reducer graph.
 
 Responsibilities:
 
-- combine viewport, subtitle, ad, user-setting, and platform evidence;
+- combine viewport, subtitle, ad, user-setting, and platform evidence into snapshots for evaluation;
 - publish the current presentation mode;
 - cancel in-flight work when playback state changes;
 - fail closed for unsafe or unknown states;
@@ -698,22 +709,22 @@ Goal: create deterministic test inputs.
 
 Deliverables:
 
-- synthetic frame fixtures;
-- WebVTT fixtures;
+- synthetic frame fixtures (future);
+- WebVTT fixtures (within subtitle-metadata fixtures today; expanded cues later);
 - HLS manifest fixtures;
 - provider metadata fixtures;
-- expected-result documentation;
+- expected-result documentation (`Docs/Fixture-Inventory.md`);
 - debug inspector shell.
 
-### MVP 1: Evidence Model and State Reducer
+### MVP 1: Evidence Model and Decision Engine
 
 Goal: make every eligibility decision explainable.
 
 Deliverables:
 
 - evidence model;
-- state model;
-- transition reducer;
+- eligibility snapshots feeding a **pure decision engine**;
+- deterministic transitions documented through snapshots plus coordinator glue (no reducer framework requirement);
 - fallback reasons;
 - unit tests.
 
@@ -766,13 +777,13 @@ Deliverables:
 - renderer view;
 - snapshot tests.
 
-### MVP 6: iOS End-to-End Demo
+### MVP 6: End-to-End Showcase Demo
 
 Goal: prove the user value in a controlled showcase.
 
 Deliverables:
 
-- playable iOS sample;
+- playable **tvOS** sample (this repo today); optional **iOS** sample when a second target exists;
 - native vs. Caption Theater mode;
 - eligible fixture;
 - unsafe fixtures;
@@ -791,15 +802,14 @@ Deliverables:
 - revalidation after ad exit;
 - tests.
 
-### MVP 8: tvOS and macOS Feasibility
+### MVP 8: Additional Platform Feasibility
 
-Goal: validate cross-platform potential.
+Goal: validate cross-platform potential beyond the tvOS-first host.
 
 Deliverables:
 
-- tvOS wrapper;
-- macOS wrapper;
-- focus and remote QA;
+- macOS wrapper and optional **iOS** target feasibility;
+- **tvOS** focus and remote QA;
 - resize and full-screen QA;
 - feasibility report.
 
@@ -813,14 +823,13 @@ Sprint goal:
 
 Tickets:
 
-1. Create fixture directory and expected-results README.
-2. Implement evidence model.
-3. Implement state reducer.
-4. Implement manifest fixture parser.
-5. Implement provider metadata JSON stub.
-6. Implement layout engine with fake analysis input.
-7. Implement caption persistence window with WebVTT fixture cues and an extensible internal cue model.
-8. Build debug inspector with fake/fixture data.
+1. Maintain fixture inventory (`Docs/Fixture-Inventory.md`) as new deterministic inputs land.
+2. Implement evidence model wiring into playback-facing coordinators as modules stabilize.
+3. Treat eligibility updates as **snapshot + decision-engine** evaluation (see `CaptionTheaterDecisionEngine`).
+4. Extend manifest and metadata inspectors as new edge cases appear.
+5. Implement layout engine with fake analysis input.
+6. Implement caption persistence window with WebVTT fixture cues and an extensible internal cue model.
+7. Build debug inspector with fake/fixture data.
 
 Acceptance criteria:
 
@@ -903,16 +912,16 @@ Caption Theater is production-candidate only when:
 
 ## Project Status
 
-Current status: planning and proof-of-concept design.
+Current status: **tvOS-first codebase** with deterministic **fixture-backed** parsing and eligibility modules (`CaptionTheaterDecisionEngine`, `HLSManifestInspector`, `ProviderMetadataInspector`, `SubtitleMetadataClassifier`) covered by unit tests. Playback integration and viewport detection remain ahead.
 
 Next recommended action:
 
-1. Build fixtures.
-2. Build evidence/state reducer.
-3. Build manifest inspector.
-4. Build caption persistence model.
+1. Keep fixtures documented in `Docs/Fixture-Inventory.md`.
+2. Introduce `CaptionTheaterCoordinator` wiring on tvOS behind fixture playback.
+3. Build viewport preclassification and bounded pixel analysis for safe regions.
+4. Build caption persistence renderer on WebVTT fixtures.
 5. Build layout engine.
-6. Build iOS showcase.
+6. Deliver tvOS end-to-end showcase; add iOS target when ready.
 
 ---
 

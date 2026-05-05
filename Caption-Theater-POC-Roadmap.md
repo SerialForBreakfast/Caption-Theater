@@ -26,6 +26,8 @@ Related ADR: `ADR-0001-Letterbox-Aware-Top-Justified-Video-Viewport.md`
 Platforms: iOS, tvOS, macOS  
 Primary Goal: Prove whether a native Apple-platform player can safely detect unused visual regions and use them to provide a better subtitle reading experience.
 
+**Implementation alignment (2026-05-05):** The Caption Theater repository is **tvOS-first** in Xcode. Earlier roadmap milestones that name **iOS** as the first integrated POC remain valid product goals but should be reinterpreted as **tvOS-first engineering** until an iOS app target exists.
+
 ---
 
 ## 1. Product Thesis
@@ -154,7 +156,7 @@ Acceptance:
 - Synthetic test frames for detector validation.
 - Debug overlay showing detected active picture bounds.
 - Runtime feature flag.
-- iOS first, then tvOS, then macOS wrapper.
+- **tvOS-first host app in this repository**, then additional wrappers for **iOS** and **macOS** as targets are added (historical drafts mentioned iOS first—implementation follows repo targets).
 - Ad-state abstraction with simulated ad pod and pause promo events.
 - Measurement/logging of eligibility and fallback decisions.
 

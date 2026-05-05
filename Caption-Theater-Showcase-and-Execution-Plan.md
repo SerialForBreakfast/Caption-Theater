@@ -7,6 +7,8 @@ Related Documents:
 - `Caption-Theater-POC-Roadmap.md`
 - `Caption-Theater-Metadata-Feasibility-Deep-Dive.md`
 
+**Implementation alignment (2026-05-05):** Execution sequencing assumes **tvOS** hosts the first playable integration built from this repository (existing Xcode targets). **iOS** showcase milestones remain roadmap-compatible once an iOS target is introduced.
+
 ---
 
 ## 1. Product Definition

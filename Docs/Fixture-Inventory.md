@@ -1,0 +1,71 @@
+# Fixture Inventory
+
+Sanitized inputs kept **inside this repository** for deterministic unit tests. They exist so parsing, classification, and eligibility logic stay verifiable **without AVPlayer** or network access.
+
+Never substitute production playlists, license URLs, keys, or private media for these paths.
+
+## Decision scenarios
+
+**Location:** `CaptionTheater/CaptionTheaterTests/Fixtures/DecisionScenarios/`
+
+| Asset | Role |
+| --- | --- |
+| `decision-scenarios.json` | Matrix of `CaptionTheaterEligibilitySnapshot` values with expected decision outcomes |
+| `DecisionScenarioFixtures.md` | Human-readable expectations and naming |
+
+**Code:** `CaptionTheaterDecisionEngine`  
+**Tests:** `CaptionTheaterDecisionFixtureTests`, direct tests in `CaptionTheaterTests`
+
+## HLS manifests
+
+**Location:** `CaptionTheater/CaptionTheaterTests/Fixtures/Manifests/`
+
+| Asset | Role |
+| --- | --- |
+| `sidecar-webvtt-master.m3u8` | Sidecar text subtitles (`EXT-X-MEDIA` subtitles) |
+| `embedded-closed-captions-master.m3u8` | Embedded closed-caption renditions |
+| `ad-daterange-discontinuity-media.m3u8` | Date ranges, discontinuities, mixed-media cues |
+| `encrypted-session-key-master.m3u8` | Encryption / session-key markers without secrets |
+| `full-frame-no-subtitles-master.m3u8` | Control: no declared subtitle transport |
+| `HLSManifestFixtures.md` | Fixture notes |
+
+**Code:** `HLSManifestInspector`  
+**Tests:** `HLSManifestInspectorTests`
+
+## Provider metadata
+
+**Location:** `CaptionTheater/CaptionTheaterTests/Fixtures/ProviderMetadata/`
+
+| Asset | Role |
+| --- | --- |
+| `trusted-eligible-letterbox.json` | Trusted QC metadata authorizing a safe layout path |
+| `blocklisted-burned-in-subtitles.json` | Policy forcing native playback |
+| `native-only-timeline.json` | Timeline segments that disallow Caption Theater |
+| `incomplete-eligible-metadata.json` | Fail-closed incomplete trusted payload |
+| `ProviderMetadataFixtures.md` | Fixture notes |
+
+**Code:** `ProviderMetadataInspector`  
+**Tests:** `ProviderMetadataInspectorTests`
+
+## Subtitle track metadata
+
+**Location:** `CaptionTheater/CaptionTheaterTests/Fixtures/Subtitles/`
+
+| Asset | Role |
+| --- | --- |
+| `sidecar-webvtt-dialogue.json` | WebVTT dialogue suitable for persistence policy |
+| `sidecar-webvtt-sdh.json` | SDH-style WebVTT |
+| `sidecar-webvtt-forced.json` | Forced narrative / authored-timing-only policy |
+| `embedded-cea608.json` | Embedded captions → native-only |
+| `image-based-subtitle.json` | Image subtitles → native-only |
+| `burned-in-subtitles.json` | Burned-in risk → native-only |
+| `missing-selected-track.json` | No selection → native-only |
+| `unknown-format.json` | Unknown format → fail closed |
+| `SubtitleMetadataFixtures.md` | Fixture notes |
+
+**Code:** `SubtitleMetadataClassifier`  
+**Tests:** `SubtitleMetadataClassifierTests`
+
+## Related governance
+
+- **DRM / live streams:** `Docs/DRM-Feasibility-Study.md` and CT-0204 stream inventory in `TASKS.md` gate any protected-stream validation beyond these fixtures.

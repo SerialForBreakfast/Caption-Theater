@@ -5,7 +5,13 @@
 Status: Draft Product Execution Plan  
 Role: Product Lead  
 Scope: Proof of concept through production-readiness assessment  
-Platforms: iOS first, then tvOS and macOS feasibility
+Platforms: **tvOS-first in this repository** (current Xcode targets); **iOS** and **macOS** remain planned product expansions using the same modular core.
+
+---
+
+## Repository platform note
+
+The Caption Theater Xcode project currently ships **tvOS-only** targets (`CaptionTheater`, `CaptionTheaterTests`, `CaptionTheaterUITests`). Tasks that describe an **iOS** playback shell or showcase should be read as **roadmap** until an iOS target exists; **Phase 5** showcase work should land on **tvOS** first to match the repo. Cross-platform feasibility (including macOS) stays in later phases.
 
 ---
 
@@ -15,6 +21,29 @@ Platforms: iOS first, then tvOS and macOS feasibility
 - `IN PROGRESS`: Started, with remaining acceptance criteria or integration work.
 - `DONE`: Completed for the current documented scope.
 - `BLOCKED`: Cannot proceed without a decision, dependency, fixture, credential, or external input.
+
+---
+
+## Execution snapshot (groomed)
+
+**Shipped in repo today**
+
+- **Phase 1 core:** Stateless `CaptionTheaterDecisionEngine`, eligibility snapshot + evidence types (`CaptionTheaterEvidence`, sources, polarities), JSON decision fixtures, broad unit coverage.
+- **Phase 2 foundations:** `HLSManifestInspector`, `ProviderMetadataInspector`, `SubtitleMetadataClassifier` with sanitized fixtures and tests.
+- **DRM study:** `Docs/DRM-Feasibility-Study.md` + CT-0204 metadata-first stream inventory (live streams still gated).
+
+**Formal gaps**
+
+- **Phase 1 exit:** Debug inspector (**CT-0103**) not built — Phase 1 exit criteria below remain partially open until it exists.
+- **Phase 2 → playback:** Converting manifest/subtitle/provider outputs into **wired `CaptionTheaterEvidence` + snapshots** during real playback is **CT-0502** (and related coordinator work), not finished by parsers alone.
+
+**Reasonable next forks (pick one driving sequence)**
+
+1. **CT-0103** — unlocks Phase 1 exit and explainability for all fixture paths.
+2. **CT-0501 / CT-0502** — tvOS shell + wire parsers/classifier/engine into a running player (even before viewport pixels).
+3. **CT-0301** — viewport preclassification before integrating layout.
+
+**Phase 0:** **CT-0002** is **partial** (`Docs/Fixture-Inventory.md` + manifest/subtitle/provider/decision JSON); video assets, synthetic frames, and full demo matrix still TODO.
 
 ---
 
@@ -61,9 +90,9 @@ These timeline estimates assume one small product/engineering team and can be co
 | Phase 2: Metadata and Manifest Feasibility | 1–2 weeks | `.m3u8`, provider metadata, subtitle declarations, DRM risk, and ad markers are parsed into evidence. |
 | Phase 3: Viewport Detection and Layout | 2–3 weeks | Safe inactive regions can be detected in fixtures and converted into stable layout geometry. |
 | Phase 4: Caption Persistence Renderer | 2–3 weeks | WebVTT fixture cues render first, using an extensible cue model designed for the main subtitle/caption formats. |
-| Phase 5: iOS End-to-End Showcase | 2–3 weeks | A local iOS demo proves native vs. Caption Theater value and fallback behavior. |
+| Phase 5: End-to-End Showcase | 2–3 weeks | A playable **tvOS** demo (this repo) proves native vs. Caption Theater value and fallback behavior; an **iOS** stakeholder demo remains roadmap-compatible. |
 | Phase 6: Ads, Promos, and Boundary Safety | 1–2 weeks | Ads play normally fullscreen/native while Caption Theater suspends, then resumes or revalidates when content returns. |
-| Phase 7: tvOS/macOS Feasibility | 2–3 weeks | Cross-platform viability, focus, remote, resize, and accessibility risks are documented. |
+| Phase 7: Additional platform feasibility | 2–3 weeks | **macOS** wrapper and any **iOS** target viability; tvOS-specific polish, focus, remote, resize (macOS), and accessibility risks are documented. |
 | Phase 8: Production Readiness Assessment | 1 week | Team decides whether to proceed, narrow scope, or stop. |
 
 Total expected POC window: approximately 10–17 weeks depending on staffing, fixture availability, and platform scope.
@@ -180,7 +209,7 @@ Acceptance Criteria:
 - Demo explicitly states that future cues are not shown.
 - Demo shows ads playing normally fullscreen/native and Caption Theater resuming or revalidating after content returns.
 
-#### CT-0002 [TODO]: Create Fixture Inventory
+#### CT-0002 [IN PROGRESS]: Create Fixture Inventory
 
 User Story:
 As an engineer, I need deterministic fixtures so every module can be tested without relying on external services.
@@ -202,6 +231,11 @@ Acceptance Criteria:
 - Every fixture has an expected decision.
 - Fixture matrix includes eligible ultra-widescreen content, burned-in text, dark scene, ad marker, DRM marker, 4:3 pillarbox, variable aspect ratio, and unsupported subtitle examples.
 - Fixture inventory separates real-world demo candidates, Apple HLS control references, and generated known-answer fixtures.
+
+Implementation Status:
+
+- Canonical map for **sanitized** JSON / `.m3u8` fixtures lives in `Docs/Fixture-Inventory.md` (decision scenarios, manifests, provider metadata, subtitle metadata).
+- Still TODO per tasks above: bundled **video** lists, **synthetic frame** catalog, dense **WebVTT cue** fixtures for renderer tests, **real-world** candidate table with licenses, **generation scripts** for raster/detector known-answers (**CT-0005**).
 
 #### CT-0003 [TODO]: Define Readability Metrics
 
@@ -282,11 +316,11 @@ Acceptance Criteria:
 ### Phase 0 Exit Criteria
 
 - Product thesis is agreed.
-- Fixture inventory is ready.
-- Demo script is ready.
-- Success metrics are defined.
-- Real-world widescreen candidate URLs and license notes are documented.
-- Generated fixture requirements are documented.
+- Fixture inventory supports **current** metadata/decision modules (`Docs/Fixture-Inventory.md`); video, synthetic-frame, and full demo matrices may still be **in progress** (**CT-0002**).
+- Demo script is ready (**CT-0001**).
+- Success metrics are defined (**CT-0003**).
+- Real-world widescreen candidate URLs and license notes are documented (**CT-0004**).
+- Generated fixture requirements are documented (**CT-0005**).
 
 ---
 
@@ -299,13 +333,13 @@ Build the decision engine before building playback UI.
 ### Requirements
 
 - Every activation or fallback decision must be explainable.
-- The state machine must fail closed for uncertainty.
-- The state machine must be testable without AVPlayer.
+- Eligibility evaluation **fails closed** for uncertainty.
+- Core eligibility logic must be testable without AVPlayer.
 - The system must separate viewport eligibility from subtitle eligibility.
 
 ### Key Tasks
 
-#### CT-0101 [IN PROGRESS]: Define Evidence Model
+#### CT-0101 [DONE]: Define Evidence Model
 
 User Story:
 As a playback engineer, I need eligibility decisions to carry evidence so unsafe activations can be diagnosed.
@@ -313,20 +347,25 @@ As a playback engineer, I need eligibility decisions to carry evidence so unsafe
 Tasks:
 
 - Define `CaptionTheaterEvidenceSource`.
-- Define `CaptionTheaterEvidenceKind`.
-- Define confidence model.
-- Define time range support.
-- Define fallback reasons.
-- Define uncertainty reasons.
+- Define evidence polarity (`CaptionTheaterEvidencePolarity`: positive / negative / uncertain).
+- Define structured evidence payloads (`CaptionTheaterEvidence` with sanitized messages).
+- Define confidence model _(deferred: future scoring on evidence or viewport confidence)_.
+- Define time range support _(deferred: attach `CMTimeRange` when coordinator emits timed evidence)_.
+- Surface ineligibility and uncertainty via typed reasons on `CaptionTheaterDecision`.
 
 Acceptance Criteria:
 
 - Evidence models conform to `Sendable`.
 - Evidence can be logged without storing raw frames.
-- Evidence can be displayed in debug UI.
+- Evidence can be displayed in debug UI _(model-ready; **CT-0103** provides the UI)_.
 - Evidence distinguishes positive, negative, and uncertain signals.
 
-#### CT-0102 [IN PROGRESS]: Define Decision Engine and Lifecycle State Model
+Implementation Status:
+
+- Shipped in `CaptionTheaterDecisionEngine.swift`: `CaptionTheaterEvidence`, `CaptionTheaterEvidenceSource`, `CaptionTheaterEvidencePolarity`, plus decision enums carrying evidence arrays.
+- Explicit numeric confidence and timed evidence attachments remain future work.
+
+#### CT-0102 [DONE]: Define Decision Engine and Lifecycle State Model
 
 User Story:
 As a QA engineer, I need deterministic eligibility decisions so edge cases can be tested reliably.
@@ -334,12 +373,12 @@ As a QA engineer, I need deterministic eligibility decisions so edge cases can b
 Tasks:
 
 - Define `CaptionTheaterDecision`.
-- Define playback state inputs.
+- Define playback state inputs (represented in `CaptionTheaterEligibilitySnapshot`).
 - Define ad state inputs.
 - Define subtitle state inputs.
 - Define viewport state inputs.
 - Define user setting inputs.
-- Implement a stateless decision engine before adding playback lifecycle coordination.
+- Implement a **stateless** decision engine before adding playback lifecycle coordination.
 
 Acceptance Criteria:
 
@@ -348,14 +387,13 @@ Acceptance Criteria:
 - Unknown ad state fails closed.
 - Unsupported subtitle format fails closed.
 - Unsafe region evidence suspends the feature.
-- Seek, track change, audio change, discontinuity, and asset transition reset cue history.
+- Seek, track change, audio change, discontinuity, and asset transition reset cue history _(owned by future **playback coordinator** + cue persistence — **Phase 4–5**; not part of the pure eligibility function)_.
 
 Implementation Status:
 
-- Completed initial stateless `CaptionTheaterDecisionEngine`.
-- Added deterministic decision tests for eligible, user-disabled, ad, unknown-ad, unsupported-subtitle, unsafe-viewport, and protected-content uncertainty cases.
-- Added JSON decision scenario fixtures and fixture-driven tests.
-- Playback lifecycle coordination and cue-history reset handling remain future work.
+- Completed stateless `CaptionTheaterDecisionEngine` + `CaptionTheaterEligibilitySnapshot` and related enums.
+- Deterministic tests + JSON scenario fixtures cover eligible, user-disabled, ad, unknown-ad, unsupported-subtitle, unsafe-viewport, protected-content uncertainty, and fixture-matrix cases.
+- Playback lifecycle, cancellation, and cue-history resets remain coordinator/renderer work.
 
 #### CT-0103 [TODO]: Build Debug Decision Inspector
 
@@ -382,7 +420,8 @@ Acceptance Criteria:
 ### Phase 1 Exit Criteria
 
 - Decision engine has unit coverage.
-- Debug inspector can explain fixture decisions.
+- Evidence-bearing eligibility decisions run without AVPlayer.
+- Debug inspector can explain fixture decisions (**pending CT-0103**; interim coverage is unit/fixture assertions on evidence strings).
 - No AVPlayer dependency is required for core decision tests.
 
 ---
@@ -491,7 +530,7 @@ Implementation Status:
 - Added unit tests for subtitle state and presentation policy classification.
 - IMSC/TTML-specific fixture metadata remains future work.
 
-#### CT-0204 [TODO]: Run DRM Feasibility Study
+#### CT-0204 [IN PROGRESS]: Run DRM Feasibility Study
 
 User Story:
 As a playback architect, I need to know whether representative protected streams allow any useful client-side Caption Theater analysis.
@@ -511,12 +550,26 @@ Acceptance Criteria:
 - The system never requires raw frame access for protected production playback.
 - Protected content without trusted metadata falls back to native presentation.
 
+Implementation Status:
+
+- Added `Docs/DRM-Feasibility-Study.md` with required inputs, test procedure, classification outcomes, result template, safety rules, **CT-0204 approval checklist**, **owner question lists**, and **minimum metadata-first test matrix** before private streams.
+- Current code already covers protected-content fallback without trusted metadata and trusted provider metadata for DRM-like fixtures.
+- **Sanitized stream inventory** (status key: `pending-approval`, `approved`, `not-allowed`, `metadata-only`):
+
+| Sanitized alias | Status | Allowed scope | Notes |
+| --- | --- | --- | --- |
+| `ct0204-metadata-first-fixtures-bundle` | `approved` | Manifest/static fixture inspection only (`CaptionTheaterTests/Fixtures/Manifests`, provider/subtitle JSON); no live playback URLs | Approval owner recorded in `Docs/DRM-Feasibility-Study.md` checklist; satisfies metadata-first phase |
+| `ct0204-live-fairplay-representative` | `pending-approval` | TBD after playback/security sign-off | Requires checklist row completion and DRM owner answers before `approved` or `metadata-only` |
+
+- Live FairPlay stream validation remains gated until at least one live-stream row is `approved` or explicitly `metadata-only` with written scope; frame sampling remains **not allowed** unless the DRM checklist marks it **yes** for that alias.
+
 ### Phase 2 Exit Criteria
 
-- Manifest and provider metadata are represented as evidence.
-- Debug inspector shows metadata-derived decision reasons.
-- DRM safety policy is represented in code and tests.
-- DRM feasibility study has a documented test plan or initial findings.
+- Manifest, provider, and subtitle metadata facts are extractable from sanitized fixtures with unit coverage.
+- Wiring those facts into runtime `CaptionTheaterEvidence` + snapshots during playback remains **CT-0502** / coordinator work.
+- Debug inspector surfaces metadata-derived reasons (**pending CT-0103**).
+- DRM safety policy is represented in code and tests (protected content without trusted metadata fails closed).
+- DRM feasibility documentation and metadata-first gates exist (**CT-0204**); live-stream validation follows approved inventory rows.
 
 ---
 
@@ -752,11 +805,11 @@ Acceptance Criteria:
 
 ---
 
-## 10. Phase 5: iOS End-to-End Showcase
+## 10. Phase 5: End-to-End Showcase (tvOS-first)
 
 ### Goal
 
-Prove the user value in a playable iOS demo.
+Prove the user value in a playable demo on **tvOS**, matching the current Xcode project. An **iOS** showcase remains a valid parallel stakeholder goal once an iOS target exists.
 
 ### Requirements
 
@@ -770,15 +823,15 @@ Prove the user value in a playable iOS demo.
 
 ### Key Tasks
 
-#### CT-0501 [TODO]: Build iOS Playback Shell
+#### CT-0501 [TODO]: Build tvOS Playback Shell
 
 User Story:
 As a stakeholder, I need a playable sample to evaluate the experience.
 
 Tasks:
 
-- Create iOS sample target or sample screen.
-- Host `AVPlayerLayer` in a custom view.
+- Extend the existing **tvOS** app target (or add a dedicated tvOS sample scene) for fixture-driven playback.
+- Host playback with `AVPlayer` / `AVPlayerViewController` or an `AVPlayerLayer`-backed view hierarchy appropriate for tvOS.
 - Load local fixture video.
 - Add play/pause/seek controls.
 - Add Caption Theater toggle.
@@ -799,10 +852,10 @@ As an engineer, I need the sample app to exercise the real decision modules.
 
 Tasks:
 
-- Connect fixture metadata to evidence model.
-- Connect detector result to layout engine.
-- Connect subtitle fixture to persistence renderer.
-- Connect state reducer to UI presentation.
+- Map outputs from `HLSManifestInspector`, `ProviderMetadataInspector`, and `SubtitleMetadataClassifier` (plus playback hooks) into `CaptionTheaterEligibilitySnapshot` and optional `CaptionTheaterEvidence` attachments.
+- Connect viewport/detector results to layout engine when Phase 3 ships.
+- Connect subtitle fixtures / track selection to persistence renderer when Phase 4 ships.
+- Connect eligibility snapshots / decision-engine outputs to UI presentation.
 - Connect fallback reason to debug UI.
 
 Acceptance Criteria:
@@ -837,7 +890,7 @@ Acceptance Criteria:
 
 ### Phase 5 Exit Criteria
 
-- iOS showcase is repeatable.
+- tvOS showcase is repeatable (this repository).
 - Product value is visible without explaining implementation details first.
 - Unsafe fallback behavior is visible.
 
@@ -871,7 +924,7 @@ Tasks:
 - Simulate ad pod end.
 - Simulate unknown ad state.
 - Simulate DAI/SSAI marker event.
-- Connect ad state to reducer.
+- Connect ad state to eligibility snapshots / decision engine inputs.
 - Add transition tests.
 
 Acceptance Criteria:
@@ -912,29 +965,29 @@ Acceptance Criteria:
 
 ---
 
-## 12. Phase 7: tvOS and macOS Feasibility
+## 12. Phase 7: Additional Platform Feasibility
 
 ### Goal
 
-Determine whether the architecture can become a cross-platform Apple playback feature.
+Validate **macOS** (and optional future **iOS** target) viability while hardening the existing **tvOS** integration path.
 
 ### Requirements
 
 - Shared core modules must compile for target platforms.
 - Platform adapters must be thin.
-- tvOS focus must remain stable.
-- macOS resize/full-screen must remain stable.
+- **tvOS** focus must remain stable on the primary shipping target.
+- macOS resize/full-screen must remain stable when pursued.
 
 ### Key Tasks
 
-#### CT-0701 [TODO]: tvOS Feasibility Pass
+#### CT-0701 [TODO]: tvOS Hardening Pass
 
 User Story:
 As a tvOS viewer, I need Caption Theater to work without breaking remote navigation, focus, or VoiceOver.
 
 Tasks:
 
-- Add tvOS wrapper.
+- Audit the existing **tvOS** host shell once Caption Theater modules attach.
 - Add overscan-safe layout mode.
 - Validate Siri Remote play/pause.
 - Validate scrubbing.
@@ -1053,15 +1106,15 @@ Acceptance Criteria:
 The following work can proceed concurrently:
 
 - Product can define demo script and readability metrics while engineering builds fixtures.
-- Metadata parsing can proceed while the state reducer is being built.
+- Metadata parsing can proceed while decision-engine integration is being built.
 - Layout engine can proceed using fake analysis input.
 - Caption persistence can proceed using fixture cues without playback.
-- Ad simulation can proceed against the reducer before real ad SDK integration.
+- Ad simulation can proceed against eligibility snapshots before real ad SDK integration.
 - tvOS/macOS wrappers should wait until the core model stabilizes, but platform risk review can start early.
 
 Dependencies:
 
-- iOS showcase depends on state reducer, layout engine, and caption renderer.
+- End-to-end showcase depends on decision-engine wiring, layout engine, and caption renderer.
 - Real-stream validation depends on manifest parser, provider metadata strategy, and playback shell.
 - DRM support depends on trusted provider metadata or allowlisting.
 - Production ad support depends on real ad lifecycle contract.
@@ -1072,7 +1125,7 @@ Dependencies:
 
 ### POC Done
 
-- iOS showcase demonstrates the prompted ultra-widescreen Caption Theater hero flow.
+- tvOS showcase demonstrates the prompted ultra-widescreen Caption Theater hero flow (this repo); iOS parity follows when an iOS target exists.
 - Persistent cue model works with no future cue display.
 - WebVTT renders first through an internal cue model designed for the main subtitle/caption formats.
 - Detector accepts at least one eligible fixture.

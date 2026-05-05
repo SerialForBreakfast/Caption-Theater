@@ -2,9 +2,10 @@
 
 ## Current State
 
-- Caption Theater is a new tvOS Xcode project with generated SwiftUI app, unit test, and UI test targets.
-- Product intent and implementation sequencing are documented in `README.md`, `TASKS.md`, `Caption-Theater-POC-Roadmap.md`, `Caption-Theater-Showcase-and-Execution-Plan.md`, `Caption-Theater-Metadata-Feasibility-Deep-Dive.md`, and `ADR-0001-Letterbox-Aware-Top-Justified-Video-Viewport.md`.
-- The Swift implementation is still template-level: `CaptionTheaterApp`, `ContentView`, and empty generated tests.
+- Caption Theater is a **tvOS-first** Xcode project (`CaptionTheater`, `CaptionTheaterTests`, `CaptionTheaterUITests`) with SwiftUI shell plus fixture-backed core modules.
+- Deterministic fixtures cover decision scenarios, HLS manifests, provider metadata, and subtitle-track classification; see `Docs/Fixture-Inventory.md`.
+- Stateless eligibility evaluation lives in `CaptionTheaterDecisionEngine`; parsing/classification in `HLSManifestInspector`, `ProviderMetadataInspector`, and `SubtitleMetadataClassifier`.
+- Product intent and sequencing remain documented in `README.md`, `TASKS.md`, `Caption-Theater-POC-Roadmap.md`, `Caption-Theater-Showcase-and-Execution-Plan.md`, `Caption-Theater-Metadata-Feasibility-Deep-Dive.md`, and `ADR-0001-Letterbox-Aware-Top-Justified-Video-Viewport.md` (now aligned with tvOS-first implementation notes).
 
 ## Constraints To Preserve
 
@@ -16,9 +17,14 @@
 
 ## Suggested Next Focus
 
-- Reconcile the docs' iOS-first POC language with the current tvOS-only Xcode project.
-- Start with fixture inventory and a stateless decision engine before AVPlayer work.
-- Add meaningful tests with deterministic fixture data as each core model is introduced.
+- Complete **CT-0103** (debug inspector) to close Phase 1 formally and support Phase 2 exit visibility—or prioritize **CT-0501/0502** tvOS wiring if playback-first sequencing is preferred.
+- Advance **CT-0301** viewport preclassification when ready to pair metadata with layout hypotheses.
+- Finish **CT-0002** gaps: video catalog, synthetic frames, real-world licensed hero candidate docs (**CT-0004**), generator scripts (**CT-0005**).
+- Stabilize UI test strategy (`CaptionTheaterUITests` launch performance flaked under full `xcodebuild test`; prefer `-skip-testing:CaptionTheaterUITests` for CI smoke until reviewed).
+
+## 2026-05-05 Task grooming note
+
+- Added **Execution snapshot** to `TASKS.md`; marked **CT-0101**/**CT-0102** **DONE**; **CT-0002** **IN PROGRESS** with implementation notes; clarified Phase 0/1/2 exit criteria vs shipped code.
 
 ## 2026-05-05 Implementation Update
 
@@ -65,3 +71,25 @@
 - Added a `Task Status Key` to `TASKS.md`.
 - Updated every `CT-` task heading with a visible status label.
 - Used `IN PROGRESS` for partially implemented foundation tasks and `TODO` for tasks that have not started.
+
+## 2026-05-05 DRM Feasibility Update
+
+- Added `Docs/DRM-Feasibility-Study.md`.
+- Documented required inputs, feasibility questions, classification outcomes, test procedure, result template, and safety rules.
+- Marked CT-0204 as `BLOCKED` until approved representative FairPlay/DRM streams and playback/security guidance are available.
+
+## 2026-05-05 CT-0204 Unblock Plan Update
+
+- Extended `Docs/DRM-Feasibility-Study.md` with a **CT-0204 approval checklist** (sanitized alias, approval owner, allowed scope, frame sampling, sanitized logging).
+- Added **owner question lists** for playback, security/DRM, provider metadata, and legal/content.
+- Added **minimum metadata-first test matrix** and ordered metadata-first steps before any private stream use.
+- Updated `TASKS.md` CT-0204 with a **sanitized stream inventory** (`approved` fixture alias `ct0204-metadata-first-fixtures-bundle`, `pending-approval` placeholder for live FairPlay).
+- Moved CT-0204 heading status from `BLOCKED` to `IN PROGRESS` for the approved metadata-first fixture phase; live-stream validation remains gated per checklist.
+
+## 2026-05-05 Unit Test Verification
+
+- `xcodebuild test -scheme CaptionTheater` with `-skip-testing:CaptionTheaterUITests` completed successfully (`exit_code: 0`) on tvOS Simulator (Apple TV 4K (3rd generation)); all `CaptionTheaterTests` bundle tests passed.
+
+## 2026-05-05 Full-scheme test note
+
+- A full `xcodebuild test` (including `CaptionTheaterUITests`) ended with **`exit_code: 65`**: `CaptionTheaterUITests.testLaunchPerformance()` failed; unit suites passed. Logs also showed **`FBSOpenApplicationServiceErrorDomain` / RequestDenied** when launching `CaptionTheaterUITests.xctrunner` (typical simulator instability or signing/environment). For automated smoke validation, prefer `-skip-testing:CaptionTheaterUITests` until UI launch-performance behavior is reviewed for CI.

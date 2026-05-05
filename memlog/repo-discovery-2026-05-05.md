@@ -34,3 +34,11 @@
 - Added a fixture-driven unit test that loads the JSON scenario matrix from the test bundle.
 - Made decision snapshot and evidence value types `Codable` so sanitized fixtures can exercise the engine without playback dependencies.
 - Verified the full `CaptionTheater` scheme again, then removed repo-local build artifacts.
+
+## 2026-05-05 HLS Manifest Update
+
+- Added `HLSManifestInspector`, a stateless nonisolated parser for sanitized in-memory HLS manifest text.
+- Added models for variant streams, media renditions, declared subtitle transports, date-range metadata, discontinuities, and encryption signals.
+- Added sanitized HLS manifest fixtures for sidecar subtitles, embedded closed captions, ad date ranges, discontinuities, encryption markers, and no-subtitle control cases.
+- Added unit tests that load HLS fixtures from the test bundle and verify extracted metadata facts.
+- Verified the full `CaptionTheater` scheme, then removed repo-local build artifacts.

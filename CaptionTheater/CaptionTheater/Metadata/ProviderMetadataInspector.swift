@@ -28,6 +28,40 @@ nonisolated struct ProviderMetadataInspector: Sendable {
             )
         }
 
+        if metadata.warnings.contains(.variableAspectRatio) {
+            var evidence = [
+                CaptionTheaterEvidence(
+                    source: .providerSideQcMetadata,
+                    polarity: metadata.isTrusted ? .positive : .uncertain,
+                    message:
+                        "Provider metadata source \(metadata.source.rawValue) reported policy \(metadata.policy.rawValue)."
+                ),
+                .negative(
+                    .providerSideQcMetadata,
+                    "Provider metadata warns variable aspect ratio requires native playback."
+                ),
+            ]
+
+            if metadata.warnings.contains(.burnedInSubtitleRisk) {
+                evidence.append(
+                    .negative(
+                        .providerSideQcMetadata,
+                        "Provider metadata warns about burned-in subtitle risk."
+                    )
+                )
+            }
+
+            let protectedContentState: CaptionTheaterProtectedContentState =
+                metadata.isTrusted ? .trustedMetadataAllowed : .protectedWithoutTrustedMetadata
+
+            return ProviderMetadataInspection(
+                metadata: metadata,
+                protectedContentState: protectedContentState,
+                viewportState: .variableAspectRatio,
+                evidence: evidence
+            )
+        }
+
         var evidence = [
             CaptionTheaterEvidence(
                 source: .providerSideQcMetadata,

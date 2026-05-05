@@ -56,6 +56,22 @@ struct ProviderMetadataInspectorTests {
         #expect(evidence.contains { $0.source == .providerSideQcMetadata && $0.polarity == .negative })
     }
 
+    /// Verifies variable-aspect warnings map to native viewport classification.
+    @Test func variableAspectWarningForcesNativeViewportClassification() throws {
+        let inspection = try inspectFixture(named: "variable-aspect-warning")
+
+        #expect(inspection.viewportState == .variableAspectRatio)
+        #expect(inspection.metadata?.warnings == [.variableAspectRatio])
+
+        let decision = CaptionTheaterDecisionEngine().decision(for: inspection.eligibilitySnapshot())
+        guard case let .ineligible(reason, _) = decision else {
+            Issue.record("Expected variable aspect metadata to be ineligible, got \(decision).")
+            return
+        }
+
+        #expect(reason == .variableAspectRatio)
+    }
+
     /// Verifies that timeline metadata can declare native-only regions for future playback coordination.
     @Test func nativeOnlyTimelineSegmentIsParsed() throws {
         let inspection = try inspectFixture(named: "native-only-timeline")

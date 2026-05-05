@@ -31,18 +31,19 @@ The Caption Theater Xcode project currently ships **tvOS-only** targets (`Captio
 - **Phase 1 core:** Stateless `CaptionTheaterDecisionEngine`, eligibility snapshot + evidence types (`CaptionTheaterEvidence`, sources, polarities), JSON decision fixtures, broad unit coverage.
 - **Phase 2 foundations:** `HLSManifestInspector`, `ProviderMetadataInspector`, `SubtitleMetadataClassifier` with sanitized fixtures and tests.
 - **DRM study:** `Docs/DRM-Feasibility-Study.md` + CT-0204 metadata-first stream inventory (live streams still gated).
-- **Phase 5 shell (partial):** Bundled offline sample clip (`CaptionTheater/Media/CaptionTheaterSamplePlayback.mp4`) + Playback tab `tvOSPlaybackShellView` (`VideoPlayer`, transport buttons, Caption Theater confirm dialog, demo eligibility toggles, debug overlay). Layout/top-alignment hero presentation remains **CT-0303** / Phase 5 exit work.
+- **Phase 5 shell (partial):** Bundled sample MP4 + **`PlaybackScenarios/`** inspector fusion + **`CaptionTheaterLayoutEngine`** / **`CaptionTheaterLayoutInputs`** (presentation aspect from `AVAssetTrack`, not pixels) + Playback tab **`tvOSCaptionTheaterPlayerContainer`** locked to **`resizeAspect`** with optional **top-pin MVP** + caption placeholder band + **caption text size menu** (`CaptionTheaterCaptionTextPreferences`). Safe-area/overscan refinement and cross-platform layout matrices remain **CT-0303** follow-through.
 
 **Formal gaps**
 
 - **Phase 1 exit:** Satisfied for fixture-driven explainability (**CT-0103** Debug tab). Coordinator-driven “live” transitions on device remain future work.
-- **Phase 2 → playback:** Converting manifest/subtitle/provider outputs into **wired `CaptionTheaterEvidence` + snapshots** during real playback is **CT-0502** (and related coordinator work), not finished by parsers alone (playback shell currently uses explicit demo stubs).
+- **Phase 2 → playback:** **Partial:** bundled playback scenarios now fuse `HLSManifestInspector`, `ProviderMetadataInspector`, and `SubtitleMetadataClassifier` via `CaptionTheaterPlaybackEvidenceAssembler` on device (`PlaybackScenarios` resources). **Remaining CT-0502:** live `AVPlayerItem`/selection observers, timeline segments (native-only ranges), and ad-state hooks—not static fixtures alone.
 
 **Reasonable next forks (pick one driving sequence)**
 
-1. **CT-0502** — Wire inspectors + playback hooks into live `CaptionTheaterEligibilitySnapshot` updates during real playback (replace demo toggles incrementally).
-2. **CT-0301** — viewport preclassification before integrating layout.
-3. **CT-0001 / CT-0002** — hero narrative + broaden fixture inventory (more video, synthetic frames) when demo readiness matters.
+1. **CT-0303 / cinematic MVP** — Harden layout (safe area, overscan, animations) and ship readable captions into the computed caption band (Phase 4 slice).
+2. **CT-0502 (finish)** — `AVPlayerItem` track selection + periodic snapshot refresh.
+3. **CT-0301** — viewport preclassification feeding evidence before pixels return.
+4. **CT-0001 / CT-0002** — hero narrative + broaden fixture inventory when demo readiness matters.
 
 **Phase 0:** **CT-0002** is **partial** (`Docs/Fixture-Inventory.md` + manifest/subtitle/provider/decision JSON + bundled sample MP4 for the playback shell); synthetic frames and full demo matrix still TODO.
 
@@ -619,6 +620,8 @@ Acceptance Criteria:
 
 #### CT-0302 [TODO]: Implement Pixel Region Detector
 
+**Milestone sequencing (native ultra-wide MVP):** Ship **presentation-aspect + layout math** (`CaptionTheaterLayoutEngine`) and **`resizeAspect`-only** presentation first. **Defer CT-0302** until that MVP is demonstrated; pixel sampling then validates encoded-letterbox ambiguity, burned-in risk in bars, and logos—not the first proof of top-aligned scope on a 16:9 panel.
+
 User Story:
 As a playback engineer, I need a bounded detector that can identify safe inactive regions where pixel analysis is allowed.
 
@@ -643,7 +646,9 @@ Acceptance Criteria:
 - Rejects variable-boundary fixture.
 - Does not persist raw frames.
 
-#### CT-0303 [TODO]: Implement Layout Engine
+#### CT-0303 [IN PROGRESS]: Implement Layout Engine
+
+**Partially shipped:** `CaptionTheaterLayoutInputs`, `CaptionTheaterLayoutGeometry`, `CaptionTheaterLayoutEngine`, and `CaptionTheaterLayoutEngineTests` implement native-centered vs **top-pinned** aspect-fit rects from **container size + picture aspect (w÷h)**; Playback tab integrates via `CaptionTheaterPlaybackShellViewModel.layoutGeometry` and `tvOSCaptionTheaterPlayerContainer` ( **`AVLayerVideoGravity.resizeAspect` only**). **Caption text size** presets persist via `@AppStorage` (`CaptionTheaterCaptionTextPreferences.textSizePresetStorageKey`) for MVP overlay + future Phase 4 renderer.
 
 User Story:
 As a UI engineer, I need deterministic geometry for native and Caption Theater presentation modes.
@@ -670,9 +675,9 @@ Acceptance Criteria:
 
 ### Phase 3 Exit Criteria
 
-- Detector works against synthetic fixture corpus.
-- Layout engine has unit coverage.
-- Debug overlay can show active picture, inactive region, caption region, confidence, and fallback reason.
+- Detector works against synthetic fixture corpus _(CT-0302; deferred until after native ultra-wide layout MVP per milestone sequencing note)._
+- Layout engine has unit coverage _(partial: ultra-wide / full-frame regression tests landed)._
+- Debug overlay can show active picture, inactive region, caption region, confidence, and fallback reason _(partial: debug HUD shows presentation aspect; caption band placeholder when top-pin enabled)._
 
 ---
 
@@ -685,6 +690,7 @@ Render already-presented text cues with bounded persistence and no future cue di
 ### Requirements
 
 - WebVTT is the first implementation source, but the cue model must support the main subtitle/caption families over time.
+- Respect **caption text size** preference (`CaptionTheaterCaptionTextSizePreset`, persisted under `CaptionTheaterCaptionTextPreferences.textSizePresetStorageKey`) when drawing into ``CaptionTheaterLayoutGeometry/captionReadingRect`` so expanded bands translate into larger readable captions without overlapping picture.
 - Current cue appears during authored timing.
 - Recently expired cue can persist briefly when safe.
 - Retained cues must look historical, not current.
@@ -854,7 +860,7 @@ Acceptance Criteria:
 
 Deferred beyond this task (Phase 5 exit / CT-0303): centered-to-top-aligned hero transition, unsafe fixture swaps without rebuilding video.
 
-#### CT-0502 [TODO]: Wire Caption Theater Modules
+#### CT-0502 [IN PROGRESS]: Wire Caption Theater Modules
 
 User Story:
 As an engineer, I need the sample app to exercise the real decision modules.
@@ -867,14 +873,28 @@ Tasks:
 - Connect eligibility snapshots / decision-engine outputs to UI presentation.
 - Connect fallback reason to debug UI.
 
+**Done in repo for static bundled scenarios**
+
+- `CaptionTheaterPlaybackEvidenceAssembler` merges manifest + provider + subtitle classifications into one snapshot (with explicit precedence comments).
+- `CaptionTheater/Media/PlaybackScenarios/*` ships sanitized copies of existing JSON/M3U8 fixtures plus the Playback tab scenario picker.
+- `CaptionTheaterPlaybackScenarioKind` covers encrypted-vs-clear manifests, full-frame manifest hints, burned-in subtitles, and variable-aspect provider warnings.
+- `ProviderMetadataInspector` maps `variableAspectRatio` warnings to ``CaptionTheaterViewportState/variableAspectRatio`` before other policy branches.
+- Unit coverage: `CaptionTheaterPlaybackEvidenceAssemblerTests` + `variable-aspect-warning` provider fixture test.
+
+**Still open**
+
+- Live `AVPlayer`/`AVPlayerItem` legible-track selection + timed metadata feeding the assembler (replace static scenario bundles incrementally).
+- Provider timeline segments (`nativeOnly` ranges) tied to `CMTime`/playback hooks.
+- Ad / promo lifecycle inputs into snapshots.
+
 Acceptance Criteria:
 
-- Eligible ultra-widescreen fixture prompts the viewer before activating Caption Theater.
-- Full-frame 16:9 fixture remains native.
-- Burned-in subtitle fixture remains native.
-- Variable-aspect fixture remains native.
-- 4:3, variable-aspect, and burned-in subtitle fixtures are retained as stretch-goal classifications with explicit debug reasons.
-- Debug UI explains all outcomes.
+- Eligible ultra-widescreen fixture prompts the viewer before activating Caption Theater. _(Prompt exists globally; still TODO: gate on live eligibility.)_
+- Full-frame 16:9 fixture remains native. _(Covered by `fullFrame16x9WebVTT` scenario + manifest hint tests.)_
+- Burned-in subtitle fixture remains native. _(Covered by `burnedInSubtitlesWithTrustedProvider` scenario + classifier.)_
+- Variable-aspect fixture remains native. _(Covered by `variableAspectProviderWarning` scenario + inspector/tests.)_
+- 4:3, variable-aspect, and burned-in subtitle fixtures are retained as stretch-goal classifications with explicit debug reasons. _(4:3 explicit scenario not yet added; variable-aspect + burned-in covered.)_
+- Debug UI explains all outcomes. _(Playback eligibility summary + existing Debug tab.)_
 
 #### CT-0503 [TODO]: Build Showcase Recording Flow
 

@@ -1,0 +1,1156 @@
+
+
+# Caption Theater Tasks
+
+Status: Draft Product Execution Plan  
+Role: Product Lead  
+Scope: Proof of concept through production-readiness assessment  
+Platforms: iOS first, then tvOS and macOS feasibility
+
+---
+
+## 1. Product Goal
+
+Caption Theater is a persistent timed-text readability mode for Apple-platform playback.
+
+It gives viewers more readable dwell time for subtitle and caption text that has already appeared. The feature preserves recent caption context in verified safe screen space so viewers can finish reading dense, translated, SDH, or fast-moving captions without rewinding or losing picture context.
+
+The goal of this task plan is to break the project into buildable phases that prove value, validate safety, expose production risks, and avoid premature investment in a full custom player.
+
+---
+
+## 2. Guiding Product Principles
+
+1. **Readable dwell time is the primary value.**  
+   The product should be judged by whether viewers can better read and retain already-presented captions.
+
+2. **No future cue display by default.**  
+   Caption Theater persists prior/current cue context. It should not preview upcoming dialogue.
+
+3. **Native fallback is a feature, not a failure.**  
+   If visual safety, subtitle semantics, ad state, DRM state, or platform compatibility is uncertain, the player should remain native.
+
+4. **Evidence beats assumptions.**  
+   The system should make decisions from manifest metadata, provider metadata, subtitle data, runtime state, and pixel analysis where available.
+
+5. **Modular before polished.**  
+   The proof of concept should validate pure modules before building a polished player UI.
+
+6. **Ads, promos, legal disclosures, and burned-in text are hard safety boundaries.**  
+   The feature must never alter or obscure required ad/legal/creative surfaces.
+
+---
+
+## 3. High-Level Timeline
+
+These timeline estimates assume one small product/engineering team and can be compressed if workstreams run concurrently.
+
+| Phase | Duration | Outcome |
+|---|---:|---|
+| Phase 0: Product Alignment and Fixtures | 1 week | Project scope, fixtures, expected results, and demo criteria are defined. |
+| Phase 1: Evidence and State Foundation | 1–2 weeks | Eligibility decisions are deterministic, testable, and explainable without AVPlayer. |
+| Phase 2: Metadata and Manifest Feasibility | 1–2 weeks | `.m3u8`, provider metadata, subtitle declarations, DRM risk, and ad markers are parsed into evidence. |
+| Phase 3: Viewport Detection and Layout | 2–3 weeks | Safe inactive regions can be detected in fixtures and converted into stable layout geometry. |
+| Phase 4: Caption Persistence Renderer | 2–3 weeks | WebVTT fixture cues render first, using an extensible cue model designed for the main subtitle/caption formats. |
+| Phase 5: iOS End-to-End Showcase | 2–3 weeks | A local iOS demo proves native vs. Caption Theater value and fallback behavior. |
+| Phase 6: Ads, Promos, and Boundary Safety | 1–2 weeks | Ads play normally fullscreen/native while Caption Theater suspends, then resumes or revalidates when content returns. |
+| Phase 7: tvOS/macOS Feasibility | 2–3 weeks | Cross-platform viability, focus, remote, resize, and accessibility risks are documented. |
+| Phase 8: Production Readiness Assessment | 1 week | Team decides whether to proceed, narrow scope, or stop. |
+
+Total expected POC window: approximately 10–17 weeks depending on staffing, fixture availability, and platform scope.
+
+---
+
+## 4. Workstreams
+
+### Product and UX
+
+Responsibilities:
+
+- define user value;
+- define settings and user-facing copy;
+- define demo script;
+- define the ultra-widescreen entry prompt and opt-in transition behavior;
+- define readability success metrics;
+- decide when persistent cues are helpful or distracting;
+- coordinate stakeholder review.
+
+### Playback Engineering
+
+Responsibilities:
+
+- build player sample harness;
+- integrate `AVPlayerLayer` container;
+- manage playback state;
+- validate seek, pause, resume, route, and lifecycle behavior;
+- evaluate AVKit/native player constraints.
+
+### Caption and Subtitle Engineering
+
+Responsibilities:
+
+- define cue model;
+- parse/adapt WebVTT fixtures first while designing the cue model for the main subtitle/caption formats;
+- implement persistence policy;
+- preserve cue semantics;
+- prevent duplicate native/custom caption rendering.
+
+### Video Analysis and Metadata
+
+Responsibilities:
+
+- parse HLS manifests;
+- parse provider metadata stubs;
+- classify viewport metadata;
+- implement frame-analysis fixtures;
+- identify unsafe visual-region evidence.
+
+### Ads and Monetization
+
+Responsibilities:
+
+- define ad-state contract;
+- simulate ad pods;
+- simulate pause promos;
+- define suppression rules;
+- ensure ad/legal surfaces are not altered.
+
+### QA and Accessibility
+
+Responsibilities:
+
+- define fixture matrix;
+- define acceptance test matrix;
+- validate VoiceOver, large captions, high contrast, and tvOS focus;
+- validate fallback states;
+- document known failures.
+
+---
+
+## 5. Phase 0: Product Alignment and Fixtures
+
+### Goal
+
+Define the controlled world where Caption Theater can be tested before real-stream complexity is introduced.
+
+### Requirements
+
+- Define the product value in terms of readable dwell time.
+- Define the first hero demo scenario: ultra-widescreen content on a 16:9 screen with an opt-in Caption Theater prompt.
+- Create fixture categories for video, frames, subtitles, manifests, and provider metadata.
+- Document the expected result for every fixture.
+- Define baseline vs. Caption Theater demo criteria.
+
+### Key Tasks
+
+#### CT-0001: Define Hero Demo Narrative
+
+User Story:
+As a stakeholder, I want to see the Caption Theater benefit in under five minutes so I can understand why the POC is worth building.
+
+Tasks:
+
+- Define the ultra-widescreen-on-16:9 hero scenario.
+- Define the eligibility prompt copy: “Would you like to enter Caption Theater mode?”
+- Define native centered baseline behavior.
+- Define the accepted state where content transitions from centered to top-aligned presentation.
+- Define the lower caption reading region behavior.
+- Define persistent caption behavior during fast dialogue.
+- Define one unsafe fallback scenario.
+- Define normal fullscreen ad behavior and content-resume behavior.
+
+Acceptance Criteria:
+
+- Demo script is written.
+- Hero clip requirements are documented.
+- Hero clip uses ultra-widescreen content on a 16:9 screen.
+- Demo includes the Caption Theater opt-in prompt.
+- Demo shows the video transition from centered to top-aligned presentation.
+- Demo shows captions using the larger lower reading region.
+- Demo does not depend on production streams.
+- Demo explicitly states that future cues are not shown.
+- Demo shows ads playing normally fullscreen/native and Caption Theater resuming or revalidating after content returns.
+
+#### CT-0002: Create Fixture Inventory
+
+User Story:
+As an engineer, I need deterministic fixtures so every module can be tested without relying on external services.
+
+Tasks:
+
+- Create video fixture list.
+- Create synthetic frame fixture list.
+- Create WebVTT fixture list.
+- Create HLS manifest fixture list.
+- Create provider metadata fixture list.
+- Document expected classification for each fixture.
+
+Acceptance Criteria:
+
+- Fixture inventory includes eligible and ineligible cases.
+- Every fixture has an expected decision.
+- Fixture matrix includes eligible ultra-widescreen content, burned-in text, dark scene, ad marker, DRM marker, 4:3 pillarbox, variable aspect ratio, and unsupported subtitle examples.
+
+#### CT-0003: Define Readability Metrics
+
+User Story:
+As a Product Lead, I need measurable success criteria so we can evaluate whether Caption Theater is actually useful.
+
+Tasks:
+
+- Define measurable dwell-time improvement.
+- Define cue retention bounds.
+- Define rewind/pause reduction metrics for demo testing.
+- Define subjective user questions.
+- Define failure metrics.
+
+Acceptance Criteria:
+
+- Metrics distinguish readability value from layout novelty.
+- Metrics include both objective and subjective measures.
+- Metrics include negative outcomes such as distraction, confusion, or perceived timing issues.
+
+### Phase 0 Exit Criteria
+
+- Product thesis is agreed.
+- Fixture inventory is ready.
+- Demo script is ready.
+- Success metrics are defined.
+
+---
+
+## 6. Phase 1: Evidence and State Foundation
+
+### Goal
+
+Build the decision engine before building playback UI.
+
+### Requirements
+
+- Every activation or fallback decision must be explainable.
+- The state machine must fail closed for uncertainty.
+- The state machine must be testable without AVPlayer.
+- The system must separate viewport eligibility from subtitle eligibility.
+
+### Key Tasks
+
+#### CT-0101: Define Evidence Model
+
+User Story:
+As a playback engineer, I need eligibility decisions to carry evidence so unsafe activations can be diagnosed.
+
+Tasks:
+
+- Define `CaptionTheaterEvidenceSource`.
+- Define `CaptionTheaterEvidenceKind`.
+- Define confidence model.
+- Define time range support.
+- Define fallback reasons.
+- Define uncertainty reasons.
+
+Acceptance Criteria:
+
+- Evidence models conform to `Sendable`.
+- Evidence can be logged without storing raw frames.
+- Evidence can be displayed in debug UI.
+- Evidence distinguishes positive, negative, and uncertain signals.
+
+#### CT-0102: Define State Machine
+
+User Story:
+As a QA engineer, I need deterministic state transitions so edge cases can be tested reliably.
+
+Tasks:
+
+- Define `CaptionTheaterModeState`.
+- Define playback events.
+- Define ad events.
+- Define subtitle events.
+- Define viewport events.
+- Define user setting events.
+- Implement reducer-style state transitions.
+
+Acceptance Criteria:
+
+- User disable wins over all states.
+- Ad pod start forces native presentation.
+- Unknown ad state fails closed.
+- Unsupported subtitle format fails closed.
+- Unsafe region evidence suspends the feature.
+- Seek, track change, audio change, discontinuity, and asset transition reset cue history.
+
+#### CT-0103: Build Debug Decision Inspector
+
+User Story:
+As a Product Lead, I need to see why the feature is active or inactive so I can evaluate the product and safety tradeoffs.
+
+Tasks:
+
+- Display current mode.
+- Display positive evidence.
+- Display negative evidence.
+- Display uncertainty reasons.
+- Display last state transition.
+- Display selected subtitle state.
+- Display ad state.
+
+Acceptance Criteria:
+
+- Debug inspector works with fixture/fake data.
+- Every state has a human-readable explanation.
+- Unsafe states are obvious.
+- Inspector is separate from production user UI.
+
+### Phase 1 Exit Criteria
+
+- State reducer has unit coverage.
+- Debug inspector can explain fixture decisions.
+- No AVPlayer dependency is required for core decision tests.
+
+---
+
+## 7. Phase 2: Metadata and Manifest Feasibility
+
+### Goal
+
+Determine what `.m3u8`, AVFoundation metadata, provider metadata, and subtitle metadata can and cannot prove.
+
+### Requirements
+
+- Manifest parsing must never claim visual-region safety by itself.
+- Provider metadata must be able to authorize DRM-like safe regions in fixtures.
+- Missing trusted metadata for protected content must return native fallback.
+- Subtitle transport must be classified.
+
+### Key Tasks
+
+#### CT-0201: Parse HLS Manifest Fixtures
+
+User Story:
+As an engineer, I need to inspect `.m3u8` metadata so we can identify subtitle, ad, discontinuity, and DRM evidence.
+
+Tasks:
+
+- Parse `EXT-X-STREAM-INF`.
+- Parse `RESOLUTION`, `CODECS`, `FRAME-RATE`, `AUDIO`, `SUBTITLES`, and `CLOSED-CAPTIONS` attributes.
+- Parse `EXT-X-MEDIA`.
+- Parse `TYPE`, `GROUP-ID`, `LANGUAGE`, `ASSOC-LANGUAGE`, `NAME`, `DEFAULT`, `AUTOSELECT`, `FORCED`, `CHARACTERISTICS`, and `URI`.
+- Parse `EXT-X-DISCONTINUITY`.
+- Parse `EXT-X-DATERANGE`.
+- Parse `EXT-X-KEY` and `EXT-X-SESSION-KEY` markers.
+- Convert findings to evidence.
+
+Acceptance Criteria:
+
+- Sidecar subtitles are distinguished from embedded closed captions.
+- Forced subtitle tracks are identified.
+- Discontinuities create revalidation evidence.
+- Date ranges can create ad-risk evidence.
+- Encryption creates DRM-risk evidence.
+- Encoded resolution is not treated as active-picture evidence.
+
+#### CT-0202: Implement Provider Metadata Stub
+
+User Story:
+As a production architect, I need to simulate trusted QC metadata because DRM content may not allow pixel analysis.
+
+Tasks:
+
+- Define local JSON schema.
+- Parse active picture rect.
+- Parse safe caption regions.
+- Parse eligibility policy.
+- Parse blocklist policy.
+- Parse variable-aspect timeline.
+- Parse burned-in subtitle warnings.
+
+Acceptance Criteria:
+
+- Trusted metadata can make a DRM-like fixture eligible.
+- Missing metadata keeps DRM-like fixture native.
+- Blocklist metadata overrides pixel analysis.
+- Metadata can define segment-level native-only regions.
+- Metadata can define a declared active aspect ratio for the ultra-widescreen hero fixture.
+
+#### CT-0203: Classify Subtitle Transport and Format
+#### CT-0204: Run DRM Feasibility Study
+
+User Story:
+As a playback architect, I need to know whether representative protected streams allow any useful client-side Caption Theater analysis.
+
+Tasks:
+
+- Identify representative DRM/FairPlay test streams.
+- Test whether raw frame access is available in controlled environments.
+- Test whether manifest and AVFoundation metadata remain available.
+- Test whether provider metadata can authorize a safe region when pixel analysis is unavailable.
+- Document whether each stream is possible, blocked, unsupported, or metadata-only.
+
+Acceptance Criteria:
+
+- DRM feasibility findings are documented.
+- The project distinguishes “not possible,” “not allowed,” “not available in this stream,” and “possible only in test content.”
+- The system never requires raw frame access for protected production playback.
+- Protected content without trusted metadata falls back to native presentation.
+
+User Story:
+As a caption engineer, I need to know whether the selected captions can be rendered and persisted safely.
+
+Tasks:
+
+- Classify sidecar WebVTT.
+- Classify embedded closed captions.
+- Classify IMSC/TTML fixture metadata if available.
+- Classify image-based subtitle fixtures.
+- Classify native-only caption cases.
+
+Acceptance Criteria:
+
+- WebVTT fixtures are marked MVP-compatible.
+- Embedded closed captions are marked native-only until a semantic extraction path exists.
+- Image-based subtitles are not reflowed.
+- Burned-in subtitles are not treated as caption data.
+
+### Phase 2 Exit Criteria
+
+- Manifest and provider metadata are represented as evidence.
+- Debug inspector shows metadata-derived decision reasons.
+- DRM safety policy is represented in code and tests.
+- DRM feasibility study has a documented test plan or initial findings.
+
+---
+
+## 8. Phase 3: Viewport Detection and Layout
+
+### Goal
+
+Detect safe inactive regions in non-DRM fixtures and compute stable video/caption layout.
+
+### Requirements
+
+- Detector must reject false positives such as dark scenes and burned-in subtitles.
+- Layout must preserve aspect ratio.
+- Layout must not crop or stretch active picture.
+- Layout must return native geometry for full-frame 16:9.
+
+### Key Tasks
+
+#### CT-0301: Implement Viewport Preclassification
+
+User Story:
+As a detector developer, I need cheap preclassification before pixel analysis.
+
+Tasks:
+
+- Normalize presentation size.
+- Classify full-frame 16:9.
+- Classify eligible ultra-widescreen candidate.
+- Classify 4:3 pillarbox.
+- Classify windowboxed content.
+- Classify square/vertical content.
+- Classify unknown content.
+- Preserve 4:3, variable-aspect, and burned-in subtitle cases as stretch-goal classifications rather than removing them from the model.
+
+Acceptance Criteria:
+
+- Known fixture dimensions classify correctly.
+- Preclassification never activates Caption Theater by itself.
+- Classification is represented as evidence.
+
+#### CT-0302: Implement Pixel Region Detector
+
+User Story:
+As a playback engineer, I need a bounded detector that can identify safe inactive regions where pixel analysis is allowed.
+
+Tasks:
+
+- Extract luminance metrics.
+- Detect top/bottom/side inactive bands.
+- Compute active picture rect.
+- Detect edge density in inactive regions.
+- Detect text-like patterns in inactive regions.
+- Detect motion/change in inactive regions for sequences.
+- Detect inconsistent boundaries.
+- Score confidence.
+
+Acceptance Criteria:
+
+- Detects known letterbox active rects.
+- Rejects full-frame 16:9.
+- Rejects dark-scene false positives.
+- Rejects burned-in subtitles in bars.
+- Rejects logos/watermarks in proposed reading region.
+- Rejects variable-boundary fixture.
+- Does not persist raw frames.
+
+#### CT-0303: Implement Layout Engine
+
+User Story:
+As a UI engineer, I need deterministic geometry for native and Caption Theater presentation modes.
+
+Tasks:
+
+- Define layout input and output models.
+- Implement native layout.
+- Implement expanded bottom reading-region layout.
+- Implement centered-to-top-aligned ultra-widescreen layout for the hero demo.
+- Preserve aspect ratio.
+- Respect safe area.
+- Simulate tvOS overscan.
+- Recompute on bounds change.
+
+Acceptance Criteria:
+
+- Active picture is not stretched.
+- Active picture is not cropped.
+- Caption region is non-negative.
+- Full-frame 16:9 returns native layout.
+- Layout tests cover common iOS, tvOS, and macOS container sizes.
+- Hero layout test verifies top-aligned ultra-widescreen active picture with a larger lower caption region on a 16:9 screen.
+
+### Phase 3 Exit Criteria
+
+- Detector works against synthetic fixture corpus.
+- Layout engine has unit coverage.
+- Debug overlay can show active picture, inactive region, caption region, confidence, and fallback reason.
+
+---
+
+## 9. Phase 4: Caption Persistence Renderer
+
+### Goal
+
+Render already-presented text cues with bounded persistence and no future cue display.
+
+### Requirements
+
+- WebVTT is the first implementation source, but the cue model must support the main subtitle/caption families over time.
+- Current cue appears during authored timing.
+- Recently expired cue can persist briefly when safe.
+- Retained cues must look historical, not current.
+- Future cues must not appear by default.
+- Cue history must clear at playback boundaries.
+
+### Key Tasks
+
+#### CT-0401: Define Internal Cue Model
+
+User Story:
+As a caption engineer, I need a normalized cue model so persistence logic is not tied directly to one parser.
+
+Tasks:
+
+- Define cue ID.
+- Define start/end time.
+- Define text payload.
+- Define style payload.
+- Define cue intent.
+- Define authored positioning hints.
+- Define persistence eligibility.
+
+Acceptance Criteria:
+
+- Cue model conforms to `Sendable`.
+- Cue model can represent dialogue, SDH, forced, lyrics, legal, ad, and unknown cue types.
+- Cue model preserves authored time.
+- Cue model is not WebVTT-specific and can support future IMSC/TTML, CEA-608/708, and app-owned cue adapters.
+
+#### CT-0402: Implement WebVTT Fixture Adapter
+
+#### CT-0402A: Define Main Subtitle Format Adapter Requirements
+
+User Story:
+As a caption engineer, I need the first implementation to avoid WebVTT-only assumptions so the product can support the main subtitle and caption formats later.
+
+Tasks:
+
+- Document adapter requirements for IMSC/TTML.
+- Document adapter requirements for CEA-608/708.
+- Document adapter requirements for app-owned cue models.
+- Identify native-only or unsupported format cases.
+- Identify semantic risks for roll-up captions, forced cues, lyrics, signs, and legal disclosures.
+
+Acceptance Criteria:
+
+- Format adapter requirements are documented.
+- WebVTT implementation uses the shared internal cue model.
+- Unsupported formats have explicit fallback behavior.
+- The architecture does not require WebVTT-specific cue assumptions in the renderer.
+
+User Story:
+As a developer, I need WebVTT fixture cues converted into the internal cue model.
+
+Tasks:
+
+- Parse cue start/end times.
+- Parse cue text.
+- Preserve line breaks.
+- Preserve basic italics or span hints if feasible.
+- Parse cue settings where available.
+- Apply fixture metadata for cue intent.
+
+Acceptance Criteria:
+
+- WebVTT fixtures convert deterministically.
+- Dense dialogue fixture renders correctly.
+- SDH fixture preserves speaker and sound-effect text.
+- Forced/lyrics/legal fixtures are marked authored-timing-only by default.
+
+#### CT-0403: Implement Persistence Window
+
+User Story:
+As a viewer, I want recent captions to remain visible briefly after they appeared so I can finish reading them.
+
+Tasks:
+
+- Select current cue from playback time.
+- Retain expired eligible cues.
+- Enforce maximum cue age.
+- Enforce maximum visible cue count.
+- Prevent future cue display.
+- Clear history on seek.
+- Clear history on subtitle track change.
+- Clear history on audio track change.
+- Clear history on ad boundary.
+- Clear history on discontinuity.
+
+Acceptance Criteria:
+
+- No cue with future start time is displayed.
+- Current cue appears during authored timing.
+- Expired eligible cue can persist within configured bounds.
+- Ineligible cue types do not persist by default.
+- Boundary events clear retained history.
+
+#### CT-0404: Implement Caption Renderer View
+
+User Story:
+As a viewer, I need current and retained captions to be readable and visually distinct.
+
+Tasks:
+
+- Render current cue prominently.
+- Render retained cues in a de-emphasized style.
+- Enforce reading-region bounds.
+- Handle large text mode strategy.
+- Avoid transcript-wall behavior.
+- Add snapshot tests.
+
+Acceptance Criteria:
+
+- Retained text is visually distinct from current speech.
+- Text stays inside reading region.
+- Renderer handles empty state.
+- Renderer handles pause state.
+- Snapshot tests cover current-only, retained, large-text, and cleared-history states.
+
+### Phase 4 Exit Criteria
+
+- Caption persistence works with fixture cues.
+- No future cue display is possible in default policy.
+- Renderer can operate without AVPlayer.
+
+---
+
+## 10. Phase 5: iOS End-to-End Showcase
+
+### Goal
+
+Prove the user value in a playable iOS demo.
+
+### Requirements
+
+- Use local fixtures first.
+- Include native and Caption Theater modes.
+- Include an opt-in Caption Theater prompt for eligible ultra-widescreen content.
+- Include a centered-to-top-aligned transition in the accepted state.
+- Include safe and unsafe examples.
+- Include debug overlay and fallback reasons.
+- Include pause, resume, and seek behavior.
+
+### Key Tasks
+
+#### CT-0501: Build iOS Playback Shell
+
+User Story:
+As a stakeholder, I need a playable sample to evaluate the experience.
+
+Tasks:
+
+- Create iOS sample target or sample screen.
+- Host `AVPlayerLayer` in a custom view.
+- Load local fixture video.
+- Add play/pause/seek controls.
+- Add Caption Theater toggle.
+- Add Caption Theater eligibility prompt for the hero flow.
+- Add debug overlay toggle.
+
+Acceptance Criteria:
+
+- Fixture video plays locally.
+- User can toggle native vs. Caption Theater mode.
+- Basic playback controls work.
+- Debug overlay can be shown/hidden.
+
+#### CT-0502: Wire Caption Theater Modules
+
+User Story:
+As an engineer, I need the sample app to exercise the real decision modules.
+
+Tasks:
+
+- Connect fixture metadata to evidence model.
+- Connect detector result to layout engine.
+- Connect subtitle fixture to persistence renderer.
+- Connect state reducer to UI presentation.
+- Connect fallback reason to debug UI.
+
+Acceptance Criteria:
+
+- Eligible ultra-widescreen fixture prompts the viewer before activating Caption Theater.
+- Full-frame 16:9 fixture remains native.
+- Burned-in subtitle fixture remains native.
+- Variable-aspect fixture remains native.
+- 4:3, variable-aspect, and burned-in subtitle fixtures are retained as stretch-goal classifications with explicit debug reasons.
+- Debug UI explains all outcomes.
+
+#### CT-0503: Build Showcase Recording Flow
+
+User Story:
+As a Product Lead, I need a repeatable demo that shows the feature value quickly.
+
+Tasks:
+
+- Define recording steps.
+- Record native baseline clip.
+- Record Caption Theater clip.
+- Record unsafe fallback clip.
+- Record ad/promo fallback clip when Phase 6 is available.
+- Capture before/after metrics.
+
+Acceptance Criteria:
+
+- Demo is under five minutes.
+- Demo clearly shows increased readable dwell time.
+- Demo states that future captions are not shown.
+- Demo shows at least one fail-closed case.
+
+### Phase 5 Exit Criteria
+
+- iOS showcase is repeatable.
+- Product value is visible without explaining implementation details first.
+- Unsafe fallback behavior is visible.
+
+---
+
+## 11. Phase 6: Ads, Promos, and Boundary Safety
+
+### Goal
+
+Prove that ads continue to play normally fullscreen/native while Caption Theater suspends during ad playback and resumes or revalidates when content returns.
+
+### Requirements
+
+- Linear ads play normally fullscreen/native.
+- Caption Theater suspends during ad playback.
+- DAI/SSAI-like markers force revalidation or suspension.
+- Unknown ad state fails closed.
+- Caption Theater resumes or revalidates when content playback returns.
+- Pause promo behavior follows explicit product/ad policy rather than blanket caption-based suppression.
+
+### Key Tasks
+
+#### CT-0601: Implement Ad State Simulator
+
+User Story:
+As an ads stakeholder, I need proof that Caption Theater will not alter ad presentation.
+
+Tasks:
+
+- Simulate ad pod start.
+- Simulate ad pod end.
+- Simulate unknown ad state.
+- Simulate DAI/SSAI marker event.
+- Connect ad state to reducer.
+- Add transition tests.
+
+Acceptance Criteria:
+
+- Ad start immediately returns to normal fullscreen/native ad presentation.
+- Unknown ad state returns to native presentation.
+- Ad end triggers content revalidation.
+- Caption Theater does not carry eligibility across ad boundaries.
+- Caption Theater can resume after ads only after content returns and the mode is still valid.
+
+#### CT-0602: Implement Pause Promo Simulator
+
+User Story:
+As a Product Lead, I need pause promos to coexist with caption accessibility.
+
+Tasks:
+
+- Simulate pause promo request.
+- Detect whether Caption Theater is active.
+- Apply an explicit product/ad policy for pause promo placement or presentation.
+- Dismiss promo on resume.
+- Dismiss promo on seek/scrub/back/subtitle-menu open.
+- Log any caption/control conflict and the selected policy outcome.
+
+Acceptance Criteria:
+
+- Pause promo behavior follows the selected product/ad policy.
+- Resume dismisses pause promo.
+- Seek clears cue history and promo state.
+- Any caption/control conflict is visible in debug UI.
+- The POC does not assume automatic suppression merely because captions are visible.
+
+### Phase 6 Exit Criteria
+
+- Ads and promos safely override Caption Theater.
+- Ad/promo state is represented in tests and debug UI.
+- Demo can show monetization safety.
+
+---
+
+## 12. Phase 7: tvOS and macOS Feasibility
+
+### Goal
+
+Determine whether the architecture can become a cross-platform Apple playback feature.
+
+### Requirements
+
+- Shared core modules must compile for target platforms.
+- Platform adapters must be thin.
+- tvOS focus must remain stable.
+- macOS resize/full-screen must remain stable.
+
+### Key Tasks
+
+#### CT-0701: tvOS Feasibility Pass
+
+User Story:
+As a tvOS viewer, I need Caption Theater to work without breaking remote navigation, focus, or VoiceOver.
+
+Tasks:
+
+- Add tvOS wrapper.
+- Add overscan-safe layout mode.
+- Validate Siri Remote play/pause.
+- Validate scrubbing.
+- Validate focus does not enter passive caption overlay.
+- Validate VoiceOver smoke behavior.
+- Validate pause promo simulation.
+
+Acceptance Criteria:
+
+- Caption overlay is passive by default.
+- Remote controls remain functional.
+- Focus remains stable.
+- Overscan-safe reading region is available.
+- Platform blockers are documented.
+
+#### CT-0702: macOS Feasibility Pass
+
+User Story:
+As a macOS viewer, I need Caption Theater to survive resize, full screen, and keyboard controls.
+
+Tasks:
+
+- Add macOS wrapper.
+- Validate window resize.
+- Validate full-screen transition.
+- Validate keyboard controls.
+- Validate backing scale changes.
+- Validate caption overlay stability.
+
+Acceptance Criteria:
+
+- Shared core code works on macOS.
+- Layout recomputes on resize.
+- Full-screen behavior is stable.
+- Keyboard controls remain functional.
+- Platform blockers are documented.
+
+### Phase 7 Exit Criteria
+
+- Cross-platform feasibility report is written.
+- iOS/tvOS/macOS blockers are identified.
+- Production path is narrowed or confirmed.
+
+---
+
+## 13. Phase 8: Production Readiness Assessment
+
+### Goal
+
+Decide whether to proceed, narrow scope, keep as an experiment, or stop.
+
+### Requirements
+
+- Evaluate value, safety, complexity, and platform risk.
+- Identify production dependencies.
+- Identify stakeholder approvals.
+- Define next-phase work if the project continues.
+
+### Key Tasks
+
+#### CT-0801: Run POC Evaluation
+
+User Story:
+As a Product Lead, I need a clear go/no-go recommendation based on evidence.
+
+Tasks:
+
+- Review showcase results.
+- Review detector accuracy.
+- Review subtitle persistence quality.
+- Review ad/promo behavior.
+- Review DRM strategy.
+- Review platform feasibility.
+- Review accessibility findings.
+- Review legal/content/ad risks.
+
+Acceptance Criteria:
+
+- Recommendation is documented.
+- Production blockers are explicit.
+- Required stakeholder decisions are listed.
+- Next-phase roadmap is written if proceeding.
+
+#### CT-0802: Define Production Candidate Requirements
+
+User Story:
+As an engineering lead, I need clear production gates before this can be shipped.
+
+Tasks:
+
+- Define real HLS/TS validation plan.
+- Define DRM metadata requirements.
+- Define real ad lifecycle contract.
+- Define subtitle pipeline contract.
+- Define analytics requirements.
+- Define kill-switch requirements.
+- Define accessibility QA requirements.
+- Define content/legal sign-off requirements.
+
+Acceptance Criteria:
+
+- Production candidate checklist is complete.
+- Required dependencies are assigned to owners.
+- Unknowns are tracked as risks or follow-up research.
+
+### Phase 8 Exit Criteria
+
+- Go/no-go/narrow-scope decision is complete.
+- Production dependencies are documented.
+- Updated roadmap exists if the project continues.
+
+---
+
+## 14. Concurrent Work Plan
+
+The following work can proceed concurrently:
+
+- Product can define demo script and readability metrics while engineering builds fixtures.
+- Metadata parsing can proceed while the state reducer is being built.
+- Layout engine can proceed using fake analysis input.
+- Caption persistence can proceed using fixture cues without playback.
+- Ad simulation can proceed against the reducer before real ad SDK integration.
+- tvOS/macOS wrappers should wait until the core model stabilizes, but platform risk review can start early.
+
+Dependencies:
+
+- iOS showcase depends on state reducer, layout engine, and caption renderer.
+- Real-stream validation depends on manifest parser, provider metadata strategy, and playback shell.
+- DRM support depends on trusted provider metadata or allowlisting.
+- Production ad support depends on real ad lifecycle contract.
+
+---
+
+## 15. Definition of Done
+
+### POC Done
+
+- iOS showcase demonstrates the prompted ultra-widescreen Caption Theater hero flow.
+- Persistent cue model works with no future cue display.
+- WebVTT renders first through an internal cue model designed for the main subtitle/caption formats.
+- Detector accepts at least one eligible fixture.
+- Detector rejects at least five unsafe fixtures.
+- Manifest inspector identifies subtitle/ad/DRM risk evidence.
+- Provider metadata stub can authorize DRM-like safe-region behavior.
+- Ad/promo simulation proves ads play normally fullscreen/native while Caption Theater suspends and resumes or revalidates around content return.
+- Debug UI explains every active/inactive decision.
+- Unit tests cover evidence, state, detection, layout, and persistence.
+- tvOS and macOS feasibility are documented.
+
+### Production Candidate Done
+
+- Representative HLS/TS streams are tested.
+- DRM path uses trusted metadata or allowlisting.
+- Real ad lifecycle integration exists.
+- Real subtitle pipeline integration exists.
+- Native/custom caption duplication is prevented.
+- Accessibility settings are honored as much as technically possible.
+- Platform QA passes for iOS, tvOS, and macOS targets.
+- Analytics and remote kill switch exist.
+- Content, legal, ads, accessibility, and product stakeholders approve rollout constraints.
+
+---
+
+## 16. First Decision Set
+
+These product decisions define the first build direction.
+
+### 16.1 Hero User Scenario
+
+The first demo focuses on a viewer entering playback of ultra-widescreen content on a 16:9 screen.
+
+Flow:
+
+1. Playback begins in normal centered presentation.
+2. The system detects eligible ultra-widescreen content with a safe lower reading region.
+3. The viewer is prompted:
+
+   > Would you like to enter Caption Theater mode?
+
+4. If accepted, the active picture transitions from centered to top-aligned presentation.
+5. The active picture remains correctly scaled and undistorted.
+6. The lower region becomes a larger caption reading area.
+7. Current captions render in that region.
+8. Recently presented captions can persist longer, giving the viewer more context and longer read time during fast dialogue.
+9. The viewer can exit Caption Theater and return to native presentation.
+
+Technical assumption for the first demo:
+
+- Prefer ultra-widescreen content delivered with a detectable aspect ratio or trusted metadata.
+- The video should be sized according to the detected or declared active aspect ratio.
+- The first fixture should be controlled enough that the expected active picture rect is known.
+
+### 16.2 Subtitle Format Direction
+
+The product goal is to support the main subtitle and caption formats, not only WebVTT.
+
+Implementation direction:
+
+1. Start with WebVTT because it is text-based and easiest to adapt into the persistence renderer.
+2. Define the internal cue model broadly enough to support WebVTT, IMSC/TTML, CEA-608/708, and app-owned cue models.
+3. Add format-specific adapters incrementally.
+4. Treat semantic fidelity as the requirement, not just text extraction.
+
+### 16.3 DRM Feasibility Direction
+
+DRM content should receive a feasibility study rather than being categorically excluded.
+
+Direction:
+
+- Identify representative DRM/FairPlay test streams.
+- Test whether useful client-side analysis is possible.
+- Do not assume raw frame access will be available.
+- Keep trusted metadata and provider-side QC as the expected production-safe path if frame access is unavailable.
+- Fall back to native presentation when protected content cannot be verified.
+
+### 16.4 4:3, Variable-Aspect, and Burned-In Subtitle Direction
+
+These cases are stretch goals and should remain in the fixture matrix.
+
+Direction:
+
+- MVP focuses on ultra-widescreen content first.
+- 4:3, variable-aspect, and burned-in subtitle cases should be studied and classified.
+- Automatic activation can remain conservative.
+- Debug tooling should explain why each case activates, suspends, or falls back.
+
+Stretch-goal exploration:
+
+- 4:3 pillarbox: investigate whether side or lower reading regions can be useful without creating an awkward reading experience.
+- Variable aspect ratio: investigate segment-aware or timeline-aware Caption Theater if trusted metadata exists.
+- Burned-in subtitles: investigate detection and fallback behavior; do not attempt OCR/reflow in the first implementation.
+
+### 16.5 Ads and Pause Promo Direction
+
+Ads should be delivered normally as expected fullscreen/native playback.
+
+Direction:
+
+- During ads, the player returns to normal fullscreen/native ad presentation.
+- Caption Theater suspends during ad playback.
+- Caption Theater resumes after ads only through normal content-resume flow and revalidation.
+- The caption view and playback presentation resume after ads like normal playback.
+- Pause promos are not automatically suppressed just because captions are visible; promo behavior should match explicit product/ad policy unless it creates a direct accessibility or control conflict.
+
+---
+
+## 17. Updated Critical Questions
+
+### Hero Demo and UX
+
+1. What exact prompt copy should be used for Caption Theater entry?
+2. Should the prompt appear automatically, or should the player expose a subtle button/badge when eligible?
+3. Should the top-align transition animate, snap, or wait until playback is paused?
+4. How do we avoid the transition feeling like a bug or unexpected aspect-ratio shift?
+5. Should the user preference persist per title, per profile, per device, or per session?
+
+### Ultra-Widescreen Detection
+
+6. What aspect-ratio threshold should make content eligible for the first prompt?
+7. Should eligibility be based on encoded resolution, active-picture detection, provider metadata, or a combination?
+8. What active-picture rect is required for the hero fixture?
+9. How much lower reading-region height is required before prompting the user?
+10. What confidence threshold is required before an automatic prompt appears?
+
+### Caption Format Support
+
+11. Which subtitle/caption formats are considered “main ones” for the first architecture: WebVTT, IMSC/TTML, CEA-608, CEA-708, or app-owned cues?
+12. Which format must actually render in the first demo?
+13. Do we have a reliable way to access CEA-608/708 cue semantics outside native rendering?
+14. How should the renderer preserve roll-up/pop-on semantics for CEA captions?
+15. What is the fallback if the selected format is supported by native playback but not by Caption Theater persistence?
+
+### DRM Feasibility
+
+16. Which DRM/FairPlay test streams can be used for feasibility testing?
+17. What does success mean for DRM: frame access, metadata access, trusted provider metadata, or safe fallback?
+18. Who can confirm whether frame extraction from protected content is allowed or expected to fail?
+19. What provider-side metadata would be acceptable if client pixel analysis is unavailable?
+20. How will DRM feasibility findings be documented for future production decisions?
+
+### Complex Aspect and Burned-In Cases
+
+21. What should the first 4:3 experiment attempt: native-only classification, side-region reading, or lower-region reading after resizing?
+22. What variable-aspect examples should be included in the fixture matrix?
+23. Should variable-aspect content ever prompt the user, or only activate with trusted timeline metadata?
+24. How will burned-in subtitles be detected and explained in debug UI?
+25. Should burned-in subtitle content ever coexist with Caption Theater if external captions are also available?
+
+### Ads and Promos
+
+26. What is the authoritative ad-state source for the POC?
+27. What should happen if ad-state callbacks are delayed or missing?
+28. Should Caption Theater resume automatically after ads, or should the user remain in the selected mode and the system revalidates silently?
+29. What pause promo placements are allowed while Caption Theater is active?
+30. What product policy applies if a pause promo competes with retained captions?
+
+### Platform Integration
+
+31. Is the first player shell a custom `AVPlayerLayer` view, an AVKit-adjacent wrapper, or both?
+32. Which native controls must be present in the first demo?
+33. Should PiP and AirPlay force native presentation in the POC?
+34. How should tvOS focus handle the entry prompt and exit control?
+35. How should macOS window resize affect the reading region and retained cue count?
+
+---
+
+## 18. Revised Immediate Sprint Decisions
+
+Before implementation begins, lock these decisions:
+
+1. Hero demo uses ultra-widescreen content on a 16:9 screen.
+2. User is prompted before Caption Theater mode activates.
+3. Caption Theater top-aligns eligible ultra-widescreen active picture and uses lower safe space for persistent captions.
+4. WebVTT renders first, but the internal cue model is designed for the main subtitle/caption formats.
+5. DRM receives a feasibility study rather than being excluded.
+6. 4:3, variable-aspect, and burned-in subtitle cases remain stretch-goal fixtures.
+7. Ads render normally fullscreen/native, Caption Theater suspends during ads, and content resumes/revalidates after ads.
+
+These decisions keep the first sprint focused while preserving the larger product ambition.

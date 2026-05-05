@@ -1,0 +1,15 @@
+{
+  "selectedTrack": {
+    "identifier": "webvtt-dialogue-en",
+    "language": "en",
+    "format": "webVTT",
+    "transport": "sidecarText",
+    "kind": "dialogue",
+    "isForced": false,
+    "isImageBased": false,
+    "isBurnedIn": false,
+    "supportsCaptionTheater": true,
+    "supportsPreviousCueRetention": true,
+    "preserveAuthoredPlacement": false
+  }
+}

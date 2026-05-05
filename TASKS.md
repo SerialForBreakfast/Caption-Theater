@@ -456,6 +456,32 @@ Implementation Status:
 - Runtime segment enforcement remains future playback coordination work.
 
 #### CT-0203: Classify Subtitle Transport and Format
+
+User Story:
+As a caption engineer, I need to know whether the selected captions can be rendered and persisted safely.
+
+Tasks:
+
+- Classify sidecar WebVTT.
+- Classify embedded closed captions.
+- Classify IMSC/TTML fixture metadata if available.
+- Classify image-based subtitle fixtures.
+- Classify native-only caption cases.
+
+Acceptance Criteria:
+
+- WebVTT fixtures are marked MVP-compatible.
+- Embedded closed captions are marked native-only until a semantic extraction path exists.
+- Image-based subtitles are not reflowed.
+- Burned-in subtitles are not treated as caption data.
+
+Implementation Status:
+
+- Completed initial sanitized `SubtitleMetadataClassifier`.
+- Added fixtures for sidecar WebVTT dialogue, sidecar WebVTT SDH, sidecar WebVTT forced narrative, embedded CEA-608 captions, image-based subtitles, burned-in subtitles, missing selected tracks, and unknown subtitle formats.
+- Added unit tests for subtitle state and presentation policy classification.
+- IMSC/TTML-specific fixture metadata remains future work.
+
 #### CT-0204: Run DRM Feasibility Study
 
 User Story:
@@ -475,24 +501,6 @@ Acceptance Criteria:
 - The project distinguishes “not possible,” “not allowed,” “not available in this stream,” and “possible only in test content.”
 - The system never requires raw frame access for protected production playback.
 - Protected content without trusted metadata falls back to native presentation.
-
-User Story:
-As a caption engineer, I need to know whether the selected captions can be rendered and persisted safely.
-
-Tasks:
-
-- Classify sidecar WebVTT.
-- Classify embedded closed captions.
-- Classify IMSC/TTML fixture metadata if available.
-- Classify image-based subtitle fixtures.
-- Classify native-only caption cases.
-
-Acceptance Criteria:
-
-- WebVTT fixtures are marked MVP-compatible.
-- Embedded closed captions are marked native-only until a semantic extraction path exists.
-- Image-based subtitles are not reflowed.
-- Burned-in subtitles are not treated as caption data.
 
 ### Phase 2 Exit Criteria
 

@@ -51,3 +51,11 @@
 - Added tests showing trusted provider metadata can authorize a protected-content decision path, missing/incomplete metadata fails closed, and blocklist metadata forces native presentation.
 - Updated `TASKS.md` to reflect the decision-engine approach, completed HLS manifest foundation, and completed provider metadata stub foundation.
 - Verified the full `CaptionTheater` scheme, then removed repo-local build artifacts.
+
+## 2026-05-05 Subtitle Classification Update
+
+- Added `SubtitleMetadataClassifier`, a stateless nonisolated classifier for sanitized selected subtitle-track metadata.
+- Added fixtures for sidecar WebVTT dialogue, sidecar WebVTT SDH, forced WebVTT, embedded CEA-608 captions, image-based subtitles, burned-in subtitles, missing selected tracks, and unknown subtitle formats.
+- Added tests for persistent cue eligibility, authored-timing-only WebVTT, native-only embedded captions, image-based subtitles, burned-in subtitles, missing tracks, and unknown formats.
+- Updated `TASKS.md` to mark CT-0203 foundation work complete and separate CT-0204 DRM feasibility as future work.
+- Verified the full `CaptionTheater` scheme, then removed repo-local build artifacts.

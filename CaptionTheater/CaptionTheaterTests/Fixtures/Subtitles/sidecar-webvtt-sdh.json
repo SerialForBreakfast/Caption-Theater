@@ -1,0 +1,15 @@
+{
+  "selectedTrack": {
+    "identifier": "webvtt-sdh-en",
+    "language": "en",
+    "format": "webVTT",
+    "transport": "sidecarText",
+    "kind": "sdh",
+    "isForced": false,
+    "isImageBased": false,
+    "isBurnedIn": false,
+    "supportsCaptionTheater": true,
+    "supportsPreviousCueRetention": true,
+    "preserveAuthoredPlacement": false
+  }
+}

@@ -7,15 +7,39 @@
 
 import SwiftUI
 
+/// Primary shell: playback showcase plus engineering-only debug tooling.
 struct ContentView: View {
+
+    private enum Tab: Hashable {
+        case home
+        case debug
+    }
+
+    @State private var selectedTab: Tab = .home
+    /// Cleared when leaving Debug so returning to the tab always lands on the baseline scenario list.
+    @State private var debugNavigationPath: [String] = []
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView(selection: $selectedTab) {
+            NavigationStack {
+                tvOSPlaybackShellView(fixtureURL: CaptionTheaterPlaybackFixture.sampleVideoURL())
+            }
+            .tabItem {
+                Label("Playback", systemImage: "play.rectangle.fill")
+            }
+            .tag(Tab.home)
+
+            CaptionTheaterDebugDecisionInspectorView(navigationPath: $debugNavigationPath)
+                .tabItem {
+                    Label("Debug", systemImage: "ladybug.fill")
+                }
+                .tag(Tab.debug)
         }
-        .padding()
+        .onChange(of: selectedTab) { _, newValue in
+            if newValue != .debug {
+                debugNavigationPath.removeAll()
+            }
+        }
     }
 }
 

@@ -31,19 +31,20 @@ The Caption Theater Xcode project currently ships **tvOS-only** targets (`Captio
 - **Phase 1 core:** Stateless `CaptionTheaterDecisionEngine`, eligibility snapshot + evidence types (`CaptionTheaterEvidence`, sources, polarities), JSON decision fixtures, broad unit coverage.
 - **Phase 2 foundations:** `HLSManifestInspector`, `ProviderMetadataInspector`, `SubtitleMetadataClassifier` with sanitized fixtures and tests.
 - **DRM study:** `Docs/DRM-Feasibility-Study.md` + CT-0204 metadata-first stream inventory (live streams still gated).
+- **Phase 5 shell (partial):** Bundled offline sample clip (`CaptionTheater/Media/CaptionTheaterSamplePlayback.mp4`) + Playback tab `tvOSPlaybackShellView` (`VideoPlayer`, transport buttons, Caption Theater confirm dialog, demo eligibility toggles, debug overlay). Layout/top-alignment hero presentation remains **CT-0303** / Phase 5 exit work.
 
 **Formal gaps**
 
-- **Phase 1 exit:** Debug inspector (**CT-0103**) not built — Phase 1 exit criteria below remain partially open until it exists.
-- **Phase 2 → playback:** Converting manifest/subtitle/provider outputs into **wired `CaptionTheaterEvidence` + snapshots** during real playback is **CT-0502** (and related coordinator work), not finished by parsers alone.
+- **Phase 1 exit:** Satisfied for fixture-driven explainability (**CT-0103** Debug tab). Coordinator-driven “live” transitions on device remain future work.
+- **Phase 2 → playback:** Converting manifest/subtitle/provider outputs into **wired `CaptionTheaterEvidence` + snapshots** during real playback is **CT-0502** (and related coordinator work), not finished by parsers alone (playback shell currently uses explicit demo stubs).
 
 **Reasonable next forks (pick one driving sequence)**
 
-1. **CT-0103** — unlocks Phase 1 exit and explainability for all fixture paths.
-2. **CT-0501 / CT-0502** — tvOS shell + wire parsers/classifier/engine into a running player (even before viewport pixels).
-3. **CT-0301** — viewport preclassification before integrating layout.
+1. **CT-0502** — Wire inspectors + playback hooks into live `CaptionTheaterEligibilitySnapshot` updates during real playback (replace demo toggles incrementally).
+2. **CT-0301** — viewport preclassification before integrating layout.
+3. **CT-0001 / CT-0002** — hero narrative + broaden fixture inventory (more video, synthetic frames) when demo readiness matters.
 
-**Phase 0:** **CT-0002** is **partial** (`Docs/Fixture-Inventory.md` + manifest/subtitle/provider/decision JSON); video assets, synthetic frames, and full demo matrix still TODO.
+**Phase 0:** **CT-0002** is **partial** (`Docs/Fixture-Inventory.md` + manifest/subtitle/provider/decision JSON + bundled sample MP4 for the playback shell); synthetic frames and full demo matrix still TODO.
 
 ---
 
@@ -395,7 +396,7 @@ Implementation Status:
 - Deterministic tests + JSON scenario fixtures cover eligible, user-disabled, ad, unknown-ad, unsupported-subtitle, unsafe-viewport, protected-content uncertainty, and fixture-matrix cases.
 - Playback lifecycle, cancellation, and cue-history resets remain coordinator/renderer work.
 
-#### CT-0103 [TODO]: Build Debug Decision Inspector
+#### CT-0103 [DONE]: Build Debug Decision Inspector
 
 User Story:
 As a Product Lead, I need to see why the feature is active or inactive so I can evaluate the product and safety tradeoffs.
@@ -406,7 +407,7 @@ Tasks:
 - Display positive evidence.
 - Display negative evidence.
 - Display uncertainty reasons.
-- Display last state transition.
+- Display last state transition _(placeholder copy until a playback coordinator emits real transitions)_.
 - Display selected subtitle state.
 - Display ad state.
 
@@ -417,11 +418,17 @@ Acceptance Criteria:
 - Unsafe states are obvious.
 - Inspector is separate from production user UI.
 
+Implementation Status:
+
+- Added **Debug** tab on tvOS hosting ``CaptionTheaterDebugDecisionInspectorView`` with `NavigationSplitView`, scenario catalog (`CaptionTheaterDebugScenarioCatalog`), and grouped evidence panels (tvOS-safe section styling; no `GroupBox`).
+- Added ``CaptionTheaterDebugDecisionInspection`` for mapping decisions into UI strings without touching AVFoundation.
+- Added ``CaptionTheaterDebugInspectionTests`` for headline wiring on baseline / linear-ad / unknown-ad scenarios.
+
 ### Phase 1 Exit Criteria
 
 - Decision engine has unit coverage.
 - Evidence-bearing eligibility decisions run without AVPlayer.
-- Debug inspector can explain fixture decisions (**pending CT-0103**; interim coverage is unit/fixture assertions on evidence strings).
+- Debug inspector can explain fixture decisions (**CT-0103**: Debug tab + scenario catalog).
 - No AVPlayer dependency is required for core decision tests.
 
 ---
@@ -567,7 +574,7 @@ Implementation Status:
 
 - Manifest, provider, and subtitle metadata facts are extractable from sanitized fixtures with unit coverage.
 - Wiring those facts into runtime `CaptionTheaterEvidence` + snapshots during playback remains **CT-0502** / coordinator work.
-- Debug inspector surfaces metadata-derived reasons (**pending CT-0103**).
+- Debug inspector surfaces eligibility outcomes and evidence strings (**CT-0103**); wiring live manifest/subtitle rows into snapshots remains **CT-0502**.
 - DRM safety policy is represented in code and tests (protected content without trusted metadata fails closed).
 - DRM feasibility documentation and metadata-first gates exist (**CT-0204**); live-stream validation follows approved inventory rows.
 
@@ -823,7 +830,7 @@ Prove the user value in a playable demo on **tvOS**, matching the current Xcode 
 
 ### Key Tasks
 
-#### CT-0501 [TODO]: Build tvOS Playback Shell
+#### CT-0501 [DONE]: Build tvOS Playback Shell
 
 User Story:
 As a stakeholder, I need a playable sample to evaluate the experience.
@@ -840,10 +847,12 @@ Tasks:
 
 Acceptance Criteria:
 
-- Fixture video plays locally.
-- User can toggle native vs. Caption Theater mode.
-- Basic playback controls work.
+- Fixture video plays locally (bundled `CaptionTheaterSamplePlayback.mp4`; generated synthetic letterboxed H.264, no audio).
+- User can toggle native vs. Caption Theater mode (`Caption Theater session` confirms via dialog; demo toggles exercise eligibility paths until CT-0502 replaces stubs).
+- Basic playback controls work (`VideoPlayer` scrubbing plus explicit transport buttons; SwiftUI `Slider` not used on tvOS).
 - Debug overlay can be shown/hidden.
+
+Deferred beyond this task (Phase 5 exit / CT-0303): centered-to-top-aligned hero transition, unsafe fixture swaps without rebuilding video.
 
 #### CT-0502 [TODO]: Wire Caption Theater Modules
 

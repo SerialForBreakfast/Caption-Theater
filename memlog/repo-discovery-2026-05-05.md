@@ -4,6 +4,7 @@
 
 - Caption Theater is a **tvOS-first** Xcode project (`CaptionTheater`, `CaptionTheaterTests`, `CaptionTheaterUITests`) with SwiftUI shell plus fixture-backed core modules.
 - Deterministic fixtures cover decision scenarios, HLS manifests, provider metadata, and subtitle-track classification; see `Docs/Fixture-Inventory.md`.
+- On-device **Debug** tab surfaces eligibility scenarios and evidence for stakeholders (`CaptionTheaterDebugDecisionInspectorView`).
 - Stateless eligibility evaluation lives in `CaptionTheaterDecisionEngine`; parsing/classification in `HLSManifestInspector`, `ProviderMetadataInspector`, and `SubtitleMetadataClassifier`.
 - Product intent and sequencing remain documented in `README.md`, `TASKS.md`, `Caption-Theater-POC-Roadmap.md`, `Caption-Theater-Showcase-and-Execution-Plan.md`, `Caption-Theater-Metadata-Feasibility-Deep-Dive.md`, and `ADR-0001-Letterbox-Aware-Top-Justified-Video-Viewport.md` (now aligned with tvOS-first implementation notes).
 
@@ -17,10 +18,15 @@
 
 ## Suggested Next Focus
 
-- Complete **CT-0103** (debug inspector) to close Phase 1 formally and support Phase 2 exit visibility—or prioritize **CT-0501/0502** tvOS wiring if playback-first sequencing is preferred.
+- Ship **CT-0501 / CT-0502**: tvOS playback shell + wire inspectors into eligibility snapshots during real playback.
 - Advance **CT-0301** viewport preclassification when ready to pair metadata with layout hypotheses.
 - Finish **CT-0002** gaps: video catalog, synthetic frames, real-world licensed hero candidate docs (**CT-0004**), generator scripts (**CT-0005**).
 - Stabilize UI test strategy (`CaptionTheaterUITests` launch performance flaked under full `xcodebuild test`; prefer `-skip-testing:CaptionTheaterUITests` for CI smoke until reviewed).
+
+## 2026-05-05 CT-0103 Debug Inspector
+
+- Added tvOS **Debug** tab: scenario catalog + evidence grouped by polarity; lifecycle transitions use placeholder copy until a coordinator exists.
+- Added `CaptionTheaterDebugInspectionTests`; unit suite passes with `-skip-testing:CaptionTheaterUITests`.
 
 ## 2026-05-05 Task grooming note
 

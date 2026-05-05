@@ -66,6 +66,12 @@ Never substitute production playlists, license URLs, keys, or private media for 
 **Code:** `SubtitleMetadataClassifier`  
 **Tests:** `SubtitleMetadataClassifierTests`
 
+## Debug decision inspector (tvOS)
+
+**Location:** SwiftUI — **Debug** tab in the tvOS app (`CaptionTheaterDebugDecisionInspectorView`), backed by in-code scenarios in `CaptionTheaterDebugScenarioCatalog` (mirrors engine matrix without bundling JSON twice).
+
+**Related tests:** `CaptionTheaterDebugInspectionTests`
+
 ## Related governance
 
 - **DRM / live streams:** `Docs/DRM-Feasibility-Study.md` and CT-0204 stream inventory in `TASKS.md` gate any protected-stream validation beyond these fixtures.

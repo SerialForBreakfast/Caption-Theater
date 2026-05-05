@@ -59,3 +59,9 @@
 - Added tests for persistent cue eligibility, authored-timing-only WebVTT, native-only embedded captions, image-based subtitles, burned-in subtitles, missing tracks, and unknown formats.
 - Updated `TASKS.md` to mark CT-0203 foundation work complete and separate CT-0204 DRM feasibility as future work.
 - Verified the full `CaptionTheater` scheme, then removed repo-local build artifacts.
+
+## 2026-05-05 Task Status Convention Update
+
+- Added a `Task Status Key` to `TASKS.md`.
+- Updated every `CT-` task heading with a visible status label.
+- Used `IN PROGRESS` for partially implemented foundation tasks and `TODO` for tasks that have not started.

@@ -9,6 +9,15 @@ Platforms: iOS first, then tvOS and macOS feasibility
 
 ---
 
+## Task Status Key
+
+- `TODO`: Not started.
+- `IN PROGRESS`: Started, with remaining acceptance criteria or integration work.
+- `DONE`: Completed for the current documented scope.
+- `BLOCKED`: Cannot proceed without a decision, dependency, fixture, credential, or external input.
+
+---
+
 ## 1. Product Goal
 
 Caption Theater is a persistent timed-text readability mode for Apple-platform playback.
@@ -143,7 +152,7 @@ Define the controlled world where Caption Theater can be tested before real-stre
 
 ### Key Tasks
 
-#### CT-0001: Define Hero Demo Narrative
+#### CT-0001 [TODO]: Define Hero Demo Narrative
 
 User Story:
 As a stakeholder, I want to see the Caption Theater benefit in under five minutes so I can understand why the POC is worth building.
@@ -171,7 +180,7 @@ Acceptance Criteria:
 - Demo explicitly states that future cues are not shown.
 - Demo shows ads playing normally fullscreen/native and Caption Theater resuming or revalidating after content returns.
 
-#### CT-0002: Create Fixture Inventory
+#### CT-0002 [TODO]: Create Fixture Inventory
 
 User Story:
 As an engineer, I need deterministic fixtures so every module can be tested without relying on external services.
@@ -194,7 +203,7 @@ Acceptance Criteria:
 - Fixture matrix includes eligible ultra-widescreen content, burned-in text, dark scene, ad marker, DRM marker, 4:3 pillarbox, variable aspect ratio, and unsupported subtitle examples.
 - Fixture inventory separates real-world demo candidates, Apple HLS control references, and generated known-answer fixtures.
 
-#### CT-0003: Define Readability Metrics
+#### CT-0003 [TODO]: Define Readability Metrics
 
 User Story:
 As a Product Lead, I need measurable success criteria so we can evaluate whether Caption Theater is actually useful.
@@ -214,7 +223,7 @@ Acceptance Criteria:
 - Metrics include both objective and subjective measures.
 - Metrics include negative outcomes such as distraction, confusion, or perceived timing issues.
 
-#### CT-0004: Source Real-World Widescreen Test Content
+#### CT-0004 [TODO]: Source Real-World Widescreen Test Content
 
 User Story:
 As a product and playback team, we need legitimate real-world ultra-widescreen test content so the hero demo proves Caption Theater value without licensing ambiguity.
@@ -246,7 +255,7 @@ Acceptance Criteria:
 - At least one Apple HLS sample stream is documented as a control reference.
 - The fixture inventory distinguishes real-world demo media from generated detector fixtures.
 
-#### CT-0005: Generate Purpose-Built Test Content
+#### CT-0005 [TODO]: Generate Purpose-Built Test Content
 
 User Story:
 As a detector and caption-rendering engineer, I need generated known-answer content so edge cases can be tested without relying on real media.
@@ -296,7 +305,7 @@ Build the decision engine before building playback UI.
 
 ### Key Tasks
 
-#### CT-0101: Define Evidence Model
+#### CT-0101 [IN PROGRESS]: Define Evidence Model
 
 User Story:
 As a playback engineer, I need eligibility decisions to carry evidence so unsafe activations can be diagnosed.
@@ -317,7 +326,7 @@ Acceptance Criteria:
 - Evidence can be displayed in debug UI.
 - Evidence distinguishes positive, negative, and uncertain signals.
 
-#### CT-0102: Define Decision Engine and Lifecycle State Model
+#### CT-0102 [IN PROGRESS]: Define Decision Engine and Lifecycle State Model
 
 User Story:
 As a QA engineer, I need deterministic eligibility decisions so edge cases can be tested reliably.
@@ -348,7 +357,7 @@ Implementation Status:
 - Added JSON decision scenario fixtures and fixture-driven tests.
 - Playback lifecycle coordination and cue-history reset handling remain future work.
 
-#### CT-0103: Build Debug Decision Inspector
+#### CT-0103 [TODO]: Build Debug Decision Inspector
 
 User Story:
 As a Product Lead, I need to see why the feature is active or inactive so I can evaluate the product and safety tradeoffs.
@@ -393,7 +402,7 @@ Determine what `.m3u8`, AVFoundation metadata, provider metadata, and subtitle m
 
 ### Key Tasks
 
-#### CT-0201: Parse HLS Manifest Fixtures
+#### CT-0201 [IN PROGRESS]: Parse HLS Manifest Fixtures
 
 User Story:
 As an engineer, I need to inspect `.m3u8` metadata so we can identify subtitle, ad, discontinuity, and DRM evidence.
@@ -425,7 +434,7 @@ Implementation Status:
 - Added unit tests for manifest fact extraction.
 - Conversion from manifest findings to decision evidence remains future work.
 
-#### CT-0202: Implement Provider Metadata Stub
+#### CT-0202 [IN PROGRESS]: Implement Provider Metadata Stub
 
 User Story:
 As a production architect, I need to simulate trusted QC metadata because DRM content may not allow pixel analysis.
@@ -455,7 +464,7 @@ Implementation Status:
 - Added unit tests showing trusted metadata can authorize a protected-content decision path, missing/incomplete metadata fails closed, and blocklist metadata forces native presentation.
 - Runtime segment enforcement remains future playback coordination work.
 
-#### CT-0203: Classify Subtitle Transport and Format
+#### CT-0203 [IN PROGRESS]: Classify Subtitle Transport and Format
 
 User Story:
 As a caption engineer, I need to know whether the selected captions can be rendered and persisted safely.
@@ -482,7 +491,7 @@ Implementation Status:
 - Added unit tests for subtitle state and presentation policy classification.
 - IMSC/TTML-specific fixture metadata remains future work.
 
-#### CT-0204: Run DRM Feasibility Study
+#### CT-0204 [TODO]: Run DRM Feasibility Study
 
 User Story:
 As a playback architect, I need to know whether representative protected streams allow any useful client-side Caption Theater analysis.
@@ -526,7 +535,7 @@ Detect safe inactive regions in non-DRM fixtures and compute stable video/captio
 
 ### Key Tasks
 
-#### CT-0301: Implement Viewport Preclassification
+#### CT-0301 [TODO]: Implement Viewport Preclassification
 
 User Story:
 As a detector developer, I need cheap preclassification before pixel analysis.
@@ -548,7 +557,7 @@ Acceptance Criteria:
 - Preclassification never activates Caption Theater by itself.
 - Classification is represented as evidence.
 
-#### CT-0302: Implement Pixel Region Detector
+#### CT-0302 [TODO]: Implement Pixel Region Detector
 
 User Story:
 As a playback engineer, I need a bounded detector that can identify safe inactive regions where pixel analysis is allowed.
@@ -574,7 +583,7 @@ Acceptance Criteria:
 - Rejects variable-boundary fixture.
 - Does not persist raw frames.
 
-#### CT-0303: Implement Layout Engine
+#### CT-0303 [TODO]: Implement Layout Engine
 
 User Story:
 As a UI engineer, I need deterministic geometry for native and Caption Theater presentation modes.
@@ -624,7 +633,7 @@ Render already-presented text cues with bounded persistence and no future cue di
 
 ### Key Tasks
 
-#### CT-0401: Define Internal Cue Model
+#### CT-0401 [TODO]: Define Internal Cue Model
 
 User Story:
 As a caption engineer, I need a normalized cue model so persistence logic is not tied directly to one parser.
@@ -646,9 +655,9 @@ Acceptance Criteria:
 - Cue model preserves authored time.
 - Cue model is not WebVTT-specific and can support future IMSC/TTML, CEA-608/708, and app-owned cue adapters.
 
-#### CT-0402: Implement WebVTT Fixture Adapter
+#### CT-0402 [TODO]: Implement WebVTT Fixture Adapter
 
-#### CT-0402A: Define Main Subtitle Format Adapter Requirements
+#### CT-0402A [TODO]: Define Main Subtitle Format Adapter Requirements
 
 User Story:
 As a caption engineer, I need the first implementation to avoid WebVTT-only assumptions so the product can support the main subtitle and caption formats later.
@@ -687,7 +696,7 @@ Acceptance Criteria:
 - SDH fixture preserves speaker and sound-effect text.
 - Forced/lyrics/legal fixtures are marked authored-timing-only by default.
 
-#### CT-0403: Implement Persistence Window
+#### CT-0403 [TODO]: Implement Persistence Window
 
 User Story:
 As a viewer, I want recent captions to remain visible briefly after they appeared so I can finish reading them.
@@ -713,7 +722,7 @@ Acceptance Criteria:
 - Ineligible cue types do not persist by default.
 - Boundary events clear retained history.
 
-#### CT-0404: Implement Caption Renderer View
+#### CT-0404 [TODO]: Implement Caption Renderer View
 
 User Story:
 As a viewer, I need current and retained captions to be readable and visually distinct.
@@ -761,7 +770,7 @@ Prove the user value in a playable iOS demo.
 
 ### Key Tasks
 
-#### CT-0501: Build iOS Playback Shell
+#### CT-0501 [TODO]: Build iOS Playback Shell
 
 User Story:
 As a stakeholder, I need a playable sample to evaluate the experience.
@@ -783,7 +792,7 @@ Acceptance Criteria:
 - Basic playback controls work.
 - Debug overlay can be shown/hidden.
 
-#### CT-0502: Wire Caption Theater Modules
+#### CT-0502 [TODO]: Wire Caption Theater Modules
 
 User Story:
 As an engineer, I need the sample app to exercise the real decision modules.
@@ -805,7 +814,7 @@ Acceptance Criteria:
 - 4:3, variable-aspect, and burned-in subtitle fixtures are retained as stretch-goal classifications with explicit debug reasons.
 - Debug UI explains all outcomes.
 
-#### CT-0503: Build Showcase Recording Flow
+#### CT-0503 [TODO]: Build Showcase Recording Flow
 
 User Story:
 As a Product Lead, I need a repeatable demo that shows the feature value quickly.
@@ -851,7 +860,7 @@ Prove that ads continue to play normally fullscreen/native while Caption Theater
 
 ### Key Tasks
 
-#### CT-0601: Implement Ad State Simulator
+#### CT-0601 [TODO]: Implement Ad State Simulator
 
 User Story:
 As an ads stakeholder, I need proof that Caption Theater will not alter ad presentation.
@@ -873,7 +882,7 @@ Acceptance Criteria:
 - Caption Theater does not carry eligibility across ad boundaries.
 - Caption Theater can resume after ads only after content returns and the mode is still valid.
 
-#### CT-0602: Implement Pause Promo Simulator
+#### CT-0602 [TODO]: Implement Pause Promo Simulator
 
 User Story:
 As a Product Lead, I need pause promos to coexist with caption accessibility.
@@ -918,7 +927,7 @@ Determine whether the architecture can become a cross-platform Apple playback fe
 
 ### Key Tasks
 
-#### CT-0701: tvOS Feasibility Pass
+#### CT-0701 [TODO]: tvOS Feasibility Pass
 
 User Story:
 As a tvOS viewer, I need Caption Theater to work without breaking remote navigation, focus, or VoiceOver.
@@ -941,7 +950,7 @@ Acceptance Criteria:
 - Overscan-safe reading region is available.
 - Platform blockers are documented.
 
-#### CT-0702: macOS Feasibility Pass
+#### CT-0702 [TODO]: macOS Feasibility Pass
 
 User Story:
 As a macOS viewer, I need Caption Theater to survive resize, full screen, and keyboard controls.
@@ -986,7 +995,7 @@ Decide whether to proceed, narrow scope, keep as an experiment, or stop.
 
 ### Key Tasks
 
-#### CT-0801: Run POC Evaluation
+#### CT-0801 [TODO]: Run POC Evaluation
 
 User Story:
 As a Product Lead, I need a clear go/no-go recommendation based on evidence.
@@ -1009,7 +1018,7 @@ Acceptance Criteria:
 - Required stakeholder decisions are listed.
 - Next-phase roadmap is written if proceeding.
 
-#### CT-0802: Define Production Candidate Requirements
+#### CT-0802 [TODO]: Define Production Candidate Requirements
 
 User Story:
 As an engineering lead, I need clear production gates before this can be shipped.

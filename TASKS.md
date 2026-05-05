@@ -183,6 +183,8 @@ Tasks:
 - Create WebVTT fixture list.
 - Create HLS manifest fixture list.
 - Create provider metadata fixture list.
+- Create real-world source candidate list with URLs, license notes, attribution requirements, and expected use.
+- Create generated-content fixture list for deterministic detector and renderer tests.
 - Document expected classification for each fixture.
 
 Acceptance Criteria:
@@ -190,6 +192,7 @@ Acceptance Criteria:
 - Fixture inventory includes eligible and ineligible cases.
 - Every fixture has an expected decision.
 - Fixture matrix includes eligible ultra-widescreen content, burned-in text, dark scene, ad marker, DRM marker, 4:3 pillarbox, variable aspect ratio, and unsupported subtitle examples.
+- Fixture inventory separates real-world demo candidates, Apple HLS control references, and generated known-answer fixtures.
 
 #### CT-0003: Define Readability Metrics
 
@@ -204,11 +207,68 @@ Tasks:
 - Define subjective user questions.
 - Define failure metrics.
 
+
 Acceptance Criteria:
 
 - Metrics distinguish readability value from layout novelty.
 - Metrics include both objective and subjective measures.
 - Metrics include negative outcomes such as distraction, confusion, or perceived timing issues.
+
+#### CT-0004: Source Real-World Widescreen Test Content
+
+User Story:
+As a product and playback team, we need legitimate real-world ultra-widescreen test content so the hero demo proves Caption Theater value without licensing ambiguity.
+
+Candidate Sources:
+
+- Tears of Steel download page: https://mango.blender.org/download/
+- Tears of Steel project page: https://studio.blender.org/projects/tears-of-steel/
+- Tears of Steel original video asset: https://studio.blender.org/projects/tears-of-steel/55f344892beb3300251b0172/?asset=5910
+- Tears of Steel timed text example: https://commons.wikimedia.org/wiki/TimedText:Tears_of_Steel_in_4k_-_Official_Blender_Foundation_release.webm.en.srt
+- Apple HLS example streams: https://developer.apple.com/streaming/examples/
+- Apple HLS authoring specification: https://developer.apple.com/documentation/http-live-streaming/hls-authoring-specification-for-apple-devices
+
+Tasks:
+
+- Evaluate Tears of Steel as the primary real-world hero fixture.
+- Verify the exact source file license, attribution requirements, and allowed local test usage.
+- Select a 15–30 second segment with useful caption density.
+- Convert or adapt available subtitles to WebVTT if needed.
+- Document the source URL, license, attribution, original dimensions, expected aspect ratio, expected active-picture rect, and expected Caption Theater decision.
+- Add Apple HLS sample streams as control references for HLS/WebVTT behavior, 16:9 fallback, and 4:3 classification.
+- Avoid random trailers, streaming-service captures, or copyrighted production content unless explicitly approved.
+
+Acceptance Criteria:
+
+- At least one real ultra-widescreen candidate is documented for hero-demo testing.
+- License and attribution notes are captured before committing local media.
+- The selected segment has expected aspect ratio and active-picture bounds.
+- At least one Apple HLS sample stream is documented as a control reference.
+- The fixture inventory distinguishes real-world demo media from generated detector fixtures.
+
+#### CT-0005: Generate Purpose-Built Test Content
+
+User Story:
+As a detector and caption-rendering engineer, I need generated known-answer content so edge cases can be tested without relying on real media.
+
+Tasks:
+
+- Generate an ultra-widescreen 2.39:1 active-picture fixture inside a 16:9 raster.
+- Generate a matching WebVTT fixture with dense dialogue and SDH-style cues.
+- Generate a full-frame 16:9 control fixture.
+- Generate a 4:3 pillarbox stretch-goal fixture.
+- Generate a variable-aspect stretch-goal fixture.
+- Generate unsafe-region fixtures with burned-in subtitles, logo/watermark, legal-text-like content, and dark-scene false positives.
+- Keep all generated fixtures inside the project directory.
+- Document generation scripts and expected active-picture rects.
+
+Acceptance Criteria:
+
+- Generated fixtures are deterministic and project-local.
+- Every generated fixture has an expected Caption Theater decision.
+- Unsafe fixtures are suitable for automated detector tests.
+- Generated content does not require external media licensing.
+- Generation scripts do not write to `/tmp`, `/private/tmp`, `/var/tmp`, or any path outside the repository.
 
 ### Phase 0 Exit Criteria
 
@@ -216,6 +276,8 @@ Acceptance Criteria:
 - Fixture inventory is ready.
 - Demo script is ready.
 - Success metrics are defined.
+- Real-world widescreen candidate URLs and license notes are documented.
+- Generated fixture requirements are documented.
 
 ---
 

@@ -1,0 +1,25 @@
+{
+  "captionTheater": {
+    "schemaVersion": 1,
+    "policy": "blocklisted",
+    "source": "provider-qc",
+    "confidence": 0.99,
+    "supportsPersistence": false,
+    "declaredActiveAspectRatio": 2.3529,
+    "activePictureRect": {
+      "x": 0,
+      "y": 132,
+      "width": 1920,
+      "height": 816
+    },
+    "safeCaptionRegions": [],
+    "allowedLayouts": [],
+    "notes": [
+      "known-burned-in-subtitles"
+    ],
+    "warnings": [
+      "burnedInSubtitleRisk"
+    ],
+    "segments": []
+  }
+}

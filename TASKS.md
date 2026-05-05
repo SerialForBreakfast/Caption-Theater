@@ -317,20 +317,20 @@ Acceptance Criteria:
 - Evidence can be displayed in debug UI.
 - Evidence distinguishes positive, negative, and uncertain signals.
 
-#### CT-0102: Define State Machine
+#### CT-0102: Define Decision Engine and Lifecycle State Model
 
 User Story:
-As a QA engineer, I need deterministic state transitions so edge cases can be tested reliably.
+As a QA engineer, I need deterministic eligibility decisions so edge cases can be tested reliably.
 
 Tasks:
 
-- Define `CaptionTheaterModeState`.
-- Define playback events.
-- Define ad events.
-- Define subtitle events.
-- Define viewport events.
-- Define user setting events.
-- Implement reducer-style state transitions.
+- Define `CaptionTheaterDecision`.
+- Define playback state inputs.
+- Define ad state inputs.
+- Define subtitle state inputs.
+- Define viewport state inputs.
+- Define user setting inputs.
+- Implement a stateless decision engine before adding playback lifecycle coordination.
 
 Acceptance Criteria:
 
@@ -340,6 +340,13 @@ Acceptance Criteria:
 - Unsupported subtitle format fails closed.
 - Unsafe region evidence suspends the feature.
 - Seek, track change, audio change, discontinuity, and asset transition reset cue history.
+
+Implementation Status:
+
+- Completed initial stateless `CaptionTheaterDecisionEngine`.
+- Added deterministic decision tests for eligible, user-disabled, ad, unknown-ad, unsupported-subtitle, unsafe-viewport, and protected-content uncertainty cases.
+- Added JSON decision scenario fixtures and fixture-driven tests.
+- Playback lifecycle coordination and cue-history reset handling remain future work.
 
 #### CT-0103: Build Debug Decision Inspector
 
@@ -365,7 +372,7 @@ Acceptance Criteria:
 
 ### Phase 1 Exit Criteria
 
-- State reducer has unit coverage.
+- Decision engine has unit coverage.
 - Debug inspector can explain fixture decisions.
 - No AVPlayer dependency is required for core decision tests.
 
@@ -411,6 +418,13 @@ Acceptance Criteria:
 - Encryption creates DRM-risk evidence.
 - Encoded resolution is not treated as active-picture evidence.
 
+Implementation Status:
+
+- Completed initial sanitized `HLSManifestInspector`.
+- Added fixtures for sidecar WebVTT subtitles, embedded closed captions, ad date ranges, discontinuities, encryption markers, and no-subtitle controls.
+- Added unit tests for manifest fact extraction.
+- Conversion from manifest findings to decision evidence remains future work.
+
 #### CT-0202: Implement Provider Metadata Stub
 
 User Story:
@@ -433,6 +447,13 @@ Acceptance Criteria:
 - Blocklist metadata overrides pixel analysis.
 - Metadata can define segment-level native-only regions.
 - Metadata can define a declared active aspect ratio for the ultra-widescreen hero fixture.
+
+Implementation Status:
+
+- Completed initial sanitized provider metadata JSON schema and `ProviderMetadataInspector`.
+- Added fixtures for trusted eligible metadata, blocklisted burned-in subtitle risk, native-only timeline segments, and incomplete metadata.
+- Added unit tests showing trusted metadata can authorize a protected-content decision path, missing/incomplete metadata fails closed, and blocklist metadata forces native presentation.
+- Runtime segment enforcement remains future playback coordination work.
 
 #### CT-0203: Classify Subtitle Transport and Format
 #### CT-0204: Run DRM Feasibility Study

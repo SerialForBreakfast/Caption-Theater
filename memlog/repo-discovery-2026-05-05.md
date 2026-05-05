@@ -42,3 +42,12 @@
 - Added sanitized HLS manifest fixtures for sidecar subtitles, embedded closed captions, ad date ranges, discontinuities, encryption markers, and no-subtitle control cases.
 - Added unit tests that load HLS fixtures from the test bundle and verify extracted metadata facts.
 - Verified the full `CaptionTheater` scheme, then removed repo-local build artifacts.
+
+## 2026-05-05 Provider Metadata Update
+
+- Added `ProviderMetadataInspector`, a stateless nonisolated decoder/evaluator for sanitized provider-side QC metadata.
+- Added a local JSON schema for policy, trusted source/confidence, active-picture rect, safe caption regions, allowed layouts, warnings, and timeline segments.
+- Added provider metadata fixtures for trusted eligibility, blocklisted burned-in subtitle risk, native-only timeline segments, and incomplete metadata.
+- Added tests showing trusted provider metadata can authorize a protected-content decision path, missing/incomplete metadata fails closed, and blocklist metadata forces native presentation.
+- Updated `TASKS.md` to reflect the decision-engine approach, completed HLS manifest foundation, and completed provider metadata stub foundation.
+- Verified the full `CaptionTheater` scheme, then removed repo-local build artifacts.

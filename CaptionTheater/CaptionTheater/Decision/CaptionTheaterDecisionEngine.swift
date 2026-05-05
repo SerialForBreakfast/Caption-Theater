@@ -6,7 +6,7 @@ import Foundation
 /// Callers provide the current evidence snapshot, and the engine returns a deterministic decision that
 /// can be tested without `AVPlayer`, SwiftUI, frame sampling, or platform UI. Coordination, cancellation,
 /// and actor ownership belong in a future playback coordinator.
-struct CaptionTheaterDecisionEngine: Sendable {
+nonisolated struct CaptionTheaterDecisionEngine: Sendable {
     /// Creates a decision engine with no retained state.
     init() {}
 
@@ -64,6 +64,23 @@ struct CaptionTheaterDecisionEngine: Sendable {
             )
         }
 
+        switch snapshot.protectedContentState {
+        case .clearContent:
+            evidence.append(.positive(.drmPolicy, "Clear content may use local viewport evidence."))
+        case .trustedMetadataAllowed:
+            evidence.append(.positive(.providerSideQcMetadata, "Trusted provider metadata allows protected-content eligibility."))
+        case .protectedWithoutTrustedMetadata:
+            return .uncertain(
+                reason: .protectedContentRequiresTrustedMetadata,
+                evidence: evidence + [.uncertain(.drmPolicy, "Protected content requires trusted metadata or allowlisting.")]
+            )
+        case .unknown:
+            return .uncertain(
+                reason: .unknownProtectedContentState,
+                evidence: evidence + [.uncertain(.drmPolicy, "Protected-content state is unknown.")]
+            )
+        }
+
         switch snapshot.viewportState {
         case .safeCinematicLetterbox:
             evidence.append(.positive(.viewportAnalysis, "Viewport analysis found safe cinematic letterbox space."))
@@ -89,23 +106,6 @@ struct CaptionTheaterDecisionEngine: Sendable {
             )
         }
 
-        switch snapshot.protectedContentState {
-        case .clearContent:
-            evidence.append(.positive(.drmPolicy, "Clear content may use local viewport evidence."))
-        case .trustedMetadataAllowed:
-            evidence.append(.positive(.providerSideQcMetadata, "Trusted provider metadata allows protected-content eligibility."))
-        case .protectedWithoutTrustedMetadata:
-            return .uncertain(
-                reason: .protectedContentRequiresTrustedMetadata,
-                evidence: evidence + [.uncertain(.drmPolicy, "Protected content requires trusted metadata or allowlisting.")]
-            )
-        case .unknown:
-            return .uncertain(
-                reason: .unknownProtectedContentState,
-                evidence: evidence + [.uncertain(.drmPolicy, "Protected-content state is unknown.")]
-            )
-        }
-
         return .eligible(evidence: evidence)
     }
 }
@@ -115,7 +115,7 @@ struct CaptionTheaterDecisionEngine: Sendable {
 /// Snapshots are value types so playback, ad, subtitle, metadata, and viewport adapters can construct
 /// them on their own actor or thread and pass them into the stateless decision engine without sharing
 /// mutable state.
-struct CaptionTheaterEligibilitySnapshot: Codable, Equatable, Sendable {
+nonisolated struct CaptionTheaterEligibilitySnapshot: Codable, Equatable, Sendable {
     let isEnabledByUser: Bool
     let adPlaybackState: CaptionTheaterAdPlaybackState
     let subtitleState: CaptionTheaterSubtitleState
@@ -142,14 +142,14 @@ struct CaptionTheaterEligibilitySnapshot: Codable, Equatable, Sendable {
 }
 
 /// The decision returned by the Caption Theater eligibility engine.
-enum CaptionTheaterDecision: Equatable, Sendable {
+nonisolated enum CaptionTheaterDecision: Equatable, Sendable {
     case eligible(evidence: [CaptionTheaterEvidence])
     case ineligible(reason: CaptionTheaterIneligibilityReason, evidence: [CaptionTheaterEvidence])
     case uncertain(reason: CaptionTheaterUncertaintyReason, evidence: [CaptionTheaterEvidence])
 }
 
 /// Reasons Caption Theater should stay in native playback even though the evidence is understood.
-enum CaptionTheaterIneligibilityReason: String, Codable, Equatable, Sendable {
+nonisolated enum CaptionTheaterIneligibilityReason: String, Codable, Equatable, Sendable {
     case disabledByUser
     case adPlaybackActive
     case promoPlaybackActive
@@ -161,7 +161,7 @@ enum CaptionTheaterIneligibilityReason: String, Codable, Equatable, Sendable {
 }
 
 /// Reasons Caption Theater should fail closed because the evidence is incomplete or unknown.
-enum CaptionTheaterUncertaintyReason: String, Codable, Equatable, Sendable {
+nonisolated enum CaptionTheaterUncertaintyReason: String, Codable, Equatable, Sendable {
     case unknownAdPlaybackState
     case unknownSubtitleFormat
     case unknownViewportSafety
@@ -170,7 +170,7 @@ enum CaptionTheaterUncertaintyReason: String, Codable, Equatable, Sendable {
 }
 
 /// Current ad or promo state supplied by the host playback integration.
-enum CaptionTheaterAdPlaybackState: String, Codable, Equatable, Sendable {
+nonisolated enum CaptionTheaterAdPlaybackState: String, Codable, Equatable, Sendable {
     case content
     case linearAd
     case pausePromo
@@ -178,7 +178,7 @@ enum CaptionTheaterAdPlaybackState: String, Codable, Equatable, Sendable {
 }
 
 /// Current subtitle-track eligibility supplied by subtitle metadata or fixture adapters.
-enum CaptionTheaterSubtitleState: String, Codable, Equatable, Sendable {
+nonisolated enum CaptionTheaterSubtitleState: String, Codable, Equatable, Sendable {
     case webVTT
     case noneSelected
     case unsupported
@@ -186,7 +186,7 @@ enum CaptionTheaterSubtitleState: String, Codable, Equatable, Sendable {
 }
 
 /// Current viewport safety classification supplied by metadata, fixtures, or future pixel analysis.
-enum CaptionTheaterViewportState: String, Codable, Equatable, Sendable {
+nonisolated enum CaptionTheaterViewportState: String, Codable, Equatable, Sendable {
     case safeCinematicLetterbox
     case fullFrame
     case unsafe
@@ -195,7 +195,7 @@ enum CaptionTheaterViewportState: String, Codable, Equatable, Sendable {
 }
 
 /// Current protected-content policy state supplied by playback and provider metadata adapters.
-enum CaptionTheaterProtectedContentState: String, Codable, Equatable, Sendable {
+nonisolated enum CaptionTheaterProtectedContentState: String, Codable, Equatable, Sendable {
     case clearContent
     case trustedMetadataAllowed
     case protectedWithoutTrustedMetadata
@@ -206,7 +206,7 @@ enum CaptionTheaterProtectedContentState: String, Codable, Equatable, Sendable {
 ///
 /// Evidence stores sanitized, non-frame diagnostic text only. It must not contain credentials,
 /// private stream URLs, FairPlay keys, raw protected frames, or unsanitized production manifests.
-struct CaptionTheaterEvidence: Codable, Equatable, Sendable {
+nonisolated struct CaptionTheaterEvidence: Codable, Equatable, Sendable {
     let source: CaptionTheaterEvidenceSource
     let polarity: CaptionTheaterEvidencePolarity
     let message: String
@@ -239,7 +239,7 @@ struct CaptionTheaterEvidence: Codable, Equatable, Sendable {
 }
 
 /// Source area that produced a piece of Caption Theater evidence.
-enum CaptionTheaterEvidenceSource: String, Codable, Equatable, Sendable {
+nonisolated enum CaptionTheaterEvidenceSource: String, Codable, Equatable, Sendable {
     case hlsManifest
     case avFoundationMetadata
     case subtitleCueMetadata
@@ -252,7 +252,7 @@ enum CaptionTheaterEvidenceSource: String, Codable, Equatable, Sendable {
 }
 
 /// Direction of a piece of evidence in the final eligibility decision.
-enum CaptionTheaterEvidencePolarity: String, Codable, Equatable, Sendable {
+nonisolated enum CaptionTheaterEvidencePolarity: String, Codable, Equatable, Sendable {
     case positive
     case negative
     case uncertain

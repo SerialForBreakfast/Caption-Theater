@@ -2,12 +2,12 @@
 //  tvOSPlaybackShellView.swift
 //  CaptionTheater
 //
-//  Fullscreen-first playback shell with ultra-wide Caption Theater offer (CT-0501 / CT-0502).
+//  Fullscreen-first playback shell with Caption Theater offer and stacked caption band (CT-0501 / CT-0502).
 //
 
 import SwiftUI
 
-/// Fullscreen playback surface: native presentation by default, optional ultra-wide Caption Theater layout.
+/// Fullscreen playback surface: Caption Theater offer when cues qualify, then optional top-stacked caption column.
 ///
 /// Touches **playback** via ``tvOSCaptionTheaterPlayerContainer`` (``AVLayerVideoGravity/resizeAspect`` only—no aspect-fill),
 /// **layout** via ``CaptionTheaterLayoutEngine``, and **engineering telemetry** via ``CaptionTheaterPlaybackLogger``
@@ -22,10 +22,10 @@ struct tvOSPlaybackShellView: View {
 
     @State private var model: CaptionTheaterPlaybackShellViewModel?
 
-    /// After the encoded aspect ratio arrives, non-ultra-wide titles skip the offer permanently for this presentation.
-    @State private var ultraWideOfferResolvedForSession = false
+    /// After the user chooses an option—or bundled non-scope content skips the offer—prompt logic stops for this shell instance.
+    @State private var captionTheaterOfferResolvedForSession = false
 
-    @State private var showUltraWideCaptionTheaterOffer = false
+    @State private var showCaptionTheaterOfferAlert = false
 
     private let demoSource: CaptionTheaterPlaybackDemoSource
     private let playbackURL: URL?
@@ -63,7 +63,7 @@ struct tvOSPlaybackShellView: View {
         case .bundledSyntheticSample:
             return "Add \(CaptionTheaterPlaybackFixture.sampleVideoResourceName).\(CaptionTheaterPlaybackFixture.sampleVideoExtension) to the app target Media folder."
         case .muxTearsOfSteelHLS:
-            return "The Mux demo URL failed to resolve. Use the Debug tab to confirm the networked demo source."
+            return "The Mux demo URL failed to resolve. Change `CaptionTheater.playbackDemoSource` in User Defaults if needed."
         }
     }
 
@@ -102,18 +102,7 @@ struct tvOSPlaybackShellView: View {
                 )
             } else {
                 GeometryReader { geo in
-                    let layout = model.layoutGeometry(containerSize: geo.size)
-                    ZStack(alignment: .topLeading) {
-                        tvOSCaptionTheaterPlayerContainer(
-                            player: model.player,
-                            videoDisplayRect: layout?.activePictureRect
-                        )
-                        .frame(width: geo.size.width, height: geo.size.height)
-
-                        captionTheaterReadingBand(model: model, layout: layout)
-
-                        debugHudOverlay(model: model)
-                    }
+                    playbackStage(model: model, containerSize: geo.size)
                 }
                 .ignoresSafeArea()
             }
@@ -122,78 +111,145 @@ struct tvOSPlaybackShellView: View {
         .onPlayPauseCommand {
             model.togglePlayPause()
         }
-        .onChange(of: model.pictureAspectRatioWidthOverHeight) { _, newAspect in
-            reactToPresentationAspectChange(model: model, newAspect: newAspect)
+        .onChange(of: model.presentationAspectGeneration) { _, _ in
+            considerCaptionTheaterOffer(model: model)
         }
-        .alert("Ultra-wide picture", isPresented: $showUltraWideCaptionTheaterOffer) {
-            Button("Caption Theater") {
-                CaptionTheaterPlaybackLogger.playbackFlow("User accepted Caption Theater layout for ultra-wide session")
+        .alert("Caption Theater", isPresented: $showCaptionTheaterOfferAlert) {
+            Button("Use Caption Theater") {
+                CaptionTheaterPlaybackLogger.playbackFlow("User chose Caption Theater (stacked captions)")
                 model.captionTheaterOptInAccepted = true
                 model.captionTheaterTopPinnedLayoutEnabled = true
-                ultraWideOfferResolvedForSession = true
+                captionTheaterOfferResolvedForSession = true
+                model.logCaptionTheaterLayoutPipeline(reason: "After CT alert confirm")
             }
-            Button("Standard", role: .cancel) {
-                CaptionTheaterPlaybackLogger.playbackFlow("User declined Caption Theater; using standard centered presentation")
+            Button("Standard playback", role: .cancel) {
+                CaptionTheaterPlaybackLogger.playbackFlow("User chose standard centered playback")
                 model.captionTheaterOptInAccepted = false
                 model.captionTheaterTopPinnedLayoutEnabled = false
-                ultraWideOfferResolvedForSession = true
+                captionTheaterOfferResolvedForSession = true
+                model.logCaptionTheaterLayoutPipeline(reason: "After CT alert standard")
             }
         } message: {
             Text(
-                "This encode uses a wider-than-HDTV active picture. Caption Theater pins video to the top and reserves the lower area for captions."
+                "This title looks scope-friendly or streams over HTTP(S). Pin video to the top and show captions in the dedicated band below?"
             )
         }
     }
 
-    private func reactToPresentationAspectChange(
-        model: CaptionTheaterPlaybackShellViewModel,
-        newAspect: Double?
-    ) {
-        guard let aspect = newAspect else {
-            return
-        }
-        guard !ultraWideOfferResolvedForSession else {
-            return
-        }
-
-        if aspect > Double(CaptionTheaterPlaybackUILayout.ultrawideAspectRatioThresholdWidthOverHeight) {
-            CaptionTheaterPlaybackLogger.playbackFlow("Presentation aspect triggers ultra-wide offer alert aspect=\(aspect)")
-            showUltraWideCaptionTheaterOffer = true
-        } else {
-            CaptionTheaterPlaybackLogger.playbackFlow("Presentation aspect is standard HDTV-shaped; skipping Caption Theater offer aspect=\(aspect)")
-            model.captionTheaterOptInAccepted = false
-            model.captionTheaterTopPinnedLayoutEnabled = false
-            ultraWideOfferResolvedForSession = true
-        }
-    }
-
     @ViewBuilder
-    private func captionTheaterReadingBand(
-        model: CaptionTheaterPlaybackShellViewModel,
-        layout: CaptionTheaterLayoutGeometry?
-    ) -> some View {
+    private func playbackStage(model: CaptionTheaterPlaybackShellViewModel, containerSize: CGSize) -> some View {
+        let layout = model.layoutGeometry(containerSize: containerSize)
+
         if model.captionTheaterOptInAccepted,
            model.captionTheaterTopPinnedLayoutEnabled,
            let layout,
-           layout.captionReadingRect.height > 1
+           layout.captionReadingRect.height > 0.5
         {
-            Text(
-                "Caption Theater band — timed text renders here in Phase 4. Native WebVTT may still composite over video until then."
-            )
-            .font(captionTextSizePreset.captionOverlayFont)
-            .foregroundStyle(.primary)
-            .multilineTextAlignment(.center)
-            .minimumScaleFactor(0.65)
-            .lineLimit(8)
-            .padding(.horizontal, 12)
-            .frame(width: layout.captionReadingRect.width, height: layout.captionReadingRect.height)
-            .background(Color(red: 0.06, green: 0.06, blue: 0.08))
-            .position(x: layout.captionReadingRect.midX, y: layout.captionReadingRect.midY)
+            topPinnedVideoWithCaptionColumn(model: model, containerSize: containerSize, layout: layout)
+        } else {
+            ZStack(alignment: .topLeading) {
+                tvOSCaptionTheaterPlayerContainer(
+                    player: model.player,
+                    videoDisplayRect: layout?.activePictureRect
+                )
+                .frame(width: containerSize.width, height: containerSize.height)
+
+                debugHudOverlay(model: model, containerSize: containerSize)
+            }
         }
     }
 
+    /// Top-pinned letterbox math with a **physical** lower ``VStack`` column for caption rendering (debug stroked).
+    private func topPinnedVideoWithCaptionColumn(
+        model: CaptionTheaterPlaybackShellViewModel,
+        containerSize: CGSize,
+        layout: CaptionTheaterLayoutGeometry
+    ) -> some View {
+        let pictureHeight = layout.activePictureRect.height
+        let captionHeight = max(0, layout.captionReadingRect.height)
+
+        return ZStack(alignment: .topTrailing) {
+            VStack(spacing: 0) {
+                ZStack {
+                    Color.black
+                    tvOSCaptionTheaterPlayerContainer(
+                        player: model.player,
+                        videoDisplayRect: CGRect(
+                            x: layout.activePictureRect.minX,
+                            y: 0,
+                            width: layout.activePictureRect.width,
+                            height: layout.activePictureRect.height
+                        )
+                    )
+                    .frame(width: containerSize.width, height: pictureHeight)
+                }
+                .frame(width: containerSize.width, height: pictureHeight)
+
+                captionTheaterCaptionColumn(
+                    model: model,
+                    width: containerSize.width,
+                    height: captionHeight
+                )
+            }
+            .frame(width: containerSize.width, height: containerSize.height, alignment: .top)
+
+            if playbackDebugHUD {
+                debugHudOverlay(model: model, containerSize: containerSize)
+            }
+        }
+        .frame(width: containerSize.width, height: containerSize.height, alignment: .top)
+    }
+
+    /// Reserved caption surface below the picture; **4 pt blue stroke** for layout debugging until Phase 4 cue rendering lands.
+    private func captionTheaterCaptionColumn(
+        model: CaptionTheaterPlaybackShellViewModel,
+        width: CGFloat,
+        height: CGFloat
+    ) -> some View {
+        Text(
+            "Caption Theater — timed cues render in this band (Phase 4). Native legible tracks stay deselected so text is not composited over the picture."
+        )
+        .font(captionTextSizePreset.captionOverlayFont)
+        .foregroundStyle(.primary)
+        .multilineTextAlignment(.center)
+        .minimumScaleFactor(0.65)
+        .lineLimit(12)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .frame(width: width, height: height, alignment: .center)
+        .background(Color(red: 0.06, green: 0.06, blue: 0.08))
+        .overlay {
+            Rectangle()
+                .strokeBorder(Color.blue, lineWidth: 4)
+        }
+    }
+
+    private func considerCaptionTheaterOffer(model: CaptionTheaterPlaybackShellViewModel) {
+        guard model.presentationProbeFinished else {
+            return
+        }
+        guard !captionTheaterOfferResolvedForSession else {
+            return
+        }
+
+        guard model.qualifiesForCaptionTheaterOffer else {
+            CaptionTheaterPlaybackLogger.playbackFlow(
+                "Caption Theater offer suppressed (local clip / non-offer heuristic) remote=\(model.playbackUsesRemoteURL) ar=\(model.pictureAspectRatioWidthOverHeight ?? -1)"
+            )
+            model.captionTheaterOptInAccepted = false
+            model.captionTheaterTopPinnedLayoutEnabled = false
+            captionTheaterOfferResolvedForSession = true
+            return
+        }
+
+        CaptionTheaterPlaybackLogger.playbackFlow(
+            "Presenting Caption Theater offer remote=\(model.playbackUsesRemoteURL) aspectUltraWide=\(model.isUltraWideEncodedPicture) ar=\(model.pictureAspectRatioWidthOverHeight ?? -1)"
+        )
+        showCaptionTheaterOfferAlert = true
+    }
+
     @ViewBuilder
-    private func debugHudOverlay(model: CaptionTheaterPlaybackShellViewModel) -> some View {
+    private func debugHudOverlay(model: CaptionTheaterPlaybackShellViewModel, containerSize: CGSize) -> some View {
         if playbackDebugHUD {
             let inspection = model.eligibilityInspection()
             VStack(alignment: .leading, spacing: 4) {
@@ -213,7 +269,7 @@ struct tvOSPlaybackShellView: View {
             .background(Color.black.opacity(0.55))
             .foregroundStyle(.white)
             .clipShape(RoundedRectangle(cornerRadius: 8))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+            .frame(width: containerSize.width, height: containerSize.height, alignment: .topTrailing)
             .padding(16)
         }
     }

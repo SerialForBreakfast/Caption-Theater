@@ -7,51 +7,27 @@
 
 import SwiftUI
 
-/// Primary shell: playback showcase plus engineering-only debug tooling.
+/// Root scene: fullscreen playback only (engineering HUD via `CaptionTheater.playbackDebugHUD` User Defaults).
+///
+/// The eligibility inspector lives in ``CaptionTheaterDebugDecisionInspectorView`` for future reattachment;
+/// demo media selection uses `CaptionTheater.playbackDemoSource` (same keys as the former Debug tab).
 struct ContentView: View {
 
-    /// Persisted demo media choice so engineers land on the ultra-wide stream after relaunch (network permitting).
+    /// Persisted demo media choice; changing it recreates the shell via `.id(...)`.
     @AppStorage("CaptionTheater.playbackDemoSource")
     private var playbackDemoSourceRawValue = CaptionTheaterPlaybackDemoSource.muxTearsOfSteelHLS.rawValue
-
-    private enum Tab: Hashable {
-        case home
-        case debug
-    }
-
-    @State private var selectedTab: Tab = .home
-    /// Cleared when leaving Debug so returning to the tab always lands on the baseline scenario list.
-    @State private var debugNavigationPath: [String] = []
 
     private var playbackDemoSource: CaptionTheaterPlaybackDemoSource {
         CaptionTheaterPlaybackDemoSource(rawValue: playbackDemoSourceRawValue) ?? .muxTearsOfSteelHLS
     }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            NavigationStack {
-                tvOSPlaybackShellView(
-                    demoSource: playbackDemoSource,
-                    playbackURL: playbackDemoSource.playbackURL()
-                )
-                /// Forces shell `@State` (including the ``AVPlayer``) to reset when switching bundled vs. networked demos.
-                .id(playbackDemoSourceRawValue)
-            }
-            .tabItem {
-                Label("Playback", systemImage: "play.rectangle.fill")
-            }
-            .tag(Tab.home)
-
-            CaptionTheaterDebugDecisionInspectorView(navigationPath: $debugNavigationPath)
-                .tabItem {
-                    Label("Debug", systemImage: "ladybug.fill")
-                }
-                .tag(Tab.debug)
-        }
-        .onChange(of: selectedTab) { _, newValue in
-            if newValue != .debug {
-                debugNavigationPath.removeAll()
-            }
+        NavigationStack {
+            tvOSPlaybackShellView(
+                demoSource: playbackDemoSource,
+                playbackURL: playbackDemoSource.playbackURL()
+            )
+            .id(playbackDemoSourceRawValue)
         }
     }
 }

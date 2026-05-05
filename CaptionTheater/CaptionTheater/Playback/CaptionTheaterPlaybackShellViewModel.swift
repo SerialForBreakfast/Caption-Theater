@@ -10,6 +10,19 @@ import CoreGraphics
 import Foundation
 import Observation
 
+extension URL {
+
+    /// Whether playback targets a remote HTTP(S) resource (typical HLS master playlist).
+    ///
+    /// Local file and bundle URLs return `false`; used only for Caption Theater **prompt heuristics**, not security.
+    fileprivate var isRemoteHTTPPlaybackURL: Bool {
+        guard let scheme = scheme?.lowercased() else {
+            return false
+        }
+        return scheme == "https" || scheme == "http"
+    }
+}
+
 /// Playback shell state bridge between `AVPlayer` timers and SwiftUI on the main actor.
 ///
 /// **Concurrency:** All methods and properties are main-actor isolated; UI reads timers and issues
@@ -29,6 +42,12 @@ final class CaptionTheaterPlaybackShellViewModel {
     /// Sample clip player for fixture playback.
     let player: AVPlayer
 
+    /// True when the opened URL is HTTP(S), i.e. not a local file URL from the bundle.
+    ///
+    /// Remote manifests often declare cinematic variants while the **initial** video track still reports a 16∶9
+    /// pixel raster (letterboxed scope inside the frame). The playback shell uses this flag to still offer Caption Theater.
+    let playbackUsesRemoteURL: Bool
+
     private var timeObserverToken: Any?
 
     /// Key-path observations for player/item lifecycle logging.
@@ -36,6 +55,15 @@ final class CaptionTheaterPlaybackShellViewModel {
 
     /// Observation for the active item’s ``AVPlayerItem/status`` (replaced when ``AVPlayer/currentItem`` changes).
     private var itemStatusObservation: NSKeyValueObservation?
+
+    /// Coalesces repetitive ``layoutGeometry(container:)`` diagnostic logs across SwiftUI layout passes.
+    private var lastLayoutGeometryDiagnosticToken: String?
+
+    /// Logs once when Caption Theater layout uses cinematic fallback because pixels are still unknown.
+    private var didLogNilReportedAspectFallback = false
+
+    /// Last widened reported aspect logged (avoids spamming ``layoutAspectRatioWidthOverHeight()`` every layout tick).
+    private var lastLoggedRemoteWidenReportedAspect: Double?
 
     /// Parsed duration in seconds; zero until loading finishes or if unknown.
     private(set) var durationSeconds: Double = 0
@@ -70,12 +98,23 @@ final class CaptionTheaterPlaybackShellViewModel {
     /// Human-readable failure when ``AVPlayerItem`` enters the failed state (for fullscreen error UI).
     private(set) var playbackFailureDescription: String?
 
+    /// Increments whenever presentation-aspect probing completes so SwiftUI can present prompts reliably (`@Observable` / `onChange` timing).
+    private(set) var presentationAspectGeneration: Int = 0
+
+    /// `true` after ``loadPresentationAspect(for:)`` finishes (success or failure).
+    private(set) var presentationProbeFinished: Bool = false
+
     /// `true` once encoded picture aspect exceeds ``CaptionTheaterPlaybackUILayout/ultrawideAspectRatioThresholdWidthOverHeight``.
     var isUltraWideEncodedPicture: Bool {
         guard let ar = pictureAspectRatioWidthOverHeight else {
             return false
         }
         return ar > Double(CaptionTheaterPlaybackUILayout.ultrawideAspectRatioThresholdWidthOverHeight)
+    }
+
+    /// Whether the shell should offer Caption Theater (ultra-wide pixels **or** remote stream heuristic).
+    var qualifiesForCaptionTheaterOffer: Bool {
+        isUltraWideEncodedPicture || playbackUsesRemoteURL
     }
 
     /// Human-readable picture aspect for debug HUD (nil while loading).
@@ -87,7 +126,10 @@ final class CaptionTheaterPlaybackShellViewModel {
     }
 
     init(url: URL) {
-        CaptionTheaterPlaybackLogger.playbackFlow("CaptionTheaterPlaybackShellViewModel init url=\(url.absoluteString)")
+        playbackUsesRemoteURL = url.isRemoteHTTPPlaybackURL
+        CaptionTheaterPlaybackLogger.playbackFlow(
+            "CaptionTheaterPlaybackShellViewModel init url=\(url.absoluteString) remote=\(playbackUsesRemoteURL)"
+        )
         player = AVPlayer(url: url)
         player.audiovisualBackgroundPlaybackPolicy = .automatic
 
@@ -107,7 +149,9 @@ final class CaptionTheaterPlaybackShellViewModel {
 
         Task { await loadDuration(for: url) }
         Task { await loadPresentationAspect(for: url) }
-        Task { await preferEnglishLegibleMediaSelectionWhenReady() }
+        CaptionTheaterPlaybackLogger.playbackFlow(
+            "Skipping automatic native legible-track selection so captions can move to the Caption Theater band (Phase 4)."
+        )
         applyScenarioSync(scenarioKind)
     }
 
@@ -122,8 +166,7 @@ final class CaptionTheaterPlaybackShellViewModel {
             }
         })
 
-        keyPathObservations.append(player.observe(\.reasonForWaitingToPlay, options: [.new]) { [weak self] playerItem, _ in
-            guard let self else { return }
+        keyPathObservations.append(player.observe(\.reasonForWaitingToPlay, options: [.new]) { playerItem, _ in
             Task { @MainActor in
                 CaptionTheaterPlaybackLogger.playbackDebug(
                     "AVPlayer.reasonForWaitingToPlay=\(String(describing: playerItem.reasonForWaitingToPlay))"
@@ -180,6 +223,7 @@ final class CaptionTheaterPlaybackShellViewModel {
                     )
                     CaptionTheaterPlaybackLogger.playbackFlow("Issuing player.play() from readyToPlay observer")
                     self.player.play()
+                    Task { await self.reloadPresentationAspectFromCurrentItemAsset(reason: "readyToPlay") }
                 case .failed:
                     let desc = observedItem.error?.localizedDescription ?? "nil"
                     CaptionTheaterPlaybackLogger.playbackFailure("AVPlayerItem.status=failed error=\(desc)")
@@ -191,53 +235,68 @@ final class CaptionTheaterPlaybackShellViewModel {
         }
     }
 
-    /// Polls until ``AVPlayer/currentItem`` exists, then selects English legible media when offered (demo helper).
+    /// Aspect ratio fed into ``CaptionTheaterLayoutEngine`` (may widen remote 16∶9 rasters after Caption Theater opt-in).
     ///
-    /// **Concurrency:** Runs as unstructured `Task` from the initializer on the main actor; uses short sleeps between polls and never blocks the UI thread for asset loads beyond `async` hops.
-    private func preferEnglishLegibleMediaSelectionWhenReady() async {
-        for attempt in 0 ..< 80 {
-            if let item = player.currentItem {
-                CaptionTheaterPlaybackLogger.playbackFlow("Legible selection: found currentItem after poll attempt=\(attempt)")
-                await applyPreferredEnglishLegibleMediaSelectionIfPossible(to: item)
-                return
+    /// When **reported** pixels are still unknown (common right after opening an HLS master URL), remote Caption Theater sessions use the cinematic fallback so stacked layout can render immediately after opt-in.
+    func layoutAspectRatioWidthOverHeight() -> Double? {
+        let threshold = Double(CaptionTheaterPlaybackUILayout.ultrawideAspectRatioThresholdWidthOverHeight)
+        let fallback = Double(CaptionTheaterPlaybackUILayout.remoteScopeFallbackAspectRatioWidthOverHeight)
+
+        guard let reported = pictureAspectRatioWidthOverHeight else {
+            guard playbackUsesRemoteURL,
+                  captionTheaterOptInAccepted,
+                  captionTheaterTopPinnedLayoutEnabled
+            else {
+                return nil
             }
-            try? await Task.sleep(nanoseconds: 50_000_000)
+            if !didLogNilReportedAspectFallback {
+                didLogNilReportedAspectFallback = true
+                CaptionTheaterPlaybackLogger.playbackFlow(
+                    "layoutAspectRatio: reported AR still nil (typical before HLS variant binds); remote Caption Theater using fallback=\(fallback)"
+                )
+            }
+            return fallback
         }
-        CaptionTheaterPlaybackLogger.playbackFailure("Legible selection: timed out waiting for currentItem")
+
+        guard playbackUsesRemoteURL,
+              captionTheaterOptInAccepted,
+              captionTheaterTopPinnedLayoutEnabled,
+              reported <= threshold
+        else {
+            return reported
+        }
+
+        if lastLoggedRemoteWidenReportedAspect != reported {
+            lastLoggedRemoteWidenReportedAspect = reported
+            CaptionTheaterPlaybackLogger.playbackFlow(
+                "layoutAspectRatio: remote cinematic widen reported=\(reported) using=\(fallback)"
+            )
+        }
+        return fallback
     }
 
-    /// Best-effort English subtitle selection for public demo streams (Mux *Tears of Steel*, etc.).
-    private func applyPreferredEnglishLegibleMediaSelectionIfPossible(to item: AVPlayerItem) async {
-        do {
-            let asset = item.asset
-            guard let group = try await asset.loadMediaSelectionGroup(for: .legible) else {
-                CaptionTheaterPlaybackLogger.playbackFlow("Legible selection: no legible AVMediaSelectionGroup on asset")
-                return
-            }
-
-            let preferred =
-                group.options.first(where: { ($0.extendedLanguageTag ?? "").hasPrefix("en") })
-                    ?? group.options.first(where: { $0.displayName.localizedCaseInsensitiveContains("english") })
-                    ?? group.defaultOption
-                    ?? group.options.first
-
-            guard let preferred else {
-                CaptionTheaterPlaybackLogger.playbackFlow("Legible selection: empty option list")
-                return
-            }
-
-            item.select(preferred, in: group)
-            CaptionTheaterPlaybackLogger.playbackFlow(
-                "Legible selection: selected option displayName=\(preferred.displayName) tag=\(preferred.extendedLanguageTag ?? "nil")"
-            )
-        } catch {
-            CaptionTheaterPlaybackLogger.playbackFailure("Legible selection: loadMediaSelectionGroup failed error=\(error.localizedDescription)")
-        }
+    /// One-line diagnostics after alert choices or probe retries (container-independent).
+    func logCaptionTheaterLayoutPipeline(reason: String) {
+        let layoutAR = layoutAspectRatioWidthOverHeight().map { String(format: "%.4f", $0) } ?? "nil"
+        let reported = pictureAspectRatioWidthOverHeight.map { String(format: "%.4f", $0) } ?? "nil"
+        CaptionTheaterPlaybackLogger.playbackFlow(
+            "\(reason) remote=\(playbackUsesRemoteURL) optIn=\(captionTheaterOptInAccepted) topPin=\(captionTheaterTopPinnedLayoutEnabled) reportedAR=\(reported) layoutAR=\(layoutAR)"
+        )
     }
 
     /// Computes layout rects for the video stage; returns `nil` until presentation aspect loads or inputs are invalid.
     func layoutGeometry(containerSize: CGSize) -> CaptionTheaterLayoutGeometry? {
-        guard let aspect = pictureAspectRatioWidthOverHeight else {
+        let mode: CaptionTheaterLayoutPresentationMode =
+            captionTheaterOptInAccepted && captionTheaterTopPinnedLayoutEnabled
+                ? .captionTheaterAspectFitTopPinned
+                : .nativeAspectFitCentered
+
+        guard let aspect = layoutAspectRatioWidthOverHeight() else {
+            logLayoutGeometryBlocked(
+                containerSize: containerSize,
+                mode: mode,
+                detail: "layoutAspectRatioWidthOverHeight returned nil"
+            )
             return nil
         }
 
@@ -246,12 +305,100 @@ final class CaptionTheaterPlaybackShellViewModel {
             pictureAspectRatioWidthOverHeight: aspect
         )
 
-        let mode: CaptionTheaterLayoutPresentationMode =
-            captionTheaterOptInAccepted && captionTheaterTopPinnedLayoutEnabled
-                ? .captionTheaterAspectFitTopPinned
-                : .nativeAspectFitCentered
+        guard let geometry = CaptionTheaterLayoutEngine().geometry(for: inputs, mode: mode) else {
+            logLayoutGeometryBlocked(
+                containerSize: containerSize,
+                mode: mode,
+                detail: "CaptionTheaterLayoutEngine returned nil (invalid inputs)"
+            )
+            return nil
+        }
 
-        return CaptionTheaterLayoutEngine().geometry(for: inputs, mode: mode)
+        logLayoutGeometryComputed(containerSize: containerSize, mode: mode, aspect: aspect, geometry: geometry)
+        return geometry
+    }
+
+    private func logLayoutGeometryBlocked(containerSize: CGSize, mode: CaptionTheaterLayoutPresentationMode, detail: String) {
+        let reported = pictureAspectRatioWidthOverHeight.map { String(format: "%.4f", $0) } ?? "nil"
+        let layoutAR = layoutAspectRatioWidthOverHeight().map { String(format: "%.4f", $0) } ?? "nil"
+        let token =
+            "blocked|\(detail)|\(mode)|\(Int(containerSize.width))x\(Int(containerSize.height))|\(reported)|\(layoutAR)|\(captionTheaterOptInAccepted)|\(captionTheaterTopPinnedLayoutEnabled)"
+        guard token != lastLayoutGeometryDiagnosticToken else {
+            return
+        }
+        lastLayoutGeometryDiagnosticToken = token
+        CaptionTheaterPlaybackLogger.playbackFlow(
+            "layoutGeometry BLOCKED: \(detail) container=\(Int(containerSize.width))x\(Int(containerSize.height)) mode=\(mode) reportedAR=\(reported) layoutAR=\(layoutAR) ctOptIn=\(captionTheaterOptInAccepted) topPin=\(captionTheaterTopPinnedLayoutEnabled)"
+        )
+    }
+
+    private func logLayoutGeometryComputed(
+        containerSize: CGSize,
+        mode: CaptionTheaterLayoutPresentationMode,
+        aspect: Double,
+        geometry: CaptionTheaterLayoutGeometry
+    ) {
+        let pic = geometry.activePictureRect
+        let cap = geometry.captionReadingRect
+        let token =
+            "ok|\(mode)|\(Int(containerSize.width))x\(Int(containerSize.height))|\(String(format: "%.4f", aspect))|\(Int(pic.width))x\(Int(pic.height))|\(Int(cap.height))"
+        guard token != lastLayoutGeometryDiagnosticToken else {
+            return
+        }
+        lastLayoutGeometryDiagnosticToken = token
+        CaptionTheaterPlaybackLogger.playbackFlow(
+            "layoutGeometry OK: mode=\(mode) container=\(Int(containerSize.width))x\(Int(containerSize.height)) aspect=\(String(format: "%.4f", aspect)) pictureRect=\(Int(pic.width))x\(Int(pic.height)) origin=\(Int(pic.origin.x)),\(Int(pic.origin.y)) captionBandH=\(Int(cap.height))"
+        )
+    }
+
+    /// Reloads natural/display dimensions from the **player-bound** asset after the HLS stack attaches variant tracks.
+    ///
+    /// **Concurrency:** Called from the main actor via unstructured `Task` when ``AVPlayerItem/status`` becomes ``readyToPlay``; performs async asset/track loads off the synchronous KVO callback path.
+    private func reloadPresentationAspectFromCurrentItemAsset(reason: String) async {
+        guard let asset = player.currentItem?.asset else {
+            CaptionTheaterPlaybackLogger.playbackFlow("reloadPresentationAspect(\(reason)): no player.currentItem.asset")
+            return
+        }
+
+        do {
+            let tracks = try await asset.loadTracks(withMediaType: .video)
+            guard let track = tracks.first else {
+                CaptionTheaterPlaybackLogger.playbackFlow(
+                    "reloadPresentationAspect(\(reason)): still zero video tracks (HLS may still be negotiating)"
+                )
+                return
+            }
+
+            let naturalSize = try await track.load(.naturalSize)
+            let transform = try await track.load(.preferredTransform)
+            let displaySize = naturalSize.applying(transform)
+            let width = abs(Double(displaySize.width))
+            let height = abs(Double(displaySize.height))
+            guard height > 0 else {
+                CaptionTheaterPlaybackLogger.playbackFailure(
+                    "reloadPresentationAspect(\(reason)): zero height after transform natural=\(naturalSize)"
+                )
+                return
+            }
+
+            let computed = width / height
+            if pictureAspectRatioWidthOverHeight != computed {
+                pictureAspectRatioWidthOverHeight = computed
+                presentationAspectGeneration += 1
+                didLogNilReportedAspectFallback = false
+                CaptionTheaterPlaybackLogger.playbackFlow(
+                    "reloadPresentationAspect(\(reason)): displayAR=\(computed) natural=\(naturalSize.width)x\(naturalSize.height) ultraWide=\(isUltraWideEncodedPicture) generation=\(presentationAspectGeneration)"
+                )
+            } else {
+                CaptionTheaterPlaybackLogger.playbackDebug(
+                    "reloadPresentationAspect(\(reason)): unchanged AR=\(computed)"
+                )
+            }
+        } catch {
+            CaptionTheaterPlaybackLogger.playbackFailure(
+                "reloadPresentationAspect(\(reason)) failed error=\(error.localizedDescription)"
+            )
+        }
     }
 
     /// Loads bundled fixtures for `kind`, clearing packs when entering manual legacy mode.
@@ -382,12 +529,22 @@ final class CaptionTheaterPlaybackShellViewModel {
     ///
     /// **Concurrency:** Runs asynchronously off the hot path; updates main-actor state when complete.
     private func loadPresentationAspect(for url: URL) async {
+        defer {
+            presentationProbeFinished = true
+            presentationAspectGeneration += 1
+            CaptionTheaterPlaybackLogger.playbackFlow(
+                "Presentation probe finished generation=\(presentationAspectGeneration) remote=\(playbackUsesRemoteURL) ar=\(pictureAspectRatioWidthOverHeight.map { String(format: "%.4f", $0) } ?? "nil") offerEligible=\(qualifiesForCaptionTheaterOffer)"
+            )
+        }
+
         let asset = AVURLAsset(url: url)
         do {
             let tracks = try await asset.loadTracks(withMediaType: .video)
             guard let track = tracks.first else {
                 pictureAspectRatioWidthOverHeight = nil
-                CaptionTheaterPlaybackLogger.playbackFailure("loadPresentationAspect: no video tracks on asset")
+                CaptionTheaterPlaybackLogger.playbackFlow(
+                    "loadPresentationAspect: zero video tracks on master AVURLAsset yet (normal for HLS until AVPlayer binds a variant); will retry from currentItem.asset at readyToPlay"
+                )
                 return
             }
 

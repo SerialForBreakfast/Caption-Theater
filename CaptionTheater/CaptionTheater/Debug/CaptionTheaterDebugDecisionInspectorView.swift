@@ -69,7 +69,7 @@ struct CaptionTheaterDebugDecisionInspectorView: View {
                     }
                     Toggle("Playback debug HUD", isOn: $playbackDebugHUD)
                     Text(
-                        "Changing demo media recreates the Playback tab player when you return to that tab (bundle ID scoped)."
+                        "These keys mirror the former tab chrome: `CaptionTheater.playbackDemoSource`, `CaptionTheater.playbackDebugHUD`. Relaunch after editing User Defaults (or temporarily embed this view in `ContentView`)."
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)

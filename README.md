@@ -2,17 +2,21 @@
 
 # Caption Theater
 
-Caption Theater is a persistent timed-text readability mode for Apple-platform video playback.
+Caption Theater transforms the unused space around cinema-aspect-ratio video into a premium, unobstructed reading area for captions.
 
-It gives viewers more time, space, and context for subtitle and caption text that has already appeared. Instead of previewing future dialogue or simply moving widescreen video, Caption Theater preserves recent caption context in verified safe screen space so viewers can finish reading dense, translated, SDH, or fast-moving text without rewinding or losing picture context.
+Many ultra-widescreen films and shows are presented on 16:9 screens with black letterbox space above and below the active picture. Caption Theater uses that otherwise empty space to give subtitles and captions more room, more dwell time, and more context without covering the image. Instead of forcing viewers to choose between watching the scene and racing to read dense text, the active picture can shift into a theater-style layout while recent caption cues persist in the open lower region.
 
-The project explores how to build this as a modular playback add-on for native iOS, tvOS, and macOS players using AVFoundation, AVKit-adjacent integrations, HLS metadata, timed-text analysis, and conservative runtime guardrails.
+The result is a cleaner caption experience for fast dialogue, translated subtitles, SDH cues, and living-room viewing: captions become easier to scan, less likely to obstruct the content, and less likely to force viewers into rewind-and-replay loops.
+
+The project explores how to build this as a modular playback add-on for native iOS, tvOS, and macOS players using AVFoundation, AVKit-adjacent integrations, HLS metadata, timed-text analysis, active-picture layout, and runtime safety guardrails.
 
 ---
 
 ## Product Thesis
 
-> Caption Theater helps viewers keep up with captions by preserving recent subtitle context in verified safe screen space, while maintaining native playback whenever visual safety, subtitle semantics, ad state, or platform compatibility is uncertain.
+> Caption Theater turns unused cinema letterbox space into a dedicated caption reading area, giving viewers longer-lasting subtitle context without covering the active picture.
+
+When ultra-widescreen content leaves empty space on a 16:9 display, Caption Theater can make that space useful. The feature preserves the cinematic image, moves eligible content into a deliberate theater-style layout, and gives captions a larger region where recent cues can remain visible long enough to be read comfortably.
 
 The feature is designed around three product values:
 
@@ -38,7 +42,7 @@ Ads continue to play normally in fullscreen/native presentation. Caption Theater
 
 ## Why This Matters
 
-Native subtitles often disappear as soon as their authored cue timing ends. That behavior is correct for synchronization, but it can be hard for viewers when captions are dense, translated, or visually competing with the picture.
+Native subtitles often disappear as soon as their authored cue timing ends, and they commonly sit on top of the picture. That behavior is correct for synchronization, but it can be hard for viewers when captions are dense, translated, fast-moving, or visually competing with important content.
 
 Caption Theater is intended to help viewers who:
 
@@ -49,7 +53,7 @@ Caption Theater is intended to help viewers who:
 - need more time to scan short-lived captions;
 - want to avoid repeated rewinds just to recover recently missed subtitle context.
 
-The goal is not to turn subtitles into a transcript wall. The goal is to preserve a small, bounded window of already-presented timed text when there is safe visual space to do so.
+The goal is not to turn subtitles into a transcript wall. The goal is to use otherwise empty cinema-layout space to preserve a small, bounded window of already-presented timed text, giving viewers a cleaner and more forgiving way to read captions while the picture remains unobstructed.
 
 ---
 

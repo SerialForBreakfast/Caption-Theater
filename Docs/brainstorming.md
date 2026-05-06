@@ -1907,6 +1907,252 @@ Notes:
 
 ---
 
+
+### 33I. Stream Intelligence and Timed Metadata Panel
+
+Use player, manifest, and timed metadata to show live information that changes as playback changes.
+
+Value:
+
+- Helps viewers understand what is happening in the stream without opening debug tools.
+- Helps QA and power users understand ad state, stream quality, captions, audio tracks, and metadata changes.
+- Can power useful viewer features such as ad break countdowns, “good time to pause,” quality-change explanations, and live/DVR status.
+
+Feasibility: High for metadata already exposed by the player; medium for ad/DAI signals depending on integration.  
+Distraction risk: Medium.  
+MVP fit: Projection Booth / debug first, then selective user-facing features.
+
+Potential data sources:
+
+- HLS master playlist and media playlists
+- `EXT-X-DATERANGE`
+- `EXT-X-PROGRAM-DATE-TIME`
+- `EXT-X-DISCONTINUITY`
+- `EXT-X-SESSION-DATA`
+- ID3 timed metadata
+- `AVPlayerItemMetadataOutput`
+- `AVPlayerItemMetadataCollector`
+- `AVPlayerItemAccessLogEvent`
+- media selection groups for audio, subtitles, captions, and audio description
+- ad SDK callbacks
+- server-side ad insertion markers
+- player item status, buffer state, live edge, and DVR window
+
+Possible user-facing states:
+
+```text
+Ad break starts soon: ~2:00
+```
+
+```text
+Ad break: 1:43 remaining
+```
+
+```text
+Quality changed: 4K → 1080p due to bandwidth
+```
+
+```text
+Live delay: 18 seconds behind live
+```
+
+```text
+Captions: English SDH • WebVTT
+```
+
+Notes:
+
+- Some metadata is declared by the stream and can be relatively trustworthy; some is inferred and should be labeled as such.
+- User-facing features should prefer stable events over noisy debug details.
+- Ads remain fullscreen/native; this panel should not alter ad playback.
+- For normal viewers, most stream intelligence should be hidden until useful.
+
+---
+
+### 33J. Ad Break Forewarning / “Pee Break” Helper
+
+Use ad markers, interstitial metadata, or ad SDK state to tell viewers when a known ad break is starting, ending, or long enough for a quick break.
+
+Value:
+
+- Solves a real viewer problem: knowing whether there is enough time to leave the room.
+- Makes ad breaks feel less hostile by giving viewers clearer expectations.
+- Helps families, accessibility users, and living-room viewers plan around interruptions.
+
+Feasibility: Medium when ad duration is known; low when ad pods are dynamic, personalized, or unknown until playback.  
+Distraction risk: Low during ads, medium before ads.  
+MVP fit: Future ad-aware user utility.
+
+Possible UI:
+
+```text
+Ad break: about 2 minutes
+```
+
+```text
+2 ads remaining • 1:35 total
+```
+
+```text
+Good time for a quick break
+```
+
+Data sources:
+
+- `EXT-X-DATERANGE` with planned duration
+- SCTE-35-derived ad markers
+- HLS interstitial metadata
+- ad SDK pod metadata
+- server-side ad insertion metadata
+
+Guardrails:
+
+- Do not promise a precise return time unless the ad system provides it.
+- Use approximate language when ad pod length is dynamic.
+- Do not encourage skipping or avoiding contractual ad playback.
+- Keep the UI useful, not snarky, in production copy.
+
+---
+
+### 33K. Live / DVR / Event State Awareness
+
+Use live-stream metadata to show whether the viewer is live, behind live, inside a DVR window, or approaching a program/ad/event boundary.
+
+Value:
+
+- Helps live sports, news, award shows, premieres, and simulcasts.
+- Explains why scrubbing, captions, or ad behavior changes in live playback.
+- Helps viewers return to live without confusion.
+
+Feasibility: High for player state and live/DVR windows; medium for program boundary metadata.  
+Distraction risk: Low to medium.  
+MVP fit: Future live-playback feature.
+
+Possible UI:
+
+```text
+2:14 behind live
+```
+
+```text
+DVR window: 37 minutes available
+```
+
+```text
+Program resumes after this break
+```
+
+Notes:
+
+- Useful for live content where timeline behavior changes.
+- Should be transient unless the user opens a live controls panel.
+- Can pair with ad break forewarning and accessibility event timelines.
+
+---
+
+### 33L. Product Placement and Brand Recognition Layer
+
+Detect or display brands, logos, products, storefronts, clothing, vehicles, food, or props that appear in the current scene.
+
+Value:
+
+- Helps viewers identify products they are curious about.
+- Could support shopping, fandom, recipes, soundtrack-like discovery, and marketing partnerships.
+- Can be useful for QA/ad measurement and brand-safety review.
+- Could combine visual logo detection, captions, audio mentions, and curated scene metadata.
+
+Feasibility: Medium with model inference; high only with curated product-placement metadata.  
+Distraction risk: High.  
+MVP fit: Separate commerce / discovery mode, not Caption Theater Core.
+
+Possible UI:
+
+```text
+Detected brand: Acme Records sign in background
+```
+
+```text
+Product card available on pause
+```
+
+Multi-signal detection:
+
+- visual logo detection
+- object detection
+- OCR for signs or packaging
+- caption mentions
+- audio speech recognition or transcript mentions
+- music metadata
+- curated product-placement metadata
+- ad/brand-safety metadata
+
+Product uses:
+
+- pause-only “what is that?” cards
+- shoppable wardrobe/props cards
+- soundtrack and merch links
+- brand-safety review tools
+- marketing attribution and campaign measurement
+- official partner cards during event mode
+
+Guardrails:
+
+- Do not show brand/product cards by default during normal playback.
+- Clearly distinguish detected, inferred, sponsored, and officially tagged products.
+- Avoid turning accessibility space into commerce inventory.
+- Brand/logo inference can be wrong and should be confidence-gated.
+- Product placement may involve legal, contractual, union, talent, music, and regional restrictions.
+- Best as pause-only, post-watch, or explicit discovery mode.
+
+---
+
+### 33M. Stream Quality Change Explainer
+
+Use access-log and playback state changes to explain visible quality problems.
+
+Value:
+
+- Helps users understand why video became soft, buffered, changed HDR state, or dropped resolution.
+- Helps QA reproduce streaming issues.
+- Gives power users visibility without opening a debug overlay.
+
+Feasibility: High for access-log and player state; medium for precise root-cause explanation.  
+Distraction risk: Low if transient and only shown when relevant.  
+MVP fit: Projection Booth / support mode.
+
+Possible UI:
+
+```text
+Quality lowered because bandwidth dropped
+```
+
+```text
+Buffering: network throughput below selected bitrate
+```
+
+```text
+Playing highest available variant
+```
+
+Data sources:
+
+- observed bitrate
+- indicated bitrate
+- transfer duration
+- stall count
+- startup time
+- current variant resolution
+- dropped-frame counters where available
+- buffer empty / likely-to-keep-up state
+
+Notes:
+
+- Useful for customer support and QA.
+- Should be optional for normal users.
+- Avoid showing noisy transient bitrate changes unless they affect visible playback.
+
+---
+
 ### 34. Social Watch Feed
 
 Use the extra region for an opt-in social feed tied to the current title, scene, or watch party.
@@ -2298,6 +2544,11 @@ Commerce cards belong in Pause / Post-Watch / Event Mode, not Caption Theater Co
 | Music genre / mood detection | Medium | Medium | Medium | Future audio-context mode |
 | QR codes and deep-link cards | Medium-High | High-Medium | Medium-High | Pause/post-watch mode |
 | Expanded playback controls | High | High | Low-Medium | Strong companion feature |
+| Stream intelligence and timed metadata panel | High for QA/power users | High-Medium | Medium | Projection Booth / debug |
+| Ad break forewarning / pee break helper | High for viewers | Medium | Low-Medium | Future ad-aware utility |
+| Live / DVR / event state awareness | Medium-High | High-Medium | Low-Medium | Future live feature |
+| Product placement and brand recognition layer | High business value | Medium | High | Separate discovery/commerce mode |
+| Stream quality change explainer | High for support/power users | High | Low | Projection Booth / support |
 | Shareable moment cards | Medium-High | Medium | Low-Medium | Future share feature |
 | Personal watch stats and insights | Medium-High | High-Medium | Low | Post-watch feature |
 | Social spoiler shield | High for social users | Medium-Low | Low-Medium | Future community infrastructure |
@@ -2409,7 +2660,12 @@ Useful for developers and advanced users, but not default UX.
 - audio track VU meters
 - 5.1 / 7.1 channel activity monitor
 - audio visualizer modes
-- rhythm / beat detector
+ - rhythm / beat detector
+ - stream intelligence / timed metadata inspector
+ - ID3 timed metadata monitor
+ - HLS date-range / interstitial monitor
+ - stream quality change explainer
+ - live edge / DVR window inspector
 
 ### Bucket 5: Separate Product Modes
 
@@ -2430,6 +2686,10 @@ These are interesting but should not be mixed into the default Caption Theater e
  - QR/deep-link companion cards
  - audio visualization mode
  - Projection Booth audio monitor
+ - ad break forewarning / pee break helper
+ - product placement discovery mode
+ - brand recognition cards
+ - live event state panel
 
 ### Bucket 6: Social, Sharing, and Commerce Integrations
 
@@ -2445,7 +2705,10 @@ These can add value, but should be opt-in, spoiler-safe, and separate from the d
 - timestamped community reactions
 - private watch-party chat
 - pause-only sponsor cards
-- post-watch commerce links
+ - post-watch commerce links
+ - product placement cards
+ - brand logo recognition annotations
+ - official partner product links
 
 ---
 
@@ -2489,8 +2752,60 @@ The most exciting future ideas are:
 18. Dynamic audio VU / surround monitor.
 19. Scene intensity meter.
 20. QR/deep-link companion cards.
+21. Ad break forewarning / pee break helper.
+22. Stream intelligence and timed metadata panel.
+23. Product placement and brand recognition layer.
+24. Stream quality change explainer.
 
 These could be powerful, but they require stronger metadata, trust, and UX guardrails.
+## Stream Intelligence Guidance
+
+HLS and AVFoundation can expose useful metadata that changes over time. The best product experiences translate that data into viewer-facing utility instead of raw debug noise.
+
+Useful stream signals:
+
+- timed metadata groups
+- ID3 metadata
+- HLS date ranges
+- HLS interstitial metadata
+- SCTE-35-derived ad markers
+- discontinuities
+- program date/time mapping
+- media selection changes
+- audio/subtitle/caption track changes
+- access-log events
+- observed bitrate and selected bitrate
+- buffer and stall state
+- live edge and DVR window state
+- ad SDK and SSAI/DAI callbacks
+
+Prefer stream-intelligence features that:
+
+- explain state changes only when useful;
+- distinguish declared metadata from inferred analysis;
+- avoid showing raw identifiers to normal viewers;
+- use approximate language when ad duration or live timing is uncertain;
+- remain hidden during dense captions unless explicitly opened;
+- keep ads fullscreen/native while still explaining ad state when appropriate.
+
+Avoid stream-intelligence features that:
+
+- expose noisy debug data to normal viewers;
+- promise exact ad timing when dynamic ad pods can change;
+- reveal future content or spoil program events;
+- treat inferred brand/logo detection as fact;
+- turn the caption region into an ad inventory surface.
+
+Strong first experiments:
+
+1. Metadata inspector for Projection Booth mode.
+2. Ad break countdown when ad duration is known.
+3. Quality change explainer for visible stream degradations.
+4. Live/DVR state indicator for live streams.
+5. Product-placement discovery only on pause or explicit request.
+
+---
+
 ## Audio Augmentation Guidance
 
 Audio features can be useful when they explain sound in ways captions do not.

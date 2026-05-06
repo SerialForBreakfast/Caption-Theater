@@ -1611,6 +1611,663 @@ Notes:
 
 ---
 
+### 33A. Audio Track VU and Surround Monitor
+
+Use the extra region to show live audio levels for stereo, 5.1, 7.1, or immersive audio layouts.
+
+Value:
+
+- Helps audio-focused viewers understand the mix.
+- Helps QA verify channel activity, loudness, and track selection.
+- Helps users see when dialogue, music, or effects dominate the current moment.
+- Can make 5.1 and surround content feel more tangible without covering the picture.
+
+Feasibility: High for local/test playback where audio samples or level metadata are available; medium to low for protected production playback depending on audio access.  
+Distraction risk: Medium.  
+MVP fit: Debug / Projection Booth mode first.
+
+Possible UI:
+
+```text
+L  ██████
+C  ████████  Dialogue-heavy
+R  █████
+LS ███
+RS ████
+LFE ██
+```
+
+Notes:
+
+- Center-channel activity can be a strong dialogue indicator.
+- LFE spikes can help identify explosions, music drops, and impact moments.
+- Production support may require player/audio-session integration rather than raw PCM access.
+- Best as optional “Projection Booth” or accessibility diagnostic mode.
+
+---
+
+### 33B. Audio Compass / Directionality Indicator
+
+Show a spatial map of where meaningful audio appears to originate: left, right, center, rear, overhead, or moving around the listener.
+
+Value:
+
+- Helps Deaf and hard-of-hearing viewers understand directional sound cues.
+- Helps users with single-sided hearing loss or spatial audio processing difficulty.
+- Helps film/audio nerds appreciate surround mixing.
+- Helps identify off-screen action direction without relying only on sound.
+
+Feasibility: Medium if channel activity is accessible; low to medium for object-based spatial audio without metadata access.  
+Distraction risk: Low to medium when subtle.  
+MVP fit: Strong future accessibility / Projection Booth feature.
+
+Possible UI:
+
+```text
+        Front
+    L     C     R
+
+    LS         RS
+        Rear
+```
+
+Example states:
+
+```text
+Audio direction: rear left footsteps
+```
+
+```text
+Audio movement: left → center → right
+```
+
+Notes:
+
+- Should avoid overclaiming precise position if only channel amplitude is known.
+- Could map 5.1 channels into simple directional indicators.
+- Could pair with SDH cues like `[footsteps approaching from behind]` when available.
+- This may be more accessible than a decorative audio visualizer.
+
+---
+
+### 33C. Rhythm and Beat Detection
+
+Detect musical rhythm, beat intensity, tempo changes, or rhythmic editing patterns.
+
+Value:
+
+- Helps viewers perceive musical structure visually.
+- Helps Deaf and hard-of-hearing viewers experience some rhythm information.
+- Helps film-analysis users notice how music and editing work together.
+- Could make musicals, concerts, action sequences, and montage scenes more understandable.
+
+Feasibility: Medium for local/test audio; medium to low for protected production playback.  
+Distraction risk: Medium to high if animated aggressively.  
+MVP fit: Research / opt-in audio visualization mode.
+
+Possible UI:
+
+```text
+Tempo: ~118 BPM | Beat strength: high
+```
+
+Or a subtle pulse indicator synchronized to detected beats.
+
+Notes:
+
+- Avoid strobing or high-motion animations.
+- Should support reduced-motion mode.
+- Could trigger only during music-heavy sections.
+- Should not compete with captions during dialogue.
+
+---
+
+### 33D. Audio Visualization Modes
+
+Offer optional visualizations for audio energy, frequency bands, surround channels, or dialogue/music/effects balance.
+
+Value:
+
+- Gives audio-focused users a fun, dynamic use of the empty space.
+- Helps debug mixes and playback output.
+- Can make concerts, music videos, and sound-heavy scenes more engaging.
+- Could provide accessibility value when designed around meaningful sound categories.
+
+Feasibility: High for generated/test content; medium for production depending on audio access.  
+Distraction risk: Medium to high.  
+MVP fit: Projection Booth / visualizer mode, not Caption Theater Core.
+
+Possible modes:
+
+- stereo waveform
+- channel VU bars
+- frequency spectrum
+- dialogue/music/effects balance
+- LFE impact pulse
+- surround ring visualization
+- caption-aware sound event visualization
+
+Distraction guidance:
+
+- Keep visualizers optional.
+- Suppress during dense captions.
+- Respect reduced-motion settings.
+- Avoid flashing patterns.
+- Prefer meaningful sound-category visualization over decorative animation.
+
+---
+
+### 33E. Scene Intensity Meter
+
+Show a live or recent-window estimate of scene intensity based on audio level, subtitle density, visual motion, flashing, violence/sensory metadata, and music energy.
+
+Value:
+
+- Helps sensory-sensitive users prepare for intense moments.
+- Helps parents or caregivers monitor content intensity.
+- Helps viewers decide when to pause, lower volume, dim the display, or skip.
+- Gives film-analysis users a sense of pacing and escalation.
+
+Feasibility: Medium.  
+Distraction risk: Medium.  
+MVP fit: Future accessibility/safety mode.
+
+Possible UI:
+
+```text
+Intensity: rising | loud audio + fast cuts
+```
+
+```text
+Sensory load: high
+```
+
+Inputs:
+
+- audio loudness / dynamic range
+- music energy
+- subtitle density
+- shot-change frequency
+- optical motion
+- flashing/strobing detection
+- content-warning metadata
+
+Notes:
+
+- Must be opt-in.
+- Should avoid judgmental labels.
+- Should not spoil content with detailed future descriptions unless the user requested warnings.
+- Could be a single minimal meter rather than text.
+
+---
+
+### 33F. Music Genre / Mood Detection
+
+Detect or display the current music style, score mood, or sound design category using icons or subtle labels.
+
+Value:
+
+- Helps viewers understand how music shapes emotion and scene rhythm.
+- Helps Deaf and hard-of-hearing viewers get additional context from music-heavy scenes.
+- Helps music discovery and soundtrack engagement.
+- Fun for film-score and music nerds.
+
+Feasibility: Medium with audio classification or soundtrack metadata; high if curated metadata exists.  
+Distraction risk: Medium.  
+MVP fit: Future audio-context mode.
+
+Possible UI:
+
+```text
+Score: tense strings | low percussion
+```
+
+```text
+Music mood: playful jazz
+```
+
+Notes:
+
+- Icons can help reduce text, but should not replace accessible labels.
+- Generated genre/mood labels should be confidence-gated.
+- SDH music cues should take priority when available.
+- Avoid emoji-only presentation.
+
+---
+
+### 33G. QR Codes and Deep-Link Cards
+
+Use the extra region for user-requested QR codes or deep-link cards that connect the viewing moment to a safe external action.
+
+Value:
+
+- Helps users move from TV playback to phone actions without typing.
+- Supports official social sharing, soundtrack links, behind-the-scenes content, merch, accessibility settings, companion experiences, or feedback.
+- Useful on tvOS where text entry is annoying.
+
+Feasibility: High for project-owned links; medium when rights, commerce, or external integrations are involved.  
+Distraction risk: Medium to high.  
+MVP fit: Pause/post-watch/event mode.
+
+Possible QR targets:
+
+- share this moment
+- official show Instagram/TikTok page
+- soundtrack or song page
+- behind-the-scenes clip
+- accessibility feedback form
+- companion article or transcript
+- merch / commerce card
+- continue on mobile
+
+Guardrails:
+
+- QR codes should be user-requested, pause-only, post-watch, or event-mode only.
+- Never show QR codes during dense captions or active dialogue by default.
+- Clearly label where the QR code goes.
+- Avoid third-party tracking surprises.
+- Respect entitlement, region, age rating, and parental controls.
+
+---
+
+### 33H. Expanded Playback Controls
+
+Use the extra region as a caption-aware playback control surface that does not cover the active picture.
+
+Value:
+
+- Makes playback controls less intrusive for cinema-aspect content.
+- Helps caption users access replay, subtitle settings, and reading controls quickly.
+- Useful on tvOS where remote navigation should stay simple.
+- Lets Caption Theater expose feature-specific actions without obscuring the movie.
+
+Feasibility: High.  
+Distraction risk: Medium if persistent, low if transient.  
+MVP fit: Strong companion feature.
+
+Possible controls:
+
+- play/pause
+- replay previous caption
+- rewind to start of current cue
+- rewind to start of scene
+- caption size
+- retention duration
+- audio track / subtitles / AD selector
+- Caption Theater on/off
+- Film Lab on/off
+- share moment
+
+Notes:
+
+- Controls should appear on user interaction, pause, or remote press.
+- Do not leave controls visible during normal playback unless pinned.
+- On tvOS, focus behavior must be predictable and minimal.
+- Caption and accessibility controls should be easier to reach than social or commerce controls.
+
+---
+
+### 34. Social Watch Feed
+
+Use the extra region for an opt-in social feed tied to the current title, scene, or watch party.
+
+Value:
+
+- Gives viewers a communal watching experience without leaving playback.
+- Supports live premieres, fandom events, creator watch-alongs, or private group viewing.
+- Uses the unused region instead of covering the active picture.
+
+Feasibility: Medium with project-owned social infrastructure; low if relying on arbitrary third-party feeds.  
+Distraction risk: High.  
+MVP fit: Separate social mode.
+
+Possible modes:
+
+- private watch-party chat
+- creator commentary feed
+- friends-only reactions
+- moderated event chat
+- title-specific community feed
+- scene-specific discussion after playback or on pause
+
+Guardrails:
+
+- Never default during normal playback.
+- Collapse during dense captions.
+- Require moderation, blocking, reporting, and spoiler controls.
+- Prefer private groups before public feeds.
+
+---
+
+### 35. Timed Reactions and Lightweight Likes
+
+Let users react to moments without opening a social app or interrupting playback.
+
+Value:
+
+- Captures audience response at the scene or moment level.
+- Helps viewers feel connected during premieres or shared watching.
+- Can produce aggregate, spoiler-safe signals like “big reaction moment” during rewatch.
+
+Feasibility: Medium.  
+Distraction risk: Medium to high.  
+MVP fit: Future opt-in mode.
+
+Possible interactions:
+
+- like this moment
+- save this scene
+- mark as funny, surprising, scary, beautiful, confusing, or favorite
+- show aggregate reactions only after the moment has passed
+
+Guardrails:
+
+- Do not show reactions before the moment occurs.
+- Avoid noisy reaction storms over the video.
+- Keep reactions limited and accessible.
+- Let users disable all social signals.
+- Do not expose personal reaction history without consent.
+
+---
+
+### 36. Shareable Moment Cards
+
+Generate a safe share card from the current timestamp, caption cue, color palette, scene description, user note, or approved promotional frame.
+
+Value:
+
+- Lets viewers share what they loved without leaving playback.
+- Helps titles gain organic social engagement.
+- Supports fandom, recommendations, education, and film-study discussion.
+- Converts dynamic Caption Theater insights into controlled share artifacts.
+
+Feasibility: Medium, depending on rights and sharing policy.  
+Distraction risk: Low when pause-only; medium if available during playback.  
+MVP fit: Future pause/share feature.
+
+Possible card types:
+
+- quote card from a short caption excerpt
+- timestamp bookmark card
+- color palette card
+- Film Lab card
+- accessibility note card
+- watch-party invite card
+- “continue from here” deep link
+- approved frame-of-video card
+- show-branded Instagram Story card
+
+Example:
+
+```text
+Shared Moment
+00:42:18 • Deep teal / amber palette
+“This shot uses warm practical highlights against a cool background.”
+Watch on ExampleStreamingApp
+@showhandle #ShowTitle
+```
+
+Frame-sharing product idea:
+
+- On pause, allow the viewer to share an approved frame or generated social card.
+- Include title branding, episode/movie title, timestamp, official show handle, campaign hashtag, and deep link.
+- Provide safe default copy that the user can edit.
+- Prefer pre-approved frame extraction rules or provider-generated stills over arbitrary screenshots.
+- Support Instagram Stories, TikTok-style vertical story cards, iMessage, share sheets, and platform deep links where allowed.
+
+Rights and policy concerns:
+
+- Captions and still frames may be copyrighted.
+- Do not assume arbitrary frame grabs are shareable.
+- Sharing should honor entitlement, region, parental controls, spoilers, talent approvals, music rights, union/contract constraints, and studio marketing policy.
+- Prefer approved still frames, generated cards, short user notes, palette cards, or platform-approved share assets.
+
+---
+
+### 37. Hashtag and Community Trend Integration
+
+Show curated or user-selected tags related to the title, episode, event, or scene.
+
+Value:
+
+- Helps users join the broader conversation after watching.
+- Useful for premieres, finales, live events, fandom weeks, and marketing campaigns.
+- Connects Caption Theater’s scene-aware context to external discussion without embedding a full feed.
+
+Feasibility: Medium with curated tags; low if automatically scraping social platforms.  
+Distraction risk: Medium.  
+MVP fit: Future marketing/community integration.
+
+Possible UI:
+
+```text
+Join after the episode: #ShowFinale #TeamMara
+```
+
+Guardrails:
+
+- Prefer curated campaign tags over live scraped hashtags.
+- Avoid showing tags that spoil future plot points.
+- Avoid showing tags during emotionally sensitive scenes.
+- Let users hide community prompts.
+- Treat external social-platform API access as optional and unstable.
+
+---
+
+### 38. Personal Watch Stats and Shareable Insights
+
+Use the extra area or post-watch summary to show user-owned viewing stats.
+
+Value:
+
+- Gives users fun personal insights without requiring public social features.
+- Can motivate accessibility personalization.
+- Helps users understand how Caption Theater improved their experience.
+
+Feasibility: High for local stats; medium for cross-device/profile stats.  
+Distraction risk: Low if post-watch; medium if during playback.  
+MVP fit: Strong future post-watch feature.
+
+Possible stats:
+
+- captions retained this session
+- rewinds avoided
+- long captions assisted
+- subtitles read in selected language
+- Film Lab notes viewed
+- palette changes detected
+- favorite saved scenes
+
+Example:
+
+```text
+Caption Theater helped retain 38 dense captions during this movie.
+```
+
+Privacy guardrails:
+
+- Viewing stats are sensitive.
+- Keep stats local by default.
+- Do not publish stats without explicit user action.
+- Avoid making accessibility usage feel exposed or gamified without consent.
+
+---
+
+### 39. Friend-Safe Recommendations
+
+Use pause or post-watch moments to suggest lightweight sharing or recommendations based on the current title.
+
+Value:
+
+- Helps users recommend content while the emotional reaction is fresh.
+- Encourages word of mouth without cluttering active playback.
+- Can generate spoiler-safe recommendation text.
+
+Feasibility: Medium.  
+Distraction risk: Low when post-watch; medium during pause.  
+MVP fit: Future post-watch feature.
+
+Examples:
+
+```text
+Recommend this to a friend who likes slow-burn sci-fi?
+```
+
+```text
+Share a spoiler-free note: “Great atmosphere and color design.”
+```
+
+Guardrails:
+
+- Post-watch is better than during playback.
+- Avoid auto-posting.
+- Use user-edited text.
+- Respect profile privacy and parental controls.
+
+---
+
+### 40. Creator / Cast Live Notes
+
+Show authored, timed notes from creators, cast, accessibility consultants, or film educators.
+
+Value:
+
+- More trustworthy than random trivia or model guesses.
+- Supports watch-alongs, premieres, commentaries, education, and fandom.
+- Can update dynamically with the scene while remaining curated.
+
+Feasibility: Medium if content partners author notes; low without pipeline support.  
+Distraction risk: Medium to high.  
+MVP fit: Future curated integration.
+
+Possible sources:
+
+- director commentary notes
+- actor watch-party notes
+- cinematographer notes
+- accessibility consultant notes
+- film educator annotations
+- live premiere annotations
+
+Guardrails:
+
+- User-selected mode only.
+- Clearly show source and authorship.
+- Do not mix authored notes with model-generated notes without labeling.
+- Avoid future-scene information.
+
+---
+
+### 41. Moderated Q&A / Watch-Along Prompts
+
+Use the region for structured prompts during special screenings, classes, or creator events.
+
+Value:
+
+- Useful for film classes, clubs, premieres, internal screenings, accessibility studies, and community events.
+- More focused than open chat.
+- Can be used asynchronously after the scene or episode.
+
+Feasibility: Medium with event infrastructure.  
+Distraction risk: Medium.  
+MVP fit: Separate event mode.
+
+Examples:
+
+```text
+Discussion prompt after this scene: What changed in the power dynamic?
+```
+
+```text
+Creator Q&A opens after the credits.
+```
+
+Guardrails:
+
+- Do not interrupt normal playback.
+- Prefer pause, scene end, episode end, or rewatch mode.
+- Moderation and abuse reporting are required for live input.
+
+---
+
+### 42. Social Spoiler Shield
+
+Use viewing progress to filter community content, reactions, and recommendations so users are not exposed to future events.
+
+Value:
+
+- Solves a major problem with social media around shows and movies.
+- Lets users engage with community content safely while watching.
+- Could make social integrations more acceptable inside playback.
+
+Feasibility: Medium with internal community systems; low with external social platforms.  
+Distraction risk: Low to medium.  
+MVP fit: Future community infrastructure.
+
+Behavior:
+
+- Only show comments or reactions tied to timestamps already watched.
+- Hide tags that reference future episodes or scenes.
+- Delay aggregate reactions until after the relevant moment.
+- Label spoiler-safe feeds clearly.
+
+Guardrails:
+
+- External social feeds are difficult to make spoiler-safe.
+- Internal timestamped community data is much safer.
+- The user should be able to turn social content off completely.
+
+---
+
+### 43. Ad and Commerce Use Cases
+
+The same unused cinema-layout space could be monetized with ads, commerce prompts, or brand integrations. This is likely attractive to product and advertising teams, but it is also the easiest way to destroy user trust in Caption Theater.
+
+Value:
+
+- Creates new inventory without covering the active picture.
+- Could support shoppable TV, sponsor cards, tune-in promotions, title merch, soundtrack links, or brand integrations.
+- Could be context-aware and less intrusive than mid-roll interruptions if designed carefully.
+
+Feasibility: Medium with ad infrastructure and product policy.  
+Distraction risk: Very high.  
+MVP fit: Not core; requires separate ad/product governance.
+
+Possible ad products:
+
+- pause-only sponsor cards
+- post-scene merch or soundtrack links
+- shoppable wardrobe/props cards
+- tune-in promo for related content
+- official show account follow/share prompt
+- sponsored trivia during event screenings
+- post-watch offer or partner link
+
+Worst-case product:
+
+- persistent banner ads in the unused caption region
+- animated ad cards during dialogue
+- ads competing with accessibility captions
+- ad prompts that appear during emotional or sensitive scenes
+- forced commerce overlays that cannot be disabled
+
+Product guidance:
+
+- Do not use the Caption Theater reading region for always-on ads.
+- Captions and accessibility content must win over ad surfaces.
+- Ads should remain fullscreen/native during ad playback.
+- Commerce or sponsor cards should be pause-only, post-watch, or explicit opt-in.
+- Any ad use should be clearly separated from the accessibility/readability mode.
+- Ad experiments should require their own acceptance criteria, accessibility review, and user trust review.
+
+Better framing:
+
+```text
+Commerce cards belong in Pause / Post-Watch / Event Mode, not Caption Theater Core.
+```
+
+---
+
 ## Ranked Opportunity Matrix
 
 | Idea | Value | Feasibility | Distraction | Priority |
@@ -1633,6 +2290,23 @@ Notes:
 | Live life-context panel | Medium-High | Medium | Medium-High | Future opt-in |
 | Live translation / dub assist panel | Medium-High | Medium | Medium | Future language mode |
 | Accessibility event timeline | High for specific users | Medium | Medium | Future accessibility |
+| Audio track VU and surround monitor | Medium-High | Medium | Medium | Projection Booth / debug |
+| Audio compass / directionality indicator | High for specific users | Medium | Low-Medium | Future accessibility / audio mode |
+| Rhythm and beat detection | Medium-High | Medium | Medium-High | Audio visualization research |
+| Audio visualization modes | Medium | Medium | Medium-High | Projection Booth / visualizer |
+| Scene intensity meter | High for specific users | Medium | Medium | Future accessibility/safety |
+| Music genre / mood detection | Medium | Medium | Medium | Future audio-context mode |
+| QR codes and deep-link cards | Medium-High | High-Medium | Medium-High | Pause/post-watch mode |
+| Expanded playback controls | High | High | Low-Medium | Strong companion feature |
+| Shareable moment cards | Medium-High | Medium | Low-Medium | Future share feature |
+| Personal watch stats and insights | Medium-High | High-Medium | Low | Post-watch feature |
+| Social spoiler shield | High for social users | Medium-Low | Low-Medium | Future community infrastructure |
+| Creator / cast live notes | Medium-High | Medium-Low | Medium-High | Curated event mode |
+| Ad and commerce cards | High business value | Medium | Very high | Separate governed mode |
+| Social watch feed | Medium | Medium | High | Separate social mode |
+| Timed reactions and likes | Medium | Medium | Medium-High | Future opt-in |
+| Hashtag/community trend integration | Medium | Medium-Low | Medium | Future marketing/community |
+| Moderated Q&A / watch-along prompts | Medium | Medium | Medium | Separate event mode |
 | SDH soundscape enhancement | High | High-Medium | Low | Strong future |
 | Accessibility reading controls | High | High | Medium | Strong future |
 | Audio description controls | High | High | Low | Strong future |
@@ -1677,6 +2351,8 @@ These are directly aligned with the current project.
 - caption reading controls
 - smart rewind / caption recovery
 - dialogue density adaptive persistence
+- expanded playback controls
+- replay previous caption control
 
 ### Bucket 2: Accessibility Augmentations
 
@@ -1701,6 +2377,9 @@ These may provide real user value but need careful design.
 - visual style change detection
 - accessibility event timeline
 - interruption-aware playback recovery
+- audio compass / directionality indicator
+- scene intensity meter
+- music mood/context labels
 
 ### Bucket 3: Contextual Enrichment
 
@@ -1727,6 +2406,10 @@ Useful for developers and advanced users, but not default UX.
 - caption format indicator
 - dropped frames
 - DRM/ad state debug indicators
+- audio track VU meters
+- 5.1 / 7.1 channel activity monitor
+- audio visualizer modes
+- rhythm / beat detector
 
 ### Bucket 5: Separate Product Modes
 
@@ -1739,6 +2422,30 @@ These are interesting but should not be mixed into the default Caption Theater e
 - film study mode
 - live life-context glance panel
 - language/dub assist mode
+ - social watch feed
+ - watch party timed reactions
+ - creator/cast live notes
+ - moderated Q&A/watch-along prompts
+ - pause/post-watch commerce cards
+ - QR/deep-link companion cards
+ - audio visualization mode
+ - Projection Booth audio monitor
+
+### Bucket 6: Social, Sharing, and Commerce Integrations
+
+These can add value, but should be opt-in, spoiler-safe, and separate from the default caption experience.
+
+- shareable moment cards
+- approved frame-of-video social cards
+- personal watch stats and insights
+- friend-safe recommendations
+- hashtag/community trend prompts
+- social spoiler shield
+- curated creator/cast notes
+- timestamped community reactions
+- private watch-party chat
+- pause-only sponsor cards
+- post-watch commerce links
 
 ---
 
@@ -1755,6 +2462,8 @@ The strongest near-term value adds are:
 7. SDH soundscape persistence.
 8. Audio description controls.
 9. Caption confidence/source indicators.
+10. Expanded playback controls.
+11. Replay previous caption control.
 
 These directly improve comprehension and accessibility without turning the empty region into a distracting dashboard.
 
@@ -1766,14 +2475,52 @@ The most exciting future ideas are:
 4. Visual style change detector.
 5. Interruption-aware playback helper.
 6. Live life-context glance panel.
-7. Spoiler-safe “what did I miss?” recap.
-8. Sign language companion window.
-9. Descriptive transcript strip.
-10. Translation/language learning mode.
-11. Camera viewpoint and movement classifier.
-12. Scene search while paused or scrubbing.
+7. Shareable moment cards.
+8. Approved frame-of-video social cards.
+9. Personal watch stats and insights.
+10. Spoiler-safe “what did I miss?” recap.
+11. Social spoiler shield.
+12. Sign language companion window.
+13. Descriptive transcript strip.
+14. Translation/language learning mode.
+15. Camera viewpoint and movement classifier.
+16. Scene search while paused or scrubbing.
+17. Audio compass / directionality indicator.
+18. Dynamic audio VU / surround monitor.
+19. Scene intensity meter.
+20. QR/deep-link companion cards.
 
 These could be powerful, but they require stronger metadata, trust, and UX guardrails.
+## Audio Augmentation Guidance
+
+Audio features can be useful when they explain sound in ways captions do not.
+
+Prefer audio augmentations that:
+
+- help users understand direction, intensity, dialogue density, or sound events;
+- provide accessibility value for Deaf, hard-of-hearing, single-sided hearing, sensory-sensitive, or audio-processing users;
+- use simple indicators instead of constant decorative animation;
+- suppress themselves during dense captions;
+- respect reduced-motion and reduced-flashing preferences;
+- stay optional and mode-specific.
+
+Avoid audio augmentations that:
+
+- become a constant nightclub visualizer during normal movies;
+- flash rapidly or pulse aggressively;
+- imply exact spatial precision when only channel activity is known;
+- compete with captions or playback controls;
+- expose raw protected audio assumptions that may not hold in production.
+
+Best first audio experiments:
+
+1. 5.1 channel activity monitor for Projection Booth mode.
+2. Audio compass based on channel activity and SDH cues.
+3. Dialogue density adaptive persistence.
+4. Scene intensity meter for opted-in users.
+5. Subtle music mood/context labels from authored or high-confidence metadata.
+
+---
 
 ---
 
@@ -1809,6 +2556,49 @@ Best candidates for dynamic behavior:
 7. Trigger/content warnings for opted-in users.
 
 ---
+## Social, Sharing, and Commerce Guidance
+
+Social features can be fun, but they are high-distraction and high-risk compared with caption/accessibility features.
+
+Prefer social integrations that:
+
+- appear on pause, post-watch, or user request;
+- are timestamp-aware and spoiler-safe;
+- use curated or project-owned feeds;
+- support private watch groups before open public feeds;
+- let viewers share metadata cards or approved stills instead of arbitrary copyrighted frames;
+- make accessibility usage private by default;
+- allow users to disable all social surfaces.
+
+Avoid social integrations that:
+
+- scroll live comments during normal dialogue;
+- show external public feeds without moderation;
+- reveal future reactions or spoilers;
+- auto-post viewing or accessibility stats;
+- use arbitrary hashtags as trusted metadata;
+- compete with captions or accessibility controls.
+
+Ad and commerce guidance:
+
+- The extra area should not become a default ad slot.
+- Captions, accessibility controls, and user trust take priority over monetization.
+- Ad playback remains fullscreen/native.
+- Commerce cards are safest on pause, post-watch, or explicit user request.
+- Sponsored or shoppable cards must be clearly labeled.
+- Any ad use should live outside Caption Theater Core and require separate product, accessibility, legal, and ads review.
+
+Best first experiments:
+
+1. Shareable moment cards without arbitrary frame grabs.
+2. Approved frame-of-video social cards with official show handles and hashtags.
+3. Personal post-watch stats kept local by default.
+4. Private watch-party timed reactions.
+5. Spoiler-safe timestamped community notes.
+6. Curated creator/cast notes for event screenings.
+
+---
+
 ## System Widgets and Live App Data
 
 It is worth exploring whether the extra area can act like a watch-mode glance surface, but this should be treated carefully.

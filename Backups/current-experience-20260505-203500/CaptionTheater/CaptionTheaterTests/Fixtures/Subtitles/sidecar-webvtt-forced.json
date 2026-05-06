@@ -1,0 +1,15 @@
+{
+  "selectedTrack": {
+    "identifier": "webvtt-forced-ja",
+    "language": "ja",
+    "format": "webVTT",
+    "transport": "sidecarText",
+    "kind": "forced",
+    "isForced": true,
+    "isImageBased": false,
+    "isBurnedIn": false,
+    "supportsCaptionTheater": true,
+    "supportsPreviousCueRetention": false,
+    "preserveAuthoredPlacement": true
+  }
+}

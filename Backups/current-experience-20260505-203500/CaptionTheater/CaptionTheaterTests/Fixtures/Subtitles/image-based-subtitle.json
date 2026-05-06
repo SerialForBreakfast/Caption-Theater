@@ -1,0 +1,15 @@
+{
+  "selectedTrack": {
+    "identifier": "pgs-image-en",
+    "language": "en",
+    "format": "imageBased",
+    "transport": "imageBased",
+    "kind": "dialogue",
+    "isForced": false,
+    "isImageBased": true,
+    "isBurnedIn": false,
+    "supportsCaptionTheater": false,
+    "supportsPreviousCueRetention": false,
+    "preserveAuthoredPlacement": true
+  }
+}

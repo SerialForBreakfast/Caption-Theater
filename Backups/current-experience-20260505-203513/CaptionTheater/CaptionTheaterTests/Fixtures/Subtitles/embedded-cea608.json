@@ -1,0 +1,15 @@
+{
+  "selectedTrack": {
+    "identifier": "embedded-cc1-en",
+    "language": "en",
+    "format": "cea608",
+    "transport": "embeddedClosedCaptions",
+    "kind": "sdh",
+    "isForced": false,
+    "isImageBased": false,
+    "isBurnedIn": false,
+    "supportsCaptionTheater": false,
+    "supportsPreviousCueRetention": false,
+    "preserveAuthoredPlacement": true
+  }
+}

@@ -18,16 +18,14 @@ The project explores how to build this as a modular playback add-on for native i
 
 ## Developer Demo Controls
 
-The playback shell includes a **Feature Toggles** button for switching demo media, enabling the playback debug HUD, and changing Caption Theater caption text size.
-
-Launch arguments can preselect the same settings:
+Launch arguments can preselect demo and engineering settings:
 
 ```text
 --caption-theater-offline-hls
 -CaptionTheater.playbackDemoSource bundledOfflineHLSMock
 --caption-theater-playback-demo-source=bundledOfflineHLSMock
---caption-theater-show-feature-toggles
--CaptionTheater.showFeatureToggles YES
+--caption-theater-playback-debug-hud=yes
+-CaptionTheater.playbackDebugHUD YES
 ```
 
 Available demo media raw values:

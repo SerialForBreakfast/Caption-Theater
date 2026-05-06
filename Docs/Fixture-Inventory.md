@@ -66,6 +66,20 @@ Never substitute production playlists, license URLs, keys, or private media for 
 **Code:** `SubtitleMetadataClassifier`  
 **Tests:** `SubtitleMetadataClassifierTests`
 
+## Bundled offline HLS demo (tvOS app resource)
+
+**Location:** `CaptionTheater/CaptionTheater/Media/OfflineHLS/TearsOfSteelFiveMinuteMock/` — packaged inside the tvOS app target via Xcode Resources (`OfflineHLS` folder reference).
+
+| Aspect | Notes |
+| --- | --- |
+| Role | Private POC playback demo without network; exercises ultra-wide raster plus segmented English WebVTT against ``AVPlayer`` |
+| Expected eligibility | True ultra-wide encoded raster (**1920×800**); declared sidecar WebVTT; suitable hero-style Caption Theater candidate unless runtime evidence blocks activation |
+| Governance | **Not** release media; re-check Mux / content licensing before **public** repository publication (see ``Docs/Sources.md`` offline mock note) |
+| Automated checks | ``CaptionTheaterOfflineHLSBundleTests`` verifies master + variant playlists and sample segments ship coherently |
+
+**Code:** ``CaptionTheaterPlaybackFixture``, ``CaptionTheaterPlaybackDemoSource.bundledOfflineHLSMock``  
+**Tests:** ``CaptionTheaterOfflineHLSBundleTests``, ``CaptionTheaterLaunchConfigurationTests``
+
 ## Debug decision inspector (tvOS)
 
 **Location:** SwiftUI — **Debug** tab in the tvOS app (`CaptionTheaterDebugDecisionInspectorView`), backed by in-code scenarios in `CaptionTheaterDebugScenarioCatalog` (mirrors engine matrix without bundling JSON twice).

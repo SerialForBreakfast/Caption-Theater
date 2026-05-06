@@ -7,19 +7,16 @@
 
 import Foundation
 
-/// Applies launch-argument overrides to the same persisted keys used by Feature Toggles.
+/// Applies launch-argument overrides to the same persisted keys used by engineering configurations.
 ///
 /// Supported forms:
 /// - `-CaptionTheater.playbackDemoSource bundledOfflineHLSMock`
 /// - `--caption-theater-playback-demo-source=bundledOfflineHLSMock`
 /// - `--caption-theater-offline-hls`
-/// - `-CaptionTheater.showFeatureToggles YES`
-/// - `--caption-theater-show-feature-toggles`
 enum CaptionTheaterLaunchConfiguration {
 
     static let playbackDemoSourceStorageKey = "CaptionTheater.playbackDemoSource"
     static let playbackDebugHUDStorageKey = "CaptionTheater.playbackDebugHUD"
-    static let showFeatureTogglesStorageKey = "CaptionTheater.showFeatureToggles"
 
     /// Applies recognized launch arguments to `defaults`.
     static func apply(arguments: [String] = ProcessInfo.processInfo.arguments, defaults: UserDefaults = .standard) {
@@ -30,9 +27,6 @@ enum CaptionTheaterLaunchConfiguration {
         }
         if let playbackDebugHUD = overrides.playbackDebugHUD {
             defaults.set(playbackDebugHUD, forKey: playbackDebugHUDStorageKey)
-        }
-        if let showFeatureToggles = overrides.showFeatureToggles {
-            defaults.set(showFeatureToggles, forKey: showFeatureTogglesStorageKey)
         }
     }
 
@@ -45,21 +39,15 @@ enum CaptionTheaterLaunchConfiguration {
 
             if argument == "--caption-theater-offline-hls" {
                 overrides.playbackDemoSource = .bundledOfflineHLSMock
-            } else if argument == "--caption-theater-show-feature-toggles" {
-                overrides.showFeatureToggles = true
             } else if argument.hasPrefix("--caption-theater-playback-demo-source=") {
                 let rawValue = value(afterEqualsIn: argument)
                 overrides.playbackDemoSource = CaptionTheaterPlaybackDemoSource(rawValue: rawValue)
             } else if argument.hasPrefix("--caption-theater-playback-debug-hud=") {
                 overrides.playbackDebugHUD = boolValue(from: value(afterEqualsIn: argument))
-            } else if argument.hasPrefix("--caption-theater-show-feature-toggles=") {
-                overrides.showFeatureToggles = boolValue(from: value(afterEqualsIn: argument))
             } else if argument == "-CaptionTheater.playbackDemoSource" {
                 overrides.playbackDemoSource = nextDemoSource(in: arguments, after: index)
             } else if argument == "-CaptionTheater.playbackDebugHUD" {
                 overrides.playbackDebugHUD = nextBool(in: arguments, after: index)
-            } else if argument == "-CaptionTheater.showFeatureToggles" {
-                overrides.showFeatureToggles = nextBool(in: arguments, after: index)
             }
         }
 
@@ -105,5 +93,4 @@ enum CaptionTheaterLaunchConfiguration {
 struct CaptionTheaterLaunchOverrides: Equatable, Sendable {
     var playbackDemoSource: CaptionTheaterPlaybackDemoSource?
     var playbackDebugHUD: Bool?
-    var showFeatureToggles: Bool?
 }

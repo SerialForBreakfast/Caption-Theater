@@ -45,7 +45,7 @@ enum CaptionTheaterPlaybackDemoSource: String, CaseIterable, Identifiable {
         case .bundledOfflineHLSMock:
             return "Add \(CaptionTheaterPlaybackFixture.offlineHLSMockMasterPlaylistSubdirectory)/\(CaptionTheaterPlaybackFixture.offlineHLSMockMasterPlaylistResourceName).\(CaptionTheaterPlaybackFixture.offlineHLSMockMasterPlaylistExtension) to the app target Media folder."
         case .muxTearsOfSteelHLS:
-            return "The Mux demo URL failed to resolve. Change `CaptionTheater.playbackDemoSource` in Feature Toggles or launch arguments."
+            return "The Mux demo URL failed to resolve. Change `CaptionTheater.playbackDemoSource` in User Defaults or launch arguments."
         }
     }
 

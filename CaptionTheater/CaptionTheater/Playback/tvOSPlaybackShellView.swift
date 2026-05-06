@@ -155,6 +155,10 @@ struct tvOSPlaybackShellView: View {
                     videoDisplayRect: layout?.activePictureRect
                 )
                 .frame(width: containerSize.width, height: containerSize.height)
+                .overlay {
+                    Rectangle()
+                        .strokeBorder(Color.green, lineWidth: 4)
+                }
 
                 debugHudOverlay(model: model, containerSize: containerSize)
             }
@@ -184,6 +188,10 @@ struct tvOSPlaybackShellView: View {
                         )
                     )
                     .frame(width: containerSize.width, height: pictureHeight)
+                    .overlay {
+                        Rectangle()
+                            .strokeBorder(Color.green, lineWidth: 4)
+                    }
                 }
                 .frame(width: containerSize.width, height: pictureHeight)
 

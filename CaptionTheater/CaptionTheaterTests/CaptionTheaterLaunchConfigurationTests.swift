@@ -3,6 +3,7 @@
 //  CaptionTheaterTests
 //
 
+import Foundation
 import Testing
 @testable import CaptionTheater
 
@@ -28,16 +29,14 @@ struct CaptionTheaterLaunchConfigurationTests {
         #expect(overrides.playbackDemoSource == .bundledOfflineHLSMock)
     }
 
-    @Test func longFormFeatureToggleArgumentIsResolved() {
+    @Test func longFormDebugHUDArgumentIsResolved() {
         let overrides = CaptionTheaterLaunchConfiguration.resolvedOverrides(
             arguments: [
                 "CaptionTheater",
-                "--caption-theater-show-feature-toggles",
                 "--caption-theater-playback-debug-hud=yes"
             ]
         )
 
-        #expect(overrides.showFeatureToggles == true)
         #expect(overrides.playbackDebugHUD == true)
     }
 

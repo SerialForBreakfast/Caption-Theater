@@ -56,6 +56,7 @@ Offline mock note:
 
 - A private POC-only five-minute offline HLS mock derived from this stream exists at `CaptionTheater/CaptionTheater/Media/OfflineHLS/TearsOfSteelFiveMinuteMock/`.
 - The mock includes one selected `1920x800` rendition with combined H.264/AAC media, matching English WebVTT subtitles, rewritten local playlists, and local segments.
+- Treat this tree as **development-only fixture media** (not production catalog content). Remove or replace it if licensing cannot be cleared for your distribution channel.
 - Do not treat that mock as release media.
 - Before making this repository public, re-check the source license, attribution terms, and redistribution rights; remove or replace the mock if redistribution is not explicitly allowed.
 
@@ -163,6 +164,11 @@ Apple sample streams are useful even when they are not ultra-widescreen hero can
 Reference:
 
 - Apple HLS example streams: https://developer.apple.com/streaming/examples/
+- Example advanced **fMP4** multivariant master (control / parser harness):
+
+```text
+https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8
+```
 
 Expected use:
 

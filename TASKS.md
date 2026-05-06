@@ -183,10 +183,14 @@ Define the controlled world where Caption Theater can be tested before real-stre
 
 ### Key Tasks
 
-#### CT-0001 [TODO]: Define Hero Demo Narrative
+#### CT-0001 [DONE]: Define Hero Demo Narrative
 
 User Story:
 As a stakeholder, I want to see the Caption Theater benefit in under five minutes so I can understand why the POC is worth building.
+
+Implementation Status:
+
+- Baseline hero narrative, first-demo scenario, opt-in framing, ads behavior, and demo controls are documented in `README.md` (product thesis, first demo scenario, developer demo controls). Formal scripted run-of-show for recordings remains with **CT-0503**.
 
 Tasks:
 
@@ -236,13 +240,19 @@ Acceptance Criteria:
 
 Implementation Status:
 
-- Canonical map for **sanitized** JSON / `.m3u8` fixtures lives in `Docs/Fixture-Inventory.md` (decision scenarios, manifests, provider metadata, subtitle metadata).
-- Still TODO per tasks above: bundled **video** lists, **synthetic frame** catalog, dense **WebVTT cue** fixtures for renderer tests, **real-world** candidate table with licenses, **generation scripts** for raster/detector known-answers (**CT-0005**).
+- Canonical map for **sanitized** JSON / `.m3u8` fixtures lives in `Docs/Fixture-Inventory.md` (decision scenarios, manifests, provider metadata, subtitle metadata, bundled offline HLS demo).
+- Still TODO per tasks above: broader bundled **video** taxonomy, **synthetic frame** catalog, dense **WebVTT cue** fixtures for renderer tests, full **generation scripts** for raster/detector known-answers (**CT-0005** backlog).
 
-#### CT-0003 [TODO]: Define Readability Metrics
+#### CT-0003 [DONE]: Define Readability Metrics
 
 User Story:
 As a Product Lead, I need measurable success criteria so we can evaluate whether Caption Theater is actually useful.
+
+Implementation Status:
+
+- **Objective placeholders:** caption dwell time vs native baseline; percentage of cues still visible N seconds after end; rewind/replay counts during dense dialogue segments (lab + field instrumentation TBD).
+- **Subjective placeholders:** post-demo Likert on readability and distraction; failure signals (confusion, timing unease).
+- Full instrumentation and evaluation protocol land with **CT-0801** (POC evaluation).
 
 Tasks:
 
@@ -259,10 +269,16 @@ Acceptance Criteria:
 - Metrics include both objective and subjective measures.
 - Metrics include negative outcomes such as distraction, confusion, or perceived timing issues.
 
-#### CT-0004 [TODO]: Source Real-World Widescreen Test Content
+#### CT-0004 [DONE]: Source Real-World Widescreen Test Content
 
 User Story:
 As a product and playback team, we need legitimate real-world ultra-widescreen test content so the hero demo proves Caption Theater value without licensing ambiguity.
+
+Implementation Status:
+
+- Hero candidate (**Mux *Tears of Steel*** multivariant), secondary candidates, Apple HLS **control reference** URLs, offline mock posture, and CT-0005 cinematic pipeline sources are consolidated in `Docs/Sources.md` with validation notes.
+- Bundled offline mock (`TearsOfSteelFiveMinuteMock`) and regeneration script (`Scripts/download_mux_offline_hls_mock.py`) support private offline demos.
+- Per-asset license verification remains the publisher’s responsibility before **public** redistribution.
 
 Candidate Sources:
 
@@ -296,11 +312,11 @@ Acceptance Criteria:
 User Story:
 As a detector and caption-rendering engineer, I need generated known-answer content so edge cases can be tested without relying on real media.
 
-Primary deliverable (landed):
+**Delivered (open masters + tooling)**
 
-- **Cinematic open-content offline HLS pipeline** — `Scripts/build_ct0005_cinematic_open_hls.py` builds a **1920×800** HLS + English WebVTT package from Blender Foundation *Tears of Steel* mirrors plus official `TOS-en.srt`, with a default trim that favors iconic rooftop dialogue. Output default: `CaptionTheater/CaptionTheater/Media/OfflineHLS/BlenderToSCinematicClip/`. Documented in `Docs/Sources.md` (CT-0005 section). Downloads cache under `Fixtures/SourceDownloads/` (Git-ignored).
+- **Cinematic open-content offline HLS pipeline** — `Scripts/build_ct0005_cinematic_open_hls.py` builds a **1920×800** HLS + English WebVTT package from Blender Foundation *Tears of Steel* mirrors plus official `TOS-en.srt`, with a default trim that favors iconic rooftop dialogue. Output default: `CaptionTheater/CaptionTheater/Media/OfflineHLS/BlenderToSCinematicClip/`. Documented in `Docs/Sources.md` (CT-0005 section). Downloads cache under `Fixtures/SourceDownloads/` (Git-ignored). See `Scripts/README.md` for when to use this script vs `download_mux_offline_hls_mock.py`.
 
-Remaining tasks (synthetic / detector suite):
+**Backlog (fully synthetic / detector suite)**
 
 - Generate an ultra-widescreen 2.39:1 active-picture fixture inside a 16:9 raster (fully synthetic raster, no third-party footage).
 - Generate a matching WebVTT fixture with dense dialogue and SDH-style cues for synthetic visuals.
@@ -320,7 +336,7 @@ Acceptance Criteria:
 - Fully synthetic detector variants do not require external media licensing.
 - Generation scripts do not write to `/tmp`, `/private/tmp`, `/var/tmp`, or any path outside the repository.
 
-#### CT-0006 [IN PROGRESS]: Create Five-Minute Offline HLS Mock of the Hero Stream
+#### CT-0006 [DONE]: Create Five-Minute Offline HLS Mock of the Hero Stream
 
 User Story:
 As a demo owner, I need a repo-local offline version of the current hero stream so the Caption Theater proof of concept can be demonstrated without relying on internet connectivity or public-stream availability.
@@ -373,21 +389,21 @@ Non-Goals:
 
 Implementation Status:
 
-- Offline media package created at `CaptionTheater/CaptionTheater/Media/OfflineHLS/TearsOfSteelFiveMinuteMock/`.
-- Package contains one `1920x800` HLS rendition with combined H.264/AAC media, 60 local `.ts` segments, 10 local English WebVTT segments, rewritten local playlists, `PROVENANCE.md`, and `MEDIA_BACKUP_MANIFEST.txt`.
-- Local `ffprobe` validation reads the package as 300 seconds with WebVTT subtitles, H.264 video, and AAC audio.
-- App-source selection, launch-argument selection, Feature Toggles selection, Xcode folder-resource inclusion, and focused launch-configuration tests are implemented.
-- Remaining: simulator/device playback with network disabled and broader app/UI smoke coverage.
+- Offline media package at `CaptionTheater/CaptionTheater/Media/OfflineHLS/TearsOfSteelFiveMinuteMock/` (single `1920×800` ladder slice: MPEG-TS + segmented English WebVTT, playlists rewritten to repo-relative URIs, `PROVENANCE.md`, manifest checksum file).
+- Regeneration path documented alongside Sources (`Scripts/download_mux_offline_hls_mock.py`).
+- **App integration:** `CaptionTheaterPlaybackDemoSource.bundledOfflineHLSMock`, `CaptionTheaterPlaybackFixture.offlineHLSMockMasterPlaylistURL(bundle:)`, `OfflineHLS` folder reference on the tvOS app target (preserves subdirectory layout), `--caption-theater-offline-hls` / `-CaptionTheater.playbackDemoSource` launch shortcuts (`CaptionTheaterLaunchConfiguration`).
+- **Automated coverage:** `CaptionTheaterOfflineHLSBundleTests` asserts bundled master/variant/subtitle playlists, sample `.ts` / `.vtt`, and key `#EXT-X-*` markers (`TASKS` acceptance: smoke checks fail when the fixture tree is incomplete).
+- **Manual QA (each milestone / release candidate):** on tvOS Simulator or device, disable network, select **Offline HLS mock**, confirm playback starts and Caption Theater receives subtitle text; record regressions in `memlog/` or issue tracker.
 
 ### Phase 0 Exit Criteria
 
 - Product thesis is agreed.
 - Fixture inventory supports **current** metadata/decision modules (`Docs/Fixture-Inventory.md`); video, synthetic-frame, and full demo matrices may still be **in progress** (**CT-0002**).
-- Demo script is ready (**CT-0001**).
-- Success metrics are defined (**CT-0003**).
-- Real-world widescreen candidate URLs and license notes are documented (**CT-0004**).
-- Generated fixture requirements are documented (**CT-0005**).
-- Offline hero-stream mock requirements are documented and prioritized separately (**CT-0006**).
+- Demo narrative baseline documented (**CT-0001**; see `README.md`).
+- Success metrics placeholders documented (**CT-0003**).
+- Real-world widescreen candidate URLs and control streams documented (**CT-0004**; see `Docs/Sources.md`).
+- Generated fixture strategy documented and open-master cinematic pipeline scripted (**CT-0005**; see `Docs/Sources.md`, `Scripts/README.md`).
+- Offline hero-stream mock implemented with automated bundle smoke tests (**CT-0006**).
 
 ---
 

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// Named caption sizes for Caption Theater overlays when ``CaptionTheaterLayoutGeometry/captionReadingRect`` supplies extra vertical space.
 ///
@@ -35,10 +36,13 @@ enum CaptionTheaterCaptionTextSizePreset: String, CaseIterable, Identifiable, Se
     }
 
     /// SwiftUI font for MVP caption overlays; Phase 4 renderer should honor the same semantic steps with Dynamic Type.
+    ///
+    /// ``standard`` uses the resolved **Caption 1** text style plus **2 pt** so the default band stays readable without jumping to the next semantic notch (``.large`` / ``.callout``).
     var captionOverlayFont: Font {
         switch self {
         case .standard:
-            return .caption
+            let basePoints = UIFont.preferredFont(forTextStyle: .caption1).pointSize
+            return Font.system(size: basePoints + 2, weight: .regular, design: .default)
         case .large:
             return .callout
         case .extraLarge:

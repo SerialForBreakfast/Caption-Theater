@@ -52,6 +52,13 @@ Expected use:
 - Subtitle persistence candidate.
 - Ultra-widescreen HLS manifest inspection candidate.
 
+Offline mock note:
+
+- A possible future fixture is a private POC-only five-minute offline HLS mock derived from this stream.
+- The mock should include one selected video rendition, matching audio if separate, matching English WebVTT subtitles, rewritten local playlists, and local segments.
+- Do not treat that mock as release media.
+- Before making this repository public, re-check the source license, attribution terms, and redistribution rights; remove or replace the mock if redistribution is not explicitly allowed.
+
 ---
 
 ### 2. Sintel — Bitmovin HLS

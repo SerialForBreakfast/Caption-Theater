@@ -315,6 +315,57 @@ Acceptance Criteria:
 - Generated content does not require external media licensing.
 - Generation scripts do not write to `/tmp`, `/private/tmp`, `/var/tmp`, or any path outside the repository.
 
+#### CT-0006 [TODO]: Create Five-Minute Offline HLS Mock of the Hero Stream
+
+User Story:
+As a demo owner, I need a repo-local offline version of the current hero stream so the Caption Theater proof of concept can be demonstrated without relying on internet connectivity or public-stream availability.
+
+Context:
+
+- Current hero candidate: Mux-hosted Tears of Steel HLS VOD documented in `Docs/Sources.md`.
+- Intended use: private proof-of-concept and development fixture only, not release media.
+- Public-repo risk: before making the repository public, re-check licensing, attribution, and redistribution rights for any downloaded third-party video, audio, subtitle, or playlist content.
+- Scope preference: capture approximately the first five minutes of the exact stream path used by the app today, but keep the implementation narrow to one rendition plus subtitles rather than mirroring the whole adaptive ladder.
+
+Tasks:
+
+- Re-verify the Mux master playlist is reachable and still contains a true ultra-widescreen encoded variant, preferably `1920x800` or the nearest available cinematic aspect ratio.
+- Re-verify the stream still declares sidecar WebVTT subtitles and identify the English subtitle playlist URI.
+- Inspect the selected video variant, audio rendition, and subtitle playlists to determine segment duration, media sequence, discontinuity tags, and whether URLs are signed or time-limited.
+- Select one video rendition for the offline fixture; do not download the entire adaptive ladder unless explicitly needed.
+- Capture enough video, audio, and subtitle segments to cover at least the first five minutes of playback.
+- Preserve a self-contained HLS structure under `CaptionTheater/CaptionTheater/Media/OfflineHLS/TearsOfSteelFiveMinuteMock/`.
+- Rewrite master, variant, audio, and subtitle playlists to use repo-local relative paths only.
+- Trim playlists so they represent only the captured five-minute window and include correct `#EXT-X-TARGETDURATION`, `#EXT-X-MEDIA-SEQUENCE`, `#EXTINF`, and `#EXT-X-ENDLIST` behavior.
+- Preserve WebVTT cue timing relative to the offline playback window; if subtitle playlists use segmented WebVTT, keep segment timing coherent with the media slice.
+- Add a provenance file in the offline fixture folder documenting source URL, capture date, selected rendition, selected subtitle language, intended private POC use, and public-repo review requirement.
+- Add an entry to `Docs/Sources.md` recording that the offline mock exists only as a development fixture and must be removed, replaced, or explicitly cleared before the repo becomes public.
+- Add a `CaptionTheaterPlaybackDemoSource` case for the bundled offline HLS mock, separate from the live Mux stream and the bundled synthetic MP4.
+- Ensure `playbackURL()` resolves the local master playlist from the app bundle and fails with a clear missing-resource placeholder if the offline fixture is absent.
+- Update Xcode project resources so the offline HLS folder is included in the app target without flattening paths that HLS relative URIs depend on.
+- Add smoke coverage that the offline fixture resources exist in the test bundle or app bundle with the expected master playlist, selected media playlist, subtitle playlist, and at least one media/subtitle segment.
+- Add fixture inventory coverage documenting expected eligibility: ultra-widescreen video, WebVTT subtitles, clear content, Caption Theater eligible unless other runtime evidence blocks it.
+- Verify on Apple TV Simulator or device with network disabled, using the offline source, that playback starts and Caption Theater can receive subtitle text.
+- Record any failure modes, especially AVFoundation bundle URL restrictions, relative HLS path issues, signed URL expiration, subtitle selection failures, or missing audio/video segment references.
+
+Acceptance Criteria:
+
+- A single repo-local offline HLS package plays at least five minutes without internet access.
+- The offline package includes local video/audio media segments and local WebVTT subtitle content, not just manifest stubs.
+- The app has a selectable bundled offline HLS demo source.
+- Caption Theater eligibility and subtitle extraction work against the offline source.
+- The fixture is documented as private POC media and explicitly flagged for licensing review before public repository publication.
+- All generated/downloaded files stay inside the repository.
+- No private credentials, cookies, signed private URLs, DRM keys, raw protected frames, or unsanitized production manifests are stored.
+- Tests or smoke checks fail clearly if the offline fixture is incomplete.
+
+Non-Goals:
+
+- Do not implement a full HLS downloader product feature.
+- Do not mirror every Mux rendition.
+- Do not ship the offline mock as release content.
+- Do not use protected, paid, DRM, or streaming-service content.
+
 ### Phase 0 Exit Criteria
 
 - Product thesis is agreed.
@@ -323,6 +374,7 @@ Acceptance Criteria:
 - Success metrics are defined (**CT-0003**).
 - Real-world widescreen candidate URLs and license notes are documented (**CT-0004**).
 - Generated fixture requirements are documented (**CT-0005**).
+- Offline hero-stream mock requirements are documented and prioritized separately (**CT-0006**).
 
 ---
 

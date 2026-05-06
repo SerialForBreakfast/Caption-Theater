@@ -12,6 +12,8 @@ The project explores how to build this as a modular playback add-on for native i
 
 **Implementation note:** The Xcode repository currently ships **tvOS-only** targets. Cross-platform goals below remain valid; new playback and showcase code should land on **tvOS** first until additional targets are added.
 
+**POC media note:** Any downloaded third-party media, HLS segments, subtitle files, or copied public-stream content in this repository is for private proof-of-concept use only unless its license and attribution terms explicitly allow broader redistribution. Before changing this repository to public visibility, review local media fixtures and either confirm redistribution rights, replace them with generated/open fixtures, or remove them.
+
 ---
 
 ## Product Thesis

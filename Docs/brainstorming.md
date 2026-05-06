@@ -862,6 +862,244 @@ Implementation notes:
 
 ### 18G. Subtitle-Gap Visual Context
 
+---
+
+### 18H. Live Life-Context Panel
+
+Use the extra region for user-selected, live-updating context that helps people stay immersed without constantly leaving playback.
+
+Value:
+
+- Reduces phone-checking during movies.
+- Helps viewers monitor time-sensitive events without pausing or opening other apps.
+- Supports households where playback is frequently interrupted by timers, deliveries, rides, sports scores, weather alerts, calendar reminders, or smart-home events.
+
+Feasibility: Medium.  
+Distraction risk: Medium to high.  
+MVP fit: Future opt-in mode.
+
+Possible uses:
+
+- food delivery status
+- rideshare status
+- sports score glance
+- timer or oven reminder
+- weather alert
+- calendar reminder
+- smart-home doorbell or motion event
+- baby monitor or accessibility alert integration
+
+System widget reality:
+
+- WidgetKit lets an app expose its own glanceable widgets to system surfaces such as the Home Screen, Lock Screen, StandBy, Smart Stack, and similar system-managed locations.
+- ActivityKit Live Activities can show an app’s live data on the Lock Screen, Dynamic Island, CarPlay, Apple Watch, and paired Mac surfaces.
+- A playback app should not assume it can embed arbitrary widgets from other apps inside its own video UI.
+- The feasible product pattern is to build a project-owned “glance panel” that integrates with approved APIs, app-owned data, user-authorized services, or deep links.
+
+Better product framing:
+
+```text
+Glance Panel: approved live cards while watching
+```
+
+Examples:
+
+```text
+Delivery: arriving in 12 min
+```
+
+```text
+Giants 3 — Dodgers 2, Bot 7th
+```
+
+```text
+Timer: 04:22 remaining
+```
+
+Distraction guidance:
+
+- Must be opt-in.
+- Should have a “quiet while movie is playing” mode.
+- Should collapse to icons during dialogue or dense caption moments.
+- Should expand only on pause, remote press, or high-priority alert.
+- Should never compete with captions.
+
+---
+
+### 18I. Interruption-Aware Playback Helper
+
+Detect likely interruption moments and offer lightweight recovery support.
+
+Value:
+
+- Helps viewers return after checking the door, answering a text, handling food, or responding to a household interruption.
+- Reduces rewinding after interruptions.
+- Makes pause/resume smarter without changing the movie.
+
+Feasibility: Medium with playback state, subtitles, and pause/resume timing.  
+Distraction risk: Low when pause/resume triggered.  
+MVP fit: Strong future pause/resume feature.
+
+Possible behavior:
+
+- On resume after a long pause, show the last 2–3 caption cues.
+- Offer “rewind to start of last sentence.”
+- Offer “rewind to start of scene.”
+- Show a short pause summary from already-seen captions.
+- Show “You paused during a silent visual beat” if visual context metadata exists.
+
+Example:
+
+```text
+Resume helper: replay last 12 seconds?
+```
+
+Distraction guidance:
+
+- Trigger only after pause/resume events.
+- Keep controls transient.
+- Do not become an always-on assistant.
+
+---
+
+### 18J. Smart Rewind / Caption Recovery
+
+Use caption timing and scene boundaries to make rewind smarter than fixed 10-second jumps.
+
+Value:
+
+- Solves the common “I missed that line” problem.
+- Helps caption users recover complete dialogue context.
+- Useful on tvOS where scrubbing is slower and more annoying.
+
+Feasibility: High for text-based subtitles; medium with scene-boundary metadata.  
+Distraction risk: Low.  
+MVP fit: Strong future companion feature.
+
+Possible actions:
+
+- replay current cue
+- replay previous cue
+- rewind to start of sentence
+- rewind to start of speaker turn
+- rewind to start of scene
+
+Example:
+
+```text
+Missed a line? Replay previous caption cue
+```
+
+Notes:
+
+- This does not require using the extra area all the time.
+- The lower region can expose the action when the user taps back or pauses.
+- Pairs naturally with persistent captions.
+
+---
+
+### 18K. Dialogue Density / Cognitive Load Indicator
+
+Detect unusually dense subtitle sequences and adapt caption presentation.
+
+Value:
+
+- Helps users understand why a scene feels hard to follow.
+- Can automatically increase retention duration or reduce nonessential overlays.
+- Helps second-language viewers and users with cognitive load challenges.
+
+Feasibility: High for text-based subtitles.  
+Distraction risk: Low if mostly adaptive rather than visibly announced.  
+MVP fit: Strong MVP+ candidate.
+
+Inputs:
+
+- characters per second
+- words per minute
+- number of speaker changes
+- cue overlap or short cue duration
+- SDH metadata density
+
+Example UI, if needed:
+
+```text
+Dense dialogue: retaining captions longer
+```
+
+Better behavior:
+
+- silently increase persistence during dense dialogue;
+- suppress nonessential augmentations;
+- offer larger text or more retained lines.
+
+---
+
+### 18L. Live Translation / Dub Assist Panel
+
+Use the extra region to clarify translation, dubbing, or subtitle/audio mismatch situations.
+
+Value:
+
+- Helps viewers understand why subtitles do not exactly match dubbed audio.
+- Helps multilingual households.
+- Helps language learners compare audio and subtitle tracks.
+
+Feasibility: Medium with track metadata and subtitle access.  
+Distraction risk: Medium.  
+MVP fit: Future language mode.
+
+Possible UI:
+
+```text
+Audio: English Dub | Subtitles: English Translation
+```
+
+```text
+Note: subtitle timing follows original Japanese audio
+```
+
+Notes:
+
+- Useful when users complain that captions “do not match.”
+- Should be transient or settings-driven.
+- Can reduce confusion without adding more content analysis.
+
+---
+
+### 18M. Accessibility Event Timeline
+
+Use the extra space to show a short upcoming/previous event timeline for selected accessibility needs.
+
+Value:
+
+- Helps users anticipate intense sensory events when opted in.
+- Helps Deaf and hard-of-hearing viewers track non-speech audio events.
+- Helps viewers understand sequences of off-screen sounds or visual beats.
+
+Feasibility: Medium with SDH, audio description, or curated metadata.  
+Distraction risk: Medium.  
+MVP fit: Future accessibility mode.
+
+Example:
+
+```text
+Recent: footsteps upstairs → door opens → phone vibrates
+```
+
+Or opted-in warning mode:
+
+```text
+Upcoming: flashing lights in ~20 seconds
+```
+
+Notes:
+
+- Should not preview plot events by default.
+- Warning lead time should be user-configurable.
+- Works best with authored accessibility metadata.
+
+---
+
 During gaps between subtitle cues, use the extra space to describe important visual action, setting, or object changes.
 
 Value:
@@ -1389,6 +1627,12 @@ Notes:
 | Focus / depth-of-field estimator | Medium | Medium | Medium | Film Lab research |
 | Visual trigger/content warning detection | High for specific users | Medium-Low | Low-Medium | Accessibility research |
 | Live visual description from image detection | High for specific users | Medium-Low | Medium-High | Accessibility research |
+| Interruption-aware playback helper | High | Medium | Low | Strong future |
+| Smart rewind / caption recovery | High | High-Medium | Low | Strong future |
+| Dialogue density / cognitive load indicator | High | High | Low | MVP+ |
+| Live life-context panel | Medium-High | Medium | Medium-High | Future opt-in |
+| Live translation / dub assist panel | Medium-High | Medium | Medium | Future language mode |
+| Accessibility event timeline | High for specific users | Medium | Medium | Future accessibility |
 | SDH soundscape enhancement | High | High-Medium | Low | Strong future |
 | Accessibility reading controls | High | High | Medium | Strong future |
 | Audio description controls | High | High | Low | Strong future |
@@ -1431,6 +1675,8 @@ These are directly aligned with the current project.
 - caption style preview and tuning
 - SDH cue persistence
 - caption reading controls
+- smart rewind / caption recovery
+- dialogue density adaptive persistence
 
 ### Bucket 2: Accessibility Augmentations
 
@@ -1453,6 +1699,8 @@ These may provide real user value but need careful design.
 - live visual description from image detection
 - visual trigger/content warning detection
 - visual style change detection
+- accessibility event timeline
+- interruption-aware playback recovery
 
 ### Bucket 3: Contextual Enrichment
 
@@ -1489,6 +1737,8 @@ These are interesting but should not be mixed into the default Caption Theater e
 - scene search
 - language learning mode
 - film study mode
+- live life-context glance panel
+- language/dub assist mode
 
 ---
 
@@ -1499,10 +1749,12 @@ The strongest near-term value adds are:
 1. Persistent multi-line captions.
 2. Large caption mode.
 3. Reading pace assist.
-4. Caption style preview and tuning.
-5. SDH soundscape persistence.
-6. Audio description controls.
-7. Caption confidence/source indicators.
+4. Dialogue density adaptive persistence.
+5. Smart rewind / caption recovery.
+6. Caption style preview and tuning.
+7. SDH soundscape persistence.
+8. Audio description controls.
+9. Caption confidence/source indicators.
 
 These directly improve comprehension and accessibility without turning the empty region into a distracting dashboard.
 
@@ -1512,12 +1764,14 @@ The most exciting future ideas are:
 2. Subtitle-gap visual context.
 3. Dynamic cinematography notes.
 4. Visual style change detector.
-5. Spoiler-safe “what did I miss?” recap.
-6. Sign language companion window.
-7. Descriptive transcript strip.
-8. Translation/language learning mode.
-9. Camera viewpoint and movement classifier.
-10. Scene search while paused or scrubbing.
+5. Interruption-aware playback helper.
+6. Live life-context glance panel.
+7. Spoiler-safe “what did I miss?” recap.
+8. Sign language companion window.
+9. Descriptive transcript strip.
+10. Translation/language learning mode.
+11. Camera viewpoint and movement classifier.
+12. Scene search while paused or scrubbing.
 
 These could be powerful, but they require stronger metadata, trust, and UX guardrails.
 
@@ -1555,6 +1809,43 @@ Best candidates for dynamic behavior:
 7. Trigger/content warnings for opted-in users.
 
 ---
+## System Widgets and Live App Data
+
+It is worth exploring whether the extra area can act like a watch-mode glance surface, but this should be treated carefully.
+
+Product idea:
+
+- Let viewers opt into a small set of live cards while watching.
+- Prioritize user-selected, time-sensitive information.
+- Collapse or hide cards during dense captions or important scenes.
+- Expand on pause or explicit remote/keyboard interaction.
+
+Platform reality:
+
+- WidgetKit is designed for an app to expose its own glanceable content to system-managed surfaces.
+- ActivityKit Live Activities expose an app’s live data on system surfaces such as the Lock Screen, Dynamic Island, CarPlay, Apple Watch, and paired Mac surfaces.
+- A third-party playback app generally should not assume it can embed arbitrary widgets from other apps inside its own playback UI.
+- The feasible path is a project-owned glance panel with app-owned integrations, user-authorized data, deep links, or provider APIs.
+
+Best use cases:
+
+- timers
+- delivery or rideshare status
+- sports score glance
+- weather alert
+- calendar reminder
+- smart-home or doorbell event
+- accessibility alert
+
+Product guardrails:
+
+- User must opt in.
+- Captions take priority.
+- Ads remain fullscreen/native.
+- The glance panel should hide during dense dialogue unless explicitly pinned.
+- No third-party data should appear without user authorization.
+- No arbitrary widget embedding should be assumed in the architecture.
+
 
 ## References
 

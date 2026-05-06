@@ -58,12 +58,7 @@ struct tvOSPlaybackShellView: View {
     }
 
     private var missingPlaybackGuidance: String {
-        switch demoSource {
-        case .bundledSyntheticSample:
-            return "Add \(CaptionTheaterPlaybackFixture.sampleVideoResourceName).\(CaptionTheaterPlaybackFixture.sampleVideoExtension) to the app target Media folder."
-        case .muxTearsOfSteelHLS:
-            return "The Mux demo URL failed to resolve. Change `CaptionTheater.playbackDemoSource` in User Defaults if needed."
-        }
+        demoSource.missingPlaybackGuidance
     }
 
     private func playbackBody(url: URL) -> some View {

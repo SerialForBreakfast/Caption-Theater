@@ -5,3 +5,6 @@ CaptionTheater/CaptionTheater.xcodeproj/project.xcworkspace/xcuserdata/josephmcc
 #   git rm -r --cached Scratch/
 /Scratch/
 /scratch/
+
+# Large cached masters downloaded by Scripts/build_ct0005_cinematic_open_hls.py
+Fixtures/SourceDownloads/

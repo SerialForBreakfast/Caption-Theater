@@ -291,15 +291,19 @@ Acceptance Criteria:
 - At least one Apple HLS sample stream is documented as a control reference.
 - The fixture inventory distinguishes real-world demo media from generated detector fixtures.
 
-#### CT-0005 [TODO]: Generate Purpose-Built Test Content
+#### CT-0005 [IN PROGRESS]: Generate Purpose-Built Test Content
 
 User Story:
 As a detector and caption-rendering engineer, I need generated known-answer content so edge cases can be tested without relying on real media.
 
-Tasks:
+Primary deliverable (landed):
 
-- Generate an ultra-widescreen 2.39:1 active-picture fixture inside a 16:9 raster.
-- Generate a matching WebVTT fixture with dense dialogue and SDH-style cues.
+- **Cinematic open-content offline HLS pipeline** — `Scripts/build_ct0005_cinematic_open_hls.py` builds a **1920×800** HLS + English WebVTT package from Blender Foundation *Tears of Steel* mirrors plus official `TOS-en.srt`, with a default trim that favors iconic rooftop dialogue. Output default: `CaptionTheater/CaptionTheater/Media/OfflineHLS/BlenderToSCinematicClip/`. Documented in `Docs/Sources.md` (CT-0005 section). Downloads cache under `Fixtures/SourceDownloads/` (Git-ignored).
+
+Remaining tasks (synthetic / detector suite):
+
+- Generate an ultra-widescreen 2.39:1 active-picture fixture inside a 16:9 raster (fully synthetic raster, no third-party footage).
+- Generate a matching WebVTT fixture with dense dialogue and SDH-style cues for synthetic visuals.
 - Generate a full-frame 16:9 control fixture.
 - Generate a 4:3 pillarbox stretch-goal fixture.
 - Generate a variable-aspect stretch-goal fixture.
@@ -312,10 +316,11 @@ Acceptance Criteria:
 - Generated fixtures are deterministic and project-local.
 - Every generated fixture has an expected Caption Theater decision.
 - Unsafe fixtures are suitable for automated detector tests.
-- Generated content does not require external media licensing.
+- Open-derived bundles comply with source licensing before **public** redistribution (private dev/PoC use matches other offline HLS fixtures).
+- Fully synthetic detector variants do not require external media licensing.
 - Generation scripts do not write to `/tmp`, `/private/tmp`, `/var/tmp`, or any path outside the repository.
 
-#### CT-0006 [TODO]: Create Five-Minute Offline HLS Mock of the Hero Stream
+#### CT-0006 [IN PROGRESS]: Create Five-Minute Offline HLS Mock of the Hero Stream
 
 User Story:
 As a demo owner, I need a repo-local offline version of the current hero stream so the Caption Theater proof of concept can be demonstrated without relying on internet connectivity or public-stream availability.
@@ -365,6 +370,14 @@ Non-Goals:
 - Do not mirror every Mux rendition.
 - Do not ship the offline mock as release content.
 - Do not use protected, paid, DRM, or streaming-service content.
+
+Implementation Status:
+
+- Offline media package created at `CaptionTheater/CaptionTheater/Media/OfflineHLS/TearsOfSteelFiveMinuteMock/`.
+- Package contains one `1920x800` HLS rendition with combined H.264/AAC media, 60 local `.ts` segments, 10 local English WebVTT segments, rewritten local playlists, `PROVENANCE.md`, and `MEDIA_BACKUP_MANIFEST.txt`.
+- Local `ffprobe` validation reads the package as 300 seconds with WebVTT subtitles, H.264 video, and AAC audio.
+- App-source selection, launch-argument selection, Feature Toggles selection, Xcode folder-resource inclusion, and focused launch-configuration tests are implemented.
+- Remaining: simulator/device playback with network disabled and broader app/UI smoke coverage.
 
 ### Phase 0 Exit Criteria
 

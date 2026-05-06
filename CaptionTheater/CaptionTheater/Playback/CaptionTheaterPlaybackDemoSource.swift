@@ -17,6 +17,9 @@ enum CaptionTheaterPlaybackDemoSource: String, CaseIterable, Identifiable {
     /// Bundled synthetic clip from ``CaptionTheaterPlaybackFixture`` (offline; typically ~16:9 presentation).
     case bundledSyntheticSample
 
+    /// Bundled five-minute local HLS mock: true ultra-wide video + English WebVTT subtitles.
+    case bundledOfflineHLSMock
+
     /// Public Mux VOD stream: ultra-wide ladder + sidecar subtitles (see ``Docs/Sources.md`` candidate #1).
     case muxTearsOfSteelHLS
 
@@ -27,16 +30,32 @@ enum CaptionTheaterPlaybackDemoSource: String, CaseIterable, Identifiable {
         switch self {
         case .bundledSyntheticSample:
             return "Bundled synthetic sample"
+        case .bundledOfflineHLSMock:
+            return "Offline HLS mock (5 min, UW + subs)"
         case .muxTearsOfSteelHLS:
             return "Mux: Tears of Steel (HLS, UW + subs)"
         }
     }
 
-    /// Resolves the ``URL`` used by ``AVPlayer`` for this source; nil when the bundled sample is missing from the target.
-    func playbackURL() -> URL? {
+    /// User-facing missing-media guidance for sources that resolve from the app bundle.
+    var missingPlaybackGuidance: String {
         switch self {
         case .bundledSyntheticSample:
-            CaptionTheaterPlaybackFixture.sampleVideoURL()
+            return "Add \(CaptionTheaterPlaybackFixture.sampleVideoResourceName).\(CaptionTheaterPlaybackFixture.sampleVideoExtension) to the app target Media folder."
+        case .bundledOfflineHLSMock:
+            return "Add \(CaptionTheaterPlaybackFixture.offlineHLSMockMasterPlaylistSubdirectory)/\(CaptionTheaterPlaybackFixture.offlineHLSMockMasterPlaylistResourceName).\(CaptionTheaterPlaybackFixture.offlineHLSMockMasterPlaylistExtension) to the app target Media folder."
+        case .muxTearsOfSteelHLS:
+            return "The Mux demo URL failed to resolve. Change `CaptionTheater.playbackDemoSource` in Feature Toggles or launch arguments."
+        }
+    }
+
+    /// Resolves the ``URL`` used by ``AVPlayer`` for this source; nil when the bundled sample is missing from the target.
+    func playbackURL(bundle: Bundle = .main) -> URL? {
+        switch self {
+        case .bundledSyntheticSample:
+            CaptionTheaterPlaybackFixture.sampleVideoURL(bundle: bundle)
+        case .bundledOfflineHLSMock:
+            CaptionTheaterPlaybackFixture.offlineHLSMockMasterPlaylistURL(bundle: bundle)
         case .muxTearsOfSteelHLS:
             CaptionTheaterPlaybackFixture.muxTearsOfSteelDemoMasterPlaylistURL
         }

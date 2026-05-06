@@ -28,8 +28,33 @@ enum CaptionTheaterPlaybackFixture {
     /// Inner segment URLs are signed by Mux and may expire between playlist refreshes; `AVPlayer` reloads manifests normally.
     static let muxTearsOfSteelDemoMasterPlaylistURL = URL(string: "https://stream.mux.com/4XYzhPXzqArkFI8d1vDsScBLD69Gh1b2.m3u8")
 
+    /// Repo-local five-minute HLS mock derived from the Mux Tears of Steel demo stream for private POC use.
+    static let offlineHLSMockMasterPlaylistSubdirectory = "OfflineHLS/TearsOfSteelFiveMinuteMock"
+
+    /// Master playlist filename for ``offlineHLSMockMasterPlaylistURL(bundle:)``.
+    static let offlineHLSMockMasterPlaylistResourceName = "master"
+
+    /// Master playlist extension for ``offlineHLSMockMasterPlaylistURL(bundle:)``.
+    static let offlineHLSMockMasterPlaylistExtension = "m3u8"
+
     /// URL of the packaged MP4 used by ``tvOSPlaybackShellView``, when present in the bundle.
-    static func sampleVideoURL() -> URL? {
-        Bundle.main.url(forResource: sampleVideoResourceName, withExtension: sampleVideoExtension)
+    static func sampleVideoURL(bundle: Bundle = .main) -> URL? {
+        bundle.url(forResource: sampleVideoResourceName, withExtension: sampleVideoExtension)
+    }
+
+    /// URL of the packaged offline HLS mock master playlist, when present in the bundle.
+    static func offlineHLSMockMasterPlaylistURL(bundle: Bundle = .main) -> URL? {
+        if let preservedSubdirectoryURL = bundle.url(
+            forResource: offlineHLSMockMasterPlaylistResourceName,
+            withExtension: offlineHLSMockMasterPlaylistExtension,
+            subdirectory: offlineHLSMockMasterPlaylistSubdirectory
+        ) {
+            return preservedSubdirectoryURL
+        }
+
+        return bundle.url(
+            forResource: offlineHLSMockMasterPlaylistResourceName,
+            withExtension: offlineHLSMockMasterPlaylistExtension
+        )
     }
 }

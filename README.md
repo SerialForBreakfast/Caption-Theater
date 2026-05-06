@@ -16,6 +16,30 @@ The project explores how to build this as a modular playback add-on for native i
 
 ---
 
+## Developer Demo Controls
+
+The playback shell includes a **Feature Toggles** button for switching demo media, enabling the playback debug HUD, and changing Caption Theater caption text size.
+
+Launch arguments can preselect the same settings:
+
+```text
+--caption-theater-offline-hls
+-CaptionTheater.playbackDemoSource bundledOfflineHLSMock
+--caption-theater-playback-demo-source=bundledOfflineHLSMock
+--caption-theater-show-feature-toggles
+-CaptionTheater.showFeatureToggles YES
+```
+
+Available demo media raw values:
+
+- `muxTearsOfSteelHLS`
+- `bundledOfflineHLSMock`
+- `bundledSyntheticSample`
+
+`bundledOfflineHLSMock` uses the repo-local five-minute HLS package under `CaptionTheater/CaptionTheater/Media/OfflineHLS/TearsOfSteelFiveMinuteMock/`.
+
+---
+
 ## Product Thesis
 
 > Caption Theater turns unused cinema letterbox space into a dedicated caption reading area, giving viewers longer-lasting subtitle context without covering the active picture.

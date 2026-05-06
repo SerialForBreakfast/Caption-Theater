@@ -54,8 +54,8 @@ Expected use:
 
 Offline mock note:
 
-- A possible future fixture is a private POC-only five-minute offline HLS mock derived from this stream.
-- The mock should include one selected video rendition, matching audio if separate, matching English WebVTT subtitles, rewritten local playlists, and local segments.
+- A private POC-only five-minute offline HLS mock derived from this stream exists at `CaptionTheater/CaptionTheater/Media/OfflineHLS/TearsOfSteelFiveMinuteMock/`.
+- The mock includes one selected `1920x800` rendition with combined H.264/AAC media, matching English WebVTT subtitles, rewritten local playlists, and local segments.
 - Do not treat that mock as release media.
 - Before making this repository public, re-check the source license, attribution terms, and redistribution rights; remove or replace the mock if redistribution is not explicitly allowed.
 
@@ -209,6 +209,34 @@ Generated fixture variants:
 - legal-text-like lower region
 
 All generated content and generation scripts must stay inside the repository. Do not write to `/tmp`, `/private/tmp`, or `/var/tmp`.
+
+---
+
+## CT-0005: Cinematic open-content pipeline (repo-local)
+
+**Task:** CT-0005 (see `TASKS.md`) — purpose-built offline HLS that exercises Caption Theater:
+true ultra-wide raster, recognizable live-action imagery, and English dialogue via sidecar WebVTT.
+
+**Script:** `Scripts/build_ct0005_cinematic_open_hls.py`
+
+**Default sources (Blender Foundation mirrors):**
+
+- Video master: `https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov`
+- English subtitles (official ``TOS-en.srt``): `https://download.blender.org/demo/movies/ToS/subtitles/TOS-en.srt`
+
+Alternate masters from the same directory (for example `ToS-4k-1920.mov`) can be passed with `--video-url`. Downloads are cached under `Fixtures/SourceDownloads/ct0005-open-masters/` (ignored by Git).
+
+**What it produces:**
+
+- Output folder (default): `CaptionTheater/CaptionTheater/Media/OfflineHLS/BlenderToSCinematicClip/`
+- Center cinematic crop toward **1920×800**, AAC audio, H.264 MPEG-TS segments, `master.m3u8` + `EXT-X-MEDIA` subtitles aligned to segment durations.
+- Defaults trim **`--trim-start 22`** for **`--duration 120`** seconds so the clip lands on the iconic Amsterdam rooftop argument (“You're a jerk, Thom…” ) with dense dialogue — adjust as needed.
+
+**Requirements:** `ffmpeg` and `ffprobe` on `PATH`.
+
+**Licensing:** Re-verify Blender Foundation / *Tears of Steel* terms and attribution before publishing the repo or redistributing bundles. The blender.org `copyright.txt` in the demo folder primarily documents soundtrack licensing; confirm motion-picture reuse separately (`tearsofsteel.org`, Blender Foundation).
+
+**Related:** Re-encoded offline ladder pulled directly from the public Mux multivariant stream (no crop) lives under `Scripts/download_mux_offline_hls_mock.py` and `Media/OfflineHLS/TearsOfSteelFiveMinuteMock/`.
 
 ---
 

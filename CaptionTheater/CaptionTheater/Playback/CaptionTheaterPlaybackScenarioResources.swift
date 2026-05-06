@@ -180,7 +180,7 @@ nonisolated enum CaptionTheaterPlaybackScenarioKind: String, CaseIterable, Ident
 extension Bundle {
 
     /// Resolves playback demo fixtures whether Xcode copied them under ``PlaybackScenarios`` or flat into the bundle root.
-    fileprivate func urlForPlaybackScenarioResource(name: String, extension ext: String) -> URL? {
+    fileprivate nonisolated func urlForPlaybackScenarioResource(name: String, extension ext: String) -> URL? {
         if let url = url(forResource: name, withExtension: ext, subdirectory: CaptionTheaterPlaybackScenarioKind.playbackScenarioResourcesSubdirectory) {
             return url
         }

@@ -2758,6 +2758,105 @@ The most exciting future ideas are:
 24. Stream quality change explainer.
 
 These could be powerful, but they require stronger metadata, trust, and UX guardrails.
+
+
+
+## Native Apple Tooling Opportunity Map
+
+Many of the strongest ideas become more actionable when mapped to existing Apple platform capabilities. The product question is not only “what could we show?” but “what viewer problem does an Apple-native API help us solve?”
+
+| Viewer Problem | Possible Feature | Native Apple Tools / APIs | Notes |
+|---|---|---|---|
+| “I missed that line.” | Replay previous caption, rewind to current cue, caption persistence | AVFoundation timebase, media selection, WebVTT/sidecar subtitles, custom cue model | Strong fit. This is directly aligned with Caption Theater Core. |
+| “The captions disappear too quickly.” | Adaptive caption retention based on cue density | AVFoundation timed text, custom renderer, accessibility settings | Strong fit. Requires custom caption rendering. |
+| “The captions are too small from the couch.” | Large caption mode and live style preview | MediaAccessibility, UIKit/AppKit/SwiftUI text rendering, system caption preferences | Strong fit. Should respect system settings where possible. |
+| “Why did the video quality suddenly get worse?” | Quality change explainer | `AVPlayerItemAccessLogEvent`, buffer state, observed bitrate, indicated bitrate | Strong Projection Booth/support feature. |
+| “Is this stream actually 4K / HDR / Atmos?” | Playback diagnostics strip | AVFoundation asset tracks, access logs, media selection groups, audio route metadata | Good power-user/QA feature. Keep out of default UI. |
+| “What subtitle/audio tracks are available?” | Track confidence/source panel | AVMediaSelectionGroup, AVMediaSelectionOption, MediaAccessibility | Useful for accessibility trust and track selection. |
+| “Is audio description available?” | Audio description discovery/control | AVFoundation media selection, MediaAccessibility preferences | Strong accessibility surface. |
+| “Where is that sound coming from?” | Audio compass / surround monitor | AVAudioEngine for local/test content, channel layout metadata, SDH cues | Great concept, but production access may vary. Use channel metadata and SDH when raw audio is unavailable. |
+| “Is there enough time to take a quick break?” | Ad break countdown / break helper | HLS `EXT-X-DATERANGE`, interstitial metadata, ad SDK callbacks, AVPlayer timed metadata | Useful when ad pod duration is known. Must use approximate wording when dynamic. |
+| “Am I live or behind live?” | Live/DVR state indicator | AVPlayer live playback state, seekable time ranges, HLS program date time | Useful for live sports/news/events. |
+| “What is happening visually while no one is speaking?” | Subtitle-gap visual context | Vision, Core ML, VideoToolbox frame access where allowed, provider metadata | Strong accessibility research path. DRM likely needs provider metadata. |
+| “What is this shot’s visual style?” | Dynamic cinematography notes | Vision, Core Image, Core ML, frame sampling, shot-boundary detection | Best for Film Lab mode; label generated analysis. |
+| “What colors define this scene?” | Dynamic color palette / LUT inspector | Core Image, Vision, Accelerate/vImage, Metal Performance Shaders | Strong Film Lab candidate. Works best with non-DRM or provider-side analysis. |
+| “Is this scene visually intense?” | Sensory load / intensity meter | Vision, Core ML, audio analysis, subtitle density, curated metadata | Useful accessibility feature. Must be opt-in and confidence-gated. |
+| “Can you warn me about flashing lights?” | Flash/strobe warning | Vision/frame analysis, metadata, provider-side QC | High value, but risky. Prefer provider metadata for production. |
+| “What brand/product is that?” | Product placement discovery | Vision OCR, object detection, logo detection model, metadata | Useful but commerce-heavy. Pause-only or explicit discovery mode. |
+| “Can I share this moment?” | Shareable moment card | Share sheet / ShareLink, generated images, approved stills, deep links | Valuable if rights-safe. Prefer approved stills/cards over arbitrary screenshots. |
+| “Can I quickly open this on my phone?” | QR/deep-link card | Core Image QR generation, Universal Links, ShareLink | Strong tvOS companion pattern. Pause/post-watch only. |
+| “Can the app show my timer/delivery/sports score?” | Glance panel | WidgetKit concepts, ActivityKit concepts, app-owned integrations, notifications | Do not assume arbitrary third-party widget embedding. Build project-owned cards. |
+| “Can captions work with VoiceOver or assistive devices?” | Accessible caption/control surfaces | SwiftUI/UIKit/AppKit accessibility APIs, VoiceOver labels, Switch Control, Full Keyboard Access | Important for controls and settings. Avoid making passive captions unexpectedly focusable during playback. |
+| “Can the interface adapt to my accessibility settings?” | Focus/minimal UI, reduced motion, contrast-aware overlays | UIAccessibility, Reduce Motion, Increase Contrast, Differentiate Without Color, Dynamic Type where appropriate | Strong global design requirement. |
+
+### Useful Native Framework Buckets
+
+**Playback and stream state**
+
+- AVFoundation
+- AVKit-adjacent integration
+- AVPlayer access logs
+- AVPlayer timed metadata outputs
+- AVMediaSelection APIs
+- MediaAccessibility
+
+**Video and image analysis**
+
+- Vision
+- Core ML
+- Core Image
+- VideoToolbox
+- Metal / Metal Performance Shaders
+- Accelerate / vImage
+
+**Audio analysis**
+
+- AVAudioEngine for local/test analysis
+- AudioToolbox / Core Audio concepts
+- channel layout metadata
+- SDH captions and timed metadata as safer production signals
+
+**User interaction and accessibility**
+
+- SwiftUI / UIKit / AppKit accessibility APIs
+- VoiceOver
+- Switch Control
+- Full Keyboard Access
+- Dynamic Type where appropriate
+- Reduce Motion / Increase Contrast / Differentiate Without Color
+
+**Sharing and companion experiences**
+
+- Share sheet / ShareLink
+- Universal Links
+- Core Image QR generation
+- WidgetKit for app-owned widgets on system surfaces
+- ActivityKit for app-owned Live Activities where supported
+- Notifications for user-authorized alerts
+
+### Tooling Reality Check
+
+Native tools help most when the signal is already available from playback state, timed metadata, subtitles, captions, user settings, or local fixtures.
+
+Native tools are weaker when the feature requires:
+
+- raw frame access for DRM-protected video;
+- arbitrary third-party widget embedding;
+- reliable emotion inference;
+- product/logo recognition without a trained model or curated metadata;
+- exact ad pod timing when ads are dynamically selected;
+- rights-safe sharing of arbitrary frames or subtitle text.
+
+Product strategy:
+
+1. Start with high-confidence Apple-native signals: subtitles, media selection, access logs, timed metadata, caption settings, and layout state.
+2. Add Vision/Core ML analysis for local, generated, or clearly permitted content.
+3. Use provider-side metadata for DRM, product placement, content warnings, and variable-aspect safety.
+4. Treat inferred visual/audio intelligence as optional, labeled, and confidence-gated.
+
+---
+
+
 ## Stream Intelligence Guidance
 
 HLS and AVFoundation can expose useful metadata that changes over time. The best product experiences translate that data into viewer-facing utility instead of raw debug noise.

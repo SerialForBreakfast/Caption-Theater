@@ -56,6 +56,9 @@ The extra area should not become a catch-all dashboard. It should become a user-
 4. **Context beats clutter.**  
    One useful piece of information is better than a dashboard of noise.
 
+4A. **Dynamic beats static.**  
+    Static metadata wastes the space unless the user explicitly asks for it. The strongest enhancements should react to the current shot, scene, caption gap, visual style, or playback state.
+
 5. **Distraction cost must be evaluated.**  
    Every feature needs a distraction rating and a clear reason to exist.
 
@@ -152,10 +155,11 @@ MVP fit: Not core MVP, strong future mode.
 
 Notes:
 
-- Amazon Prime Video’s X-Ray is the obvious product reference point: scene-linked cast, music, trivia, and recap-style context.
-- This should be a user-invoked mode, not always-on.
-- The best UX may be “press/hold for scene info” rather than persistent display.
-- Works best with curated metadata, not model guesses.
+- Static cast/trivia metadata is not enough for this project.
+- Scene context should change with the shot, action, music, location, or visible subject.
+- Prefer “what is happening right now?” over “generic facts about this title.”
+- The best UX may be “press/hold for scene info” or pause-only scene cards rather than persistent display.
+- Works best with curated metadata, scene annotations, or model-assisted analysis that is clearly labeled.
 
 Implementation sources:
 
@@ -338,31 +342,42 @@ Notes:
 
 ---
 
-### 9. Chapter, Scene, and Timeline Context
+### 9. Dynamic Shot and Scene Context
 
-Show current chapter title, scene title, elapsed scene time, or progress within a long movie.
+Show scene-aware information that changes with the current shot instead of static title metadata.
 
 Value:
 
-- Helps viewers orient themselves.
-- Useful for long films, educational content, concerts, sports, and lectures.
-- Less intrusive than X-Ray trivia.
+- Helps viewers understand visual storytelling.
+- Gives film enthusiasts meaningful context without covering the image.
+- Helps accessibility users understand visual context during subtitle gaps.
+- Makes the extra space feel responsive to the movie rather than like a static info panel.
 
-Feasibility: Medium with chapter/timed metadata.  
-Distraction risk: Low if minimal.  
-MVP fit: Future simple enhancement.
+Feasibility: Medium with scene detection and curated metadata; low to medium with model inference alone.  
+Distraction risk: Medium.  
+MVP fit: Future Film Lab / accessibility context mode.
 
-Example:
+Examples:
 
 ```text
-Chapter 4: The Crossing
-01:12:08 / 02:18:44
+Establishing shot: wide view of a domestic Los Angeles house
+```
+
+```text
+Interior close-up: character notices the broken lock
+```
+
+```text
+Silent visual beat: the camera lingers on the missing photograph
 ```
 
 Notes:
 
-- Should fade or appear only on user interaction.
-- Could pair well with scrubbing.
+- Most valuable during gaps between subtitle cues.
+- Should not compete with dialogue captions.
+- Could use image segmentation, scene detection, object detection, and shot-boundary detection.
+- Should be labeled as generated when inferred by models.
+- Works well as a bridge between accessibility description and film-analysis mode.
 
 ---
 
@@ -470,24 +485,41 @@ Notes:
 
 ---
 
-### 14. Director / Commentary Companion
+### 14. Dynamic Cinematography Notes
 
-Show optional commentary notes, behind-the-scenes facts, production details, or cinematography notes.
+Show short, current-shot observations about framing, lighting, camera movement, lens feel, composition, and visual motifs.
 
 Value:
 
-- Strong for film enthusiasts.
-- Uses empty space without interrupting playback.
+- Helps viewers understand how a scene is visually constructed.
+- Makes film-analysis mode feel alive and responsive.
+- Can teach cinematography without pausing the movie.
+- Gives rewatchers a reason to keep the augmentation layer on.
 
-Feasibility: Medium with authored metadata; low if generated.  
-Distraction risk: High.  
-MVP fit: Future opt-in mode.
+Feasibility: Medium with model assistance; high only with curated shot metadata.  
+Distraction risk: Medium to high.  
+MVP fit: Future Film Lab mode.
+
+Examples:
+
+```text
+Composition: centered close-up with shallow background separation
+```
+
+```text
+Lighting: low-key interior with warm practical highlights
+```
+
+```text
+Movement: slow push-in increases tension during the silence
+```
 
 Notes:
 
-- Best during rewatching.
-- Should not be default.
-- Could pair with a “film study mode.”
+- Avoid claiming authorial intent unless metadata is curated.
+- Use cautious language for model-generated analysis: “appears,” “suggests,” “likely.”
+- Best for rewatch, pause, or explicit Film Lab mode.
+- Should update only at shot/scene boundaries, not every frame.
 
 ---
 
@@ -580,7 +612,369 @@ Notes:
 
 ---
 
+### 18A. Dynamic Color Palette / LUT Inspector
+
+Show a scene-aware color palette that updates as the visual composition changes.
+
+Value:
+
+- Helps viewers understand color grading and visual mood.
+- Gives film enthusiasts a beautiful, low-text augmentation.
+- Can reveal how a scene shifts from warm to cool, saturated to muted, or naturalistic to stylized.
+- Uses the extra space visually rather than filling it with static text.
+
+Feasibility: High for non-DRM/local content; medium with provider-side analysis for protected content.  
+Distraction risk: Low to medium.  
+MVP fit: Strong Film Lab candidate.
+
+Possible UI:
+
+```text
+Dominant palette: deep teal | amber skin highlights | desaturated gray
+```
+
+Or a visual swatch row:
+
+```text
+[ Color 1 ] [ Color 2 ] [ Color 3 ]
+```
+
+Implementation notes:
+
+- Sample frames at shot boundaries or low frequency.
+- Extract the top 3–5 dominant colors using clustering or histogram analysis.
+- Ignore black letterbox bars and subtitle regions.
+- Label colors in plain language only when confidence is high.
+- Compare palette changes across scenes to show visual progression.
+
+Distraction guidance:
+
+- Prefer swatches over paragraphs.
+- Update at shot/scene boundaries, not continuously.
+- Keep it optional and separate from caption-focused modes.
+
+---
+
+### 18B. Focus / Depth-of-Field Estimator
+
+Estimate whether the current shot uses shallow focus, deep focus, rack focus, or strong subject/background separation.
+
+Value:
+
+- Helps viewers notice how focus guides attention.
+- Useful for film education and cinematography analysis.
+- Could help low-vision viewers understand where the image is directing attention.
+
+Feasibility: Medium.  
+Distraction risk: Medium.  
+MVP fit: Future Film Lab research.
+
+Possible UI:
+
+```text
+Focus: shallow depth of field, subject isolated from background
+```
+
+```text
+Focus shift: foreground object → background figure
+```
+
+Implementation notes:
+
+- Use blur maps, edge sharpness, saliency detection, or depth estimation where available.
+- LiDAR is not relevant for streamed content, but monocular depth estimation may help.
+- Detection should be cautious; focus language can be subjective.
+- Rack-focus detection requires temporal analysis across frames.
+
+Distraction guidance:
+
+- Best as pause/rewatch analysis.
+- Avoid frequent updates during dialogue.
+
+---
+
+### 18C. Live Visual Description from Image Detection
+
+Generate concise text descriptions of important visual information, especially during gaps between subtitle cues.
+
+Value:
+
+- Helps viewers who miss visual context while reading captions.
+- Helps blind, low-vision, DeafBlind, cognitive-accessibility, and second-language users when paired with appropriate assistive modes.
+- Could provide “visual context between dialogue” without interrupting captions.
+
+Feasibility: Medium for non-DRM/local content; low to medium for production protected streams.  
+Distraction risk: Medium to high.  
+MVP fit: Research / accessibility prototype.
+
+Example:
+
+```text
+Establishing shot: wide view of a domestic Los Angeles house
+```
+
+```text
+The character silently places a key under the table
+```
+
+Implementation notes:
+
+- Use object detection, image captioning, scene classification, and shot-boundary detection.
+- Prefer gaps between subtitle cues to avoid competing with dialogue.
+- Keep descriptions short and scene-relevant.
+- Label generated output clearly.
+- Never replace authored audio description when available.
+
+Distraction guidance:
+
+- Best as an explicit accessibility mode.
+- Should be suppressible when captions are dense.
+- Should not describe obvious visuals constantly.
+
+---
+
+### 18D. Visual Trigger / Content Warning Detection
+
+Use metadata, subtitles, and optional lookahead analysis to warn users about upcoming or current intense visual content.
+
+Value:
+
+- Helps users with trauma triggers, sensory sensitivities, epilepsy risk, migraine sensitivity, or content boundaries.
+- Could let users prepare, skip, dim, pause, or choose alternate presentation.
+
+Feasibility: Medium with curated metadata; low to medium with automatic inference.  
+Distraction risk: Low when opted in; high if unexpected or spoilery.  
+MVP fit: Future accessibility/safety mode.
+
+Detectable categories:
+
+- flashing/strobing lights
+- violence or blood-like imagery
+- sexual imagery or nudity
+- drug use or needles
+- weapons
+- self-harm indicators
+- intense screaming or distress from captions/audio
+- sudden loud sound cues from SDH captions
+
+Implementation notes:
+
+- Best source is curated content-warning metadata.
+- Subtitle keywords alone are not enough and can create false positives.
+- Visual model inference should use confidence thresholds and broad categories.
+- Lookahead may require buffering or provider-side pre-analysis.
+- For DRM content, provider metadata is likely the safest path.
+
+Distraction guidance:
+
+- Must be opt-in.
+- Use category-level warnings to avoid spoilers.
+- Let users configure lead time and categories.
+- Do not show warnings to users who did not request them.
+
+---
+
+### 18E. Visual Style Change Detector
+
+Detect and describe changes in visual style, such as live action to animation, black-and-white sequences, archival footage, dream sequences, surveillance footage, or stylized aspect-ratio changes.
+
+Value:
+
+- Helps viewers understand intentional format changes.
+- Helps accessibility users who may miss visual-mode shifts.
+- Appeals to film enthusiasts who notice craft choices.
+
+Feasibility: Medium.  
+Distraction risk: Low to medium.  
+MVP fit: Future Film Lab / accessibility mode.
+
+Examples:
+
+```text
+Visual style shift: live action → hand-drawn animation
+```
+
+```text
+Archival-style footage: black-and-white, heavy grain, 4:3 frame
+```
+
+```text
+Surveillance-style view: fixed overhead camera, monochrome image
+```
+
+Implementation notes:
+
+- Detect with visual classifiers, aspect-ratio changes, color statistics, grain/noise metrics, and shot metadata.
+- Best updated at scene boundaries.
+- Should not interrupt captions.
+
+---
+
+### 18F. Camera Viewpoint and Movement Classifier
+
+Identify camera viewpoint and movement when it changes meaningfully.
+
+Value:
+
+- Helps viewers understand spatial perspective and visual storytelling.
+- Useful for film education and cinematography appreciation.
+- Could help viewers who struggle with spatial orientation in action scenes.
+
+Feasibility: Medium.  
+Distraction risk: Medium.  
+MVP fit: Future Film Lab mode.
+
+Possible classifications:
+
+- first-person view
+- over-the-shoulder
+- handheld
+- steadicam-like tracking
+- drone/aerial view
+- locked-off tripod
+- surveillance/security camera
+- POV shot
+- dolly/push-in/pull-out
+- pan/tilt
+
+Examples:
+
+```text
+Camera: handheld close following, unstable motion
+```
+
+```text
+Viewpoint: aerial establishing shot
+```
+
+```text
+Movement: slow lateral tracking shot
+```
+
+Implementation notes:
+
+- Optical flow can identify camera movement.
+- Scene classifiers can help identify aerial, surveillance, and POV shots.
+- Model output must be conservative and clearly labeled when inferred.
+- Best for rewatch/film-study mode.
+
+---
+
+### 18G. Subtitle-Gap Visual Context
+
+During gaps between subtitle cues, use the extra space to describe important visual action, setting, or object changes.
+
+Value:
+
+- Uses otherwise quiet text moments to add context without competing with dialogue.
+- Helps viewers who are reading captions and may miss visual details.
+- Helps accessibility users follow silent visual storytelling.
+- Gives the extra region a dynamic purpose beyond captions.
+
+Feasibility: Medium with visual analysis; high with authored metadata.  
+Distraction risk: Low to medium if only used during subtitle gaps.  
+MVP fit: Strong research candidate.
+
+Examples:
+
+```text
+Establishing shot: wide view of a domestic Los Angeles house
+```
+
+```text
+Silent beat: she notices the cracked phone screen
+```
+
+```text
+Action: the train leaves before he reaches the platform
+```
+
+Implementation notes:
+
+- Trigger only when there is enough subtitle silence.
+- Use shot-boundary detection to avoid stale descriptions.
+- Suppress when captions are dense.
+- Use authored descriptions when available.
+- Generated descriptions must be short and confidence-gated.
+
+Distraction guidance:
+
+- This is one of the strongest dynamic accessibility ideas.
+- It should never compete with active dialogue captions.
+- Best used as an optional “visual context between captions” mode.
+
+---
+
+
 ### 19. Sign Language Companion Window
+
+### 19A. Glyph-Based Sign Language Support
+
+Show written sign-language notation, sign glyphs, or sign-language avatar data derived from captions, subtitles, or authored sign metadata.
+
+Value:
+
+- Could support Deaf sign-language users who prefer signed-language structure over written spoken-language captions.
+- Could help sign-language learners connect subtitles to signs.
+- Could provide a compact alternative when a full sign-language interpreter video is unavailable.
+- Could make the extra cinema-layout space useful for language access without covering the active picture.
+
+Feasibility: Low to medium.  
+Distraction risk: Medium to high.  
+MVP fit: Research only.
+
+Important distinction:
+
+- Sign languages are full natural languages, not visual encodings of spoken-language text.
+- A word-for-word glyph conversion from English subtitles to ASL, BSL, or another sign language would usually be wrong.
+- Useful sign-language output requires translation into the target sign language, not merely replacing words with icons.
+
+Possible approaches:
+
+1. **Authored SignWriting track**  
+   Use a real authored SignWriting or similar written sign-language track where available.
+
+2. **HamNoSys / SiGML avatar metadata**  
+   Use expert-authored notation that can drive a signing avatar. This is more suitable for controlled educational or accessibility content than general entertainment playback.
+
+3. **Generated text-to-sign prototype**  
+   Use machine translation from subtitles into sign-language notation or avatar motion. This should be treated as experimental and clearly labeled because errors can damage comprehension.
+
+4. **Learning companion mode**  
+   Show one selected sign, phrase, or concept at a time for language learning rather than trying to translate all dialogue live.
+
+When it could help:
+
+- Educational content for sign-language learners.
+- Children’s content with authored sign-language supports.
+- Public-service, healthcare, transit, or emergency content where sign-language access has high value.
+- Rewatch or pause mode, where users have time to inspect signs.
+- Optional companion mode for Deaf users who know written sign-language notation.
+
+When it is risky:
+
+- Fast dramatic dialogue.
+- Humor, sarcasm, idioms, poetry, or songs.
+- Any case where sign-language grammar, facial expression, body movement, role shift, or spatial reference matters.
+- Automatic live translation without Deaf community review.
+- Treating glyphs as a replacement for captions or professional sign-language interpretation.
+
+Product guidance:
+
+- Do not treat glyph-based sign support as a substitute for sign-language interpretation.
+- Do not enable automatically.
+- Prefer authored tracks, curated educational content, or explicit user-selected learning mode.
+- Clearly label generated output as experimental.
+- Involve Deaf sign-language users in evaluation before claiming accessibility value.
+
+References:
+
+- SignWriting is a writing system for sign languages: https://www.signwriting.org/
+- WCAG 2.2 includes Sign Language (Prerecorded) as Level AAA guidance: https://www.w3.org/WAI/WCAG22/Understanding/sign-language-prerecorded.html
+- HamNoSys and SiGML are used in research and avatar pipelines for sign-language motion representation: https://aclanthology.org/2020.lrec-1.739.pdf
+- CWASA describes SiGML-driven signing avatars: https://vh.cmp.uea.ac.uk/index.php/CWA_Signing_Avatars_Demos
+
+---
 
 Use the lower or side-safe region for an optional sign-language interpretation video when available.
 
@@ -987,11 +1381,20 @@ Notes:
 | Large caption mode | Very high | High | Low | Core MVP / MVP+ |
 | Caption style preview and tuning | Very high | High | Low-Medium | MVP+ |
 | Reading pace assist | High | High | Low | MVP+ |
+| Dynamic color palette / LUT inspector | High | High-Medium | Low-Medium | Film Lab candidate |
+| Subtitle-gap visual context | High | Medium | Low-Medium | Accessibility research |
+| Dynamic cinematography notes | Medium-High | Medium | Medium | Film Lab candidate |
+| Visual style change detector | Medium-High | Medium | Low-Medium | Future accessibility / Film Lab |
+| Camera viewpoint and movement classifier | Medium | Medium | Medium | Film Lab research |
+| Focus / depth-of-field estimator | Medium | Medium | Medium | Film Lab research |
+| Visual trigger/content warning detection | High for specific users | Medium-Low | Low-Medium | Accessibility research |
+| Live visual description from image detection | High for specific users | Medium-Low | Medium-High | Accessibility research |
 | SDH soundscape enhancement | High | High-Medium | Low | Strong future |
 | Accessibility reading controls | High | High | Medium | Strong future |
 | Audio description controls | High | High | Low | Strong future |
 | Caption confidence/source indicator | Medium-High | High | Low | Strong future |
 | Sign language companion window | High | Medium | Medium | Future accessibility |
+| Glyph-based sign-language support | Medium-High for specific users | Low-Medium | Medium-High | Research |
 | Descriptive transcript strip | High | Medium | Medium | Future accessibility |
 | Visual description cards | High | Medium-Low | Medium | Future accessibility |
 | Character/speaker support | High | Medium | Low-Medium | Future accessibility |
@@ -1035,6 +1438,7 @@ These may provide real user value but need careful design.
 
 - speaker identity support
 - sign language companion window
+- glyph-based sign-language support
 - audio description controls
 - descriptive transcript strip
 - visual description cards
@@ -1045,16 +1449,24 @@ These may provide real user value but need careful design.
 - memory support cards
 - on-screen text translation
 - assistive device companion output
+- subtitle-gap visual context
+- live visual description from image detection
+- visual trigger/content warning detection
+- visual style change detection
 
 ### Bucket 3: Contextual Enrichment
 
 These are X-Ray-like ideas.
 
+- dynamic cinematography notes
+- dynamic shot and scene context
+- color palette / LUT inspector
+- focus / depth-of-field estimator
+- camera viewpoint and movement classifier
+- visual style change detector
 - cast/character context
 - music identification
-- trivia
-- chapter/scene metadata
-- director commentary
+- scene-aware trivia
 - quote capture
 
 ### Bucket 4: Diagnostics and Power Tools
@@ -1096,16 +1508,51 @@ These directly improve comprehension and accessibility without turning the empty
 
 The most exciting future ideas are:
 
-1. X-Ray-style scene context.
-2. Spoiler-safe “what did I miss?” recap.
-3. Sign language companion window.
-4. Descriptive transcript strip.
-5. Translation/language learning mode.
-6. Emotional/tone assistance for users who opt in.
-7. Scene search while paused or scrubbing.
-8. Assistive device companion output.
+1. Dynamic color palette / LUT inspector.
+2. Subtitle-gap visual context.
+3. Dynamic cinematography notes.
+4. Visual style change detector.
+5. Spoiler-safe “what did I miss?” recap.
+6. Sign language companion window.
+7. Descriptive transcript strip.
+8. Translation/language learning mode.
+9. Camera viewpoint and movement classifier.
+10. Scene search while paused or scrubbing.
 
 These could be powerful, but they require stronger metadata, trust, and UX guardrails.
+
+---
+
+## Dynamic Augmentation Guidance
+
+Static metadata should be treated as secondary. The best use of the extra cinema-layout area is dynamic, context-aware augmentation.
+
+Prefer enhancements that:
+
+- update at shot or scene boundaries;
+- respond to subtitle gaps;
+- explain visual composition, camera movement, or style changes;
+- help viewers recover context without pausing;
+- provide accessibility value beyond trivia;
+- stay short enough to read without pulling attention away from the movie.
+
+Avoid enhancements that:
+
+- display static title facts for long periods;
+- compete with active captions;
+- claim directorial intent without curated metadata;
+- infer sensitive content with low confidence;
+- update so frequently that they become visual noise.
+
+Best candidates for dynamic behavior:
+
+1. Color palette changes.
+2. Subtitle-gap visual context.
+3. Shot/scene descriptions.
+4. Visual style changes.
+5. Camera viewpoint and movement.
+6. Cinematography notes.
+7. Trigger/content warnings for opted-in users.
 
 ---
 
@@ -1113,6 +1560,10 @@ These could be powerful, but they require stronger metadata, trust, and UX guard
 
 - W3C Media Accessibility User Requirements documents user needs for audio and video, including captions, audio description, transcripts, and sign language: https://www.w3.org/TR/media-accessibility-reqs/
 - W3C WCAG 2.2 includes time-based media criteria for captions, audio description, sign language, extended audio description, and media alternatives: https://www.w3.org/TR/WCAG22/
+- W3C explains Sign Language (Prerecorded) as providing sign-language interpretation for prerecorded audio content: https://www.w3.org/WAI/WCAG22/Understanding/sign-language-prerecorded.html
+- SignWriting is a writing system for sign languages: https://www.signwriting.org/
+- HamNoSys-to-SiGML research describes machine-readable sign notation that can drive signing avatars: https://aclanthology.org/2020.lrec-1.739.pdf
+- CWASA describes SiGML-driven signing avatars for natural Deaf sign languages: https://vh.cmp.uea.ac.uk/index.php/CWA_Signing_Avatars_Demos
 - W3C transcripts guidance explains that descriptive transcripts include speech, non-speech audio, and visual information needed to understand content: https://www.w3.org/WAI/media/av/transcripts/
 - W3C description guidance explains that audio description conveys visual information needed to understand video content: https://www.w3.org/WAI/media/av/description/
 - W3C cognitive accessibility guidance emphasizes clear content, familiar patterns, enough time, navigation support, and personalization: https://www.w3.org/TR/coga-usable/

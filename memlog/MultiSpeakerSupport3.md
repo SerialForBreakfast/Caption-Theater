@@ -1,143 +1,268 @@
-# Multi-speaker caption support: synthesized plan
+# Multi-speaker caption support: feasibility audit
 
-This document merges the working notes in `MultiSpeakerSupport.md` and `MultiSpeakerSupport2.md` into a single recommendation: what to build first, how to source reliable speaker identity, which visual patterns to prioritize, and how to stay inside Caption Theater’s rules (persistence, no future cues, geometry preserved).
+Date: 2026-05-08
 
-For prior detail and alternatives, see:
+This document supersedes the more optimistic synthesis in `MultiSpeakerSupport.md` and `MultiSpeakerSupport2.md`. Those notes are still useful for UI ideas, but this audit focuses on the practical question: can Caption Theater realistically depend on speaker-aware caption data at scale?
 
-- `MultiSpeakerSupport.md` — fixture gap, transcript rail vs chat vs color, Phase 4 cue-model alignment.
-- `MultiSpeakerSupport2.md` — hero showcase narrative, bubble/stripe/lane options, `speaker-map.json` sketch, confidence enum, implementation slices, test matrix.
+## Bottom line
 
----
+**Speaker-aware captions are feasible as an opportunistic enhancement, not as a baseline product assumption.**
 
-## Executive summary
+The practical version is:
 
-**Showcase video:** Keep using the repo-local **Tears of Steel** offline HLS mock (`1920×800`, multi-character dialogue). It already proves **top-justified picture + lower reading band** without network dependency.
+- Use normal caption persistence and wrapping for every eligible WebVTT track.
+- Detect and preserve explicit speaker labels when they are already in the caption text, especially SDH-style labels such as `[speaker] dialogue`.
+- Parse WebVTT voice spans (`<v Speaker>`) when present.
+- Treat TTML/IMSC agent metadata as a future input only if the app actually gains access to that text track representation.
+- Use local sidecar speaker annotations only for demos, fixtures, and proof-of-concept work.
+- Do not build the main product around needing per-speaker metadata, because most streaming captions we can reasonably expect to encounter will not expose stable speaker ids.
 
-**Showcase metadata:** Do **not** pretend existing WebVTT cues carry stable speaker ids. Prefer one of:
+**Likelihood rating:** medium for controlled demos and curated assets; low-to-medium for arbitrary streaming assets; low for a product promise that all or most videos can show reliable speaker-aware layout.
 
-1. **Sidecar annotation** (`speaker-map.json` keyed by **time ranges**, not cue indices, because segments reuse cue numbers), reviewed for PoC; or  
-2. **Synthetic or extended WebVTT** with `<v Name>` voice tags or a strict `Name: ` prefix convention for tests and greenfield demos.
+## What is technically possible
 
-**Default UI direction:** A **hybrid**: **stacked lines in the lower band** + **speaker chip / transcript rail** (initials or short name) + **optional stable accent** (stripe or tint) **always paired with text**, not color alone. Use **controlled** left/right alignment or soft bubbles **only** when the data source **explicitly** marks a two-speaker exchange (or behind an experiment flag), to avoid implying on-screen position that does not exist.
+There are real formats that can represent speaker identity.
 
-**Not MVP default:** Full chat chrome, multi-lane “transcript timeline,” or spatial anchoring from inferred geometry (later research only).
+### WebVTT voice spans
 
----
+WebVTT supports voice spans such as:
 
-## Why this fits the product
+```vtt
+00:00:10.000 --> 00:00:12.000
+<v Celia>You're a jerk, Thom.
+```
 
-Both sources agree the lower band should earn its pixels: help viewers with **who spoke**, **continuity with the previous line**, and **fast handoffs**, especially for off-screen speakers, overlaps, long translated lines, and SDH where identity aids comprehension.
+The WebVTT spec uses this pattern in examples and allows styling voice spans by speaker. It also includes examples of split cue regions for two different speakers. So this is not invented or esoteric.
 
-**Top-pinned scope layout** matters because:
+Practical limitation: the presence of `<v Speaker>` in the spec does not mean commercial or public HLS assets usually include it. In our current repo-local Tears of Steel mock, there are no WebVTT voice spans.
 
-- There is **vertical room** for a short thread (current + retained lines) without obscuring the picture.  
-- **Stable rhythm** (e.g. newest-at-top policy) plus speaker chrome reduces scan cost.  
-- The win is the **dedicated reading region**, not squeezing labels into the frame.
+### SDH speaker labels in visible text
 
----
+Professional SDH style guides commonly require speaker identifiers only when needed for comprehension, especially when the speaker cannot be visually identified. Netflix's English USA guide, for example, instructs SDH authors to use bracketed speaker IDs or sound effects and says the speaker ID and dialogue should ideally be on the same line.
 
-## Non-negotiables (merged constraints)
+This is the most practical signal because it survives format conversion. It is just text, so it works in SRT, WebVTT, TTML-derived delivery, and most player pipelines.
 
-- **Persist only** already-presented cues (plus policy-eligible retention); **no future cues** by default.  
-- **Preserve video geometry**; ads and native playback boundaries stay intact.  
-- **Caption region** stays within layout (`CaptionTheaterLayoutGeometry/captionReadingRect`); respect caption text size as the renderer matures.  
-- **Accessibility:** speaker distinction requires **name or initials (text)**, not color alone; sane contrast; VoiceOver should expose **who** then **what** when we own the accessible hierarchy; respect **Reduce Motion** (avoid ornamental lane/bubble motion).  
-- **Fail closed:** when speaker identity is unknown or low-confidence, use **neutral** styling.  
-- **Do not** reposition the product as a full **transcript viewer** or **future subtitle preview**.
+Practical limitation: SDH labels are editorial and intermittent. They usually identify off-screen or ambiguous speakers, not every turn in a normal visible conversation. They are also not structured metadata unless we parse text conventions.
 
----
+### TTML / IMSC agent metadata
 
-## Visual patterns: what to take from each approach
+TTML has `ttm:agent` metadata and a `ttm:agent` attribute for associating content with the agent responsible for the line. IMSC is widely used for subtitles/captions in production and distribution workflows.
 
-| Idea | Source | Role in synthesis |
-|------|--------|-------------------|
-| **Transcript rail** (narrow column: icon / initials / chip + wrapped body) | MS1 | **Core of MVP-shaped UI**; maps to optional `speaker` on internal cue model; degrades to plain text. |
-| **Speaker color stripes / hash hue** | MS1, MS2 | **Secondary signal** only; chip + label remain primary. |
-| **Conversation bubbles + L/R alignment** | MS1, MS2 | **Demo / research** variant; two primary speakers only; risk of “chat app” feel and false spatial implications. |
-| **Speaker lanes** | MS2 | **Experimental**; watch vertical cost and transcript-like appearance; not default. |
-| **Spatial anchoring** | MS2 | **Defer** without trusted annotations; no face-inferred positions for MVP. |
-| **SDH / bracket labels in source** | MS1 | **Trust when authored**; parser lifts display name; high trust, not flashy. |
-| **Hybrid MVP** | MS2 | **Adopt as default direction**: stacked text + chip + optional accent + optional conditional L/R when data allows. |
+Practical limitation: this does not automatically help us on tvOS/HLS. The app must actually receive text track data in a form that preserves the metadata. If AVFoundation hands us only rendered text or normalized cue strings, the rich metadata may already be gone. Supporting TTML/IMSC directly is also a larger parser and packaging commitment than the current WebVTT-first path.
 
-**Best composite:** **Hybrid (MS2) + transcript rail terminology (MS1)** = same thing stated two ways; implementation should lead with **rail + chip**, emphasize **current cue** vs **dimmed retained**, and collapse repeated labels within a **run** of the same speaker (MS2).
+### HLS carriage
 
----
+HLS supports subtitle renditions. RFC 8216 describes WebVTT subtitle segments and `EXT-X-MEDIA:TYPE=SUBTITLES`; Apple HLS authoring docs also recognize `wvtt` and `stpp.ttml.im1t` codec identifiers for WebVTT and IMSC text subtitles.
 
-## Data model and confidence (from MS2, aligned with MS1 Phase 4)
+Practical limitation: the `.m3u8` manifest identifies subtitle renditions, languages, accessibility characteristics, and URIs. It does not provide per-cue speaker identity. Speaker data has to live inside the subtitle resource itself, inside a metadata track, or in an application-specific sidecar that we control.
 
-Canonical cues should eventually carry optional structured speaker data, not presentation baked into VTT files (MS1 medium-term).
+## What exists widely enough to matter
 
-Minimum useful fields:
+### Widely available
 
-- **Cue:** id, timing, text payload, optional **speaker** attachment.  
-- **Speaker:** stable `id`, `displayName`, `shortLabel`; optional **accent** hint for UI; **confidence** tier.
+- Plain subtitles with no speaker identity.
+- SDH captions with visible labels for some speaker changes.
+- HLS subtitle renditions declared as WebVTT or IMSC.
+- Caption text that can be wrapped into a dedicated Caption Theater reading region.
 
-**Confidence tiers (apply styling only for safe tiers):**
+These are practical enough for product behavior.
 
-| Tier | Meaning | Default UI |
-|------|---------|------------|
-| `authored` | WebVTT `<v>`, provider metadata, explicit SDH label | Full speaker chrome |
-| `fixtureAnnotated` | Reviewed sidecar (e.g. `speaker-map.json`) | Full speaker chrome for demos |
-| `inferredWeak` | Heuristics only | **Neutral** (no speaker chrome) |
-| `unknown` | No attribution | **Neutral** |
+### Sometimes available
 
-For Tears of Steel today, target **`fixtureAnnotated`** via sidecar until/adunless voice tags are added in a controlled fixture.
+- WebVTT voice spans.
+- TTML/IMSC metadata that names agents/speakers.
+- Consistent `Speaker: dialogue` transcript-style captions in educational, interview, meeting, or generated-transcript contexts.
+- Authoring pipelines that retain speaker labels as visible text.
 
-**Sidecar shape (MS2):** JSON with `speakers[]` and `cues[]` entries using **`start` / `end`** times (seconds) matching WebVTT windows; validate `speakerID` references. Prefer time-based matching because **segment-local cue ids conflict across files**.
+These are worth supporting opportunistically.
 
-Alternative **short term (MS1):** small synthetic VTT with voice tags or prefixes for **unit tests** (`speaker extraction`, renderer snapshots), without committing to editing shipped mock subtitles.
+### Not available enough to rely on
 
----
+- Per-cue stable speaker ids across mainstream streaming catalogs.
+- Accurate on-screen speaker positions.
+- Public HLS test assets that combine ultrawide video, multi-speaker dialogue, and structured speaker metadata in a way we can treat as representative.
+- A universal platform guarantee that AVFoundation/native HLS playback will expose structured speaker metadata to our renderer.
 
-## Renderer behavior (merged rules)
+These should not be prerequisites for the feature.
 
-- Apply speaker styling only when confidence is **`authored`** or **`fixtureAnnotated`**.  
-- **Current cue:** strongest contrast, caption size preset applied; speaker chip visible; optionally stronger accent.  
-- **Retained cues:** readable but visually **historical** (dimmer / lighter secondary); same speaker identity treatment; bounded by existing scroll/history policy.  
-- **Runs:** show speaker label on **first cue of a run**; suppress duplicate labels for consecutive same-speaker lines (exact thresholds open; see open questions).  
-- **Never** change authored timing or leak future text.  
-- **Color:** never sole differentiator; pair with label, weight, or rail position.
+## Evidence from our current assets
 
----
+The repo-local offline HLS mock is still useful:
 
-## Testing and acceptance (merged)
+- `CaptionTheater/CaptionTheater/Media/OfflineHLS/TearsOfSteelFiveMinuteMock/`
+- `1920x800` video variant
+- HLS WebVTT subtitle rendition
+- Multiple-character dialogue in the first five minutes
 
-**From MS1 (milestone-level):**
+But it does **not** contain structured speaker identity:
 
-- Fixture encodes **≥2 speakers** and **≥10 alternating lines** in ultrawide/letterboxed context.  
-- UI proves **≥1 non-color-only** differentiator.  
-- **Reduce Motion:** avoid ornamental motion.  
-- No pre-start cues; retention policy unchanged.
+- no `<v Speaker>` WebVTT voice spans found in repo media;
+- no consistent `Speaker:` prefix convention;
+- no stable speaker ids in the manifest;
+- character names appear inside dialogue occasionally, but that is not reliable attribution.
 
-**From MS2 (concrete tests):**
+This means Tears of Steel is a good layout and offline-playback fixture, but not proof that multi-speaker metadata is available in the wild.
 
-- Decode and validate sidecar; reject bad `speakerID`; time-range match to cues; unknown fallback; no future cues in retained list; label run-collapse behavior.  
-- Snapshots: two-speaker exchange, three-speaker brief, unknown fallback, long wrapped line + chip, high contrast/largest text if applicable.  
-- Manual: undistorted top video; lower band clarifies **who**; fast exchange easier than native-only; retained block does not read as an endless transcript wall.
+## Viability by implementation path
 
----
+| Path | Feasibility | Product value | Scale risk | Recommendation |
+|------|-------------|---------------|------------|----------------|
+| Plain retained captions with better wrapping | High | High | Low | Must do regardless of speaker work. |
+| Parse visible SDH speaker labels | High | Medium | Low | Practical first speaker feature. |
+| Parse WebVTT `<v Speaker>` voice spans | Medium | Medium | Medium | Add if our parser owns raw VTT text. |
+| Local `speaker-map.json` sidecar | High for demos | Medium for PoC | High for product | Use only for fixtures and demos. |
+| TTML/IMSC `ttm:agent` support | Medium technically | Medium | High for current app scope | Defer until there is a real source asset and parser need. |
+| Heuristic speaker inference from text | Low | Low-to-medium | High | Avoid default UI. |
+| Audio diarization | Low for this app | Potentially high | Very high | Out of scope without explicit product decision. |
+| Spatial speaker anchoring | Low | Unproven | Very high | Research only; do not imply position without metadata. |
 
-## Implementation slices (consolidated)
+## The realistic MVP
 
-1. **Fixture + parser:** `speaker-map.json` (or synthetic VTT + voice tags) + Swift types + unit tests.  
-2. **Cue enrichment:** join annotations by time range into scrolling cue entries / internal model; plain path unchanged.  
-3. **Renderer prototype:** rail + chip + optional accent; hybrid as default; bubbles/lanes behind flags.  
-4. **Demo compare:** native subtitles vs Caption Theater flat vs speaker-aware (short script).
+The MVP should not require exotic caption assets.
 
-Later: align fields with **CT-0401** internal cue model so VTT-specific details do not leak into renderer decisions.
+1. **Default path:** render ordinary cues in the Caption Theater lower band with strong wrapping, sizing, and persistence.
+2. **Speaker label preservation:** if a cue starts with a credible SDH speaker label, render it as a speaker chip plus dialogue text.
+3. **Voice span preservation:** if raw WebVTT contains `<v Speaker>`, lift `Speaker` into the same chip model.
+4. **Unknown fallback:** if there is no trusted speaker signal, render normal captions. No color, no bubble alignment, no inferred speaker.
+5. **Demo fixture:** use a repo-local sidecar for Tears of Steel only to demonstrate what the UI could do when speaker metadata exists. Label that fixture as PoC-only.
 
----
+This is practical because it improves every asset through wrapping/persistence, improves some assets through authored speaker labels, and avoids making the rare metadata case the core value proposition.
 
-## Open questions (deduplicated)
+## UI implications
 
-- Label **every** cue vs **only on speaker change** vs run-collapsed (recommend: run-collapsed with clear rule when gap exceeds N seconds).  
-- Left/right alignment: require **explicit** two-speaker metadata flag vs automatic for exactly two `fixtureAnnotated` ids?  
-- **Cap** distinct accent colors (e.g. max 4 prominent) before falling back to neutral + text only.  
-- Trust **authored** SDH brackets automatically when present? (Likely yes for `authored`, with normalization.)  
-- Speaker styling: **user toggle** vs automatic when metadata exists?
+The best production-shaped UI remains the restrained transcript rail:
 
----
+```text
+Celia  You're a jerk, Thom.
+Thom   Look Celia, we have to follow our passions.
+```
 
-## Recommendation (one paragraph)
+Use:
 
-Use **Tears of Steel** plus a **reviewed time-keyed sidecar** (or parallel **synthetic VTT** for tests) so speaker identity is **honest and stable**. Ship a **hybrid renderer**: **transcript rail / speaker chip**, **optional accent** with **textual labels**, **run-collapsed names**, and **current vs retained** emphasis—while reserving **bubbles, lanes, and spatial anchoring** for experiments. This matches both documents: maximal comprehension benefit from the **lower band**, minimal betrayal of trust (no fake inference), and strict alignment with **persistence, geometry, and accessibility** commitments.
+- speaker name or initials as visible text;
+- optional accent stripe as secondary signal;
+- run-collapsed labels for consecutive lines from the same speaker;
+- neutral rendering when attribution is unknown;
+- no future cues;
+- no implied screen position unless explicitly authored.
+
+Avoid default chat bubbles or left/right lanes unless a fixture or asset explicitly marks a two-speaker exchange. Those patterns are compelling in a demo, but they can overstate the certainty of the data.
+
+## Intelligent wrapping
+
+Wrapping is viable and should be prioritized independently of speaker metadata.
+
+Practical rules:
+
+- Fill the Caption Theater caption reading width, not the native video subtitle width.
+- Preserve authored line breaks when they carry meaning.
+- Otherwise wrap to the available caption region using balanced lines and readable phrase boundaries where possible.
+- Keep speaker chips outside or beside the text flow so they do not steal unpredictable width from every line.
+- At large text sizes, allow more vertical space and fewer retained cues rather than shrinking text below the selected size.
+
+This means the lower band should be treated as the target reading surface. Native caption line breaks are useful hints, not hard geometry, because the Caption Theater layout is intentionally different from the video viewport.
+
+## What would prove this is viable at scale
+
+One public asset with rich speaker markup is not enough. A credible go/no-go bar would be:
+
+- multiple HLS VOD assets from different sources that include WebVTT voice spans or equivalent structured speaker metadata;
+- evidence that AVFoundation/custom parsing can access that metadata reliably in our playback path;
+- at least one production-style SDH track where visible speaker labels appear often enough to improve comprehension;
+- tests covering the fallback path where no speaker data exists.
+
+If we cannot find representative public or licensable assets with structured speaker metadata, that is strong evidence against making speaker-specific layouts a core promise. It is not evidence against supporting authored labels opportunistically.
+
+## Research addendum: availability estimate
+
+This pass looked for proof that structured speaker identity is common enough to influence product direction. The result reinforces the conservative conclusion.
+
+### Findings
+
+**WebVTT voice spans are real, but public usage is hard to find.**
+
+The WebVTT spec has first-class voice spans and a canonical example using `<v Roger Bingham>` and `<v Neil deGrasse Tyson>`. Search results for `<v ...>` overwhelmingly surface the spec, tutorials, validators, and copied examples rather than independently hosted production HLS subtitle assets. That suggests voice spans are format-supported but not obviously common in public streaming samples.
+
+**Public HLS/VTT samples tend to be plain captions.**
+
+The public Mux Tears of Steel WebVTT sample used in their captioning docs contains plain cues with no `<v Speaker>` spans, no stable `Speaker:` convention, and no bracketed speaker labels. This matches our bundled five-minute mock. The Bitmovin Sintel public sample is widely referenced as a WebVTT/HLS test stream, but direct read-only sampling from this environment returned CDN access-denied responses, so it should not be counted as inspected evidence either way.
+
+**Commercial streaming workflows prioritize track carriage over speaker structure.**
+
+Mux accepts SRT or WebVTT and turns them into HLS text tracks. AWS MediaConvert documents IMSC, TTML, and WebVTT sidecar output workflows. Bitmovin documents HLS WebVTT support and notes that tvOS subtitle styling/positioning is restricted to AVFoundation/System UI when using the system path. These are strong signals that text-track delivery is mainstream, but they do not establish that speaker identity survives as structured per-cue metadata.
+
+**SDH guidance strongly supports visible speaker labels, not stable hidden IDs.**
+
+Captioning Key says speaker identity is important and recommends placement, parenthesized names, and generic labels such as `(speaker #1)` or `(narrator)` when needed. Service-provider pages describe SDH as including dialogue, sound effects, and speaker identification across broadcast formats. This supports parsing visible labels as practical product input. It does not support assuming every cue has a machine-stable speaker id.
+
+**Emerging ASR speaker ID is notable precisely because it is emerging.**
+
+A 2025 broadcast subtitling report describes Verbit's live ASR speaker-identification feature as an "industry first" and gives an example output like `>> JONATHAN WILLIAMS:`. That is useful market evidence: speaker identification is valuable, but current systems often encode it as visible text conventions, and reliable live speaker ID is still treated as a differentiated capability rather than commodity caption infrastructure.
+
+### Estimated prevalence by signal type
+
+This is not a statistical corpus result; it is a product-risk estimate from public docs, public samples, and discoverability.
+
+| Signal | Estimated availability in practical streaming assets | Confidence | Product implication |
+|--------|------------------------------------------------------|------------|---------------------|
+| Plain WebVTT/SRT subtitle text | High | High | Core path must optimize wrapping and retention. |
+| HLS subtitle rendition in manifest | High for prepared streaming assets | High | Good basis for Caption Theater eligibility. |
+| SDH visible speaker labels | Medium in SDH/caption tracks, low in translation subtitle tracks | Medium | Parse opportunistically; do not expect every turn. |
+| WebVTT `<v Speaker>` voice spans | Low to unknown | Medium | Support if cheap, but do not plan around it. |
+| TTML/IMSC agent metadata reaching app renderer | Low for current WebVTT-first tvOS path | Medium | Defer until we have source assets and ingestion proof. |
+| Sidecar speaker map | High only for our own fixtures | High | Demo/testing only. |
+| Automatic diarization with names | Low for this app | High | Out of scope unless the product changes materially. |
+
+### Decision impact
+
+The go/no-go bar should stay strict. We should not require "multiple HLS VOD assets with WebVTT voice spans" before supporting speaker chips, because visible SDH labels are a practical enough input. But we **should** require that bar before making chat bubbles, lanes, or speaker-specific layouts a core advertised feature.
+
+The near-term decision should be:
+
+1. Build robust plain-caption layout first.
+2. Add a label extractor for visible SDH speaker conventions.
+3. Add WebVTT voice-span parsing only if the app owns raw WebVTT parsing in that path.
+4. Keep rich multi-speaker demos clearly marked as fixture-driven.
+5. Revisit product priority only after we find multiple representative assets with structured speaker metadata and verify the tvOS ingestion path preserves it.
+
+## Risk assessment
+
+Primary risks:
+
+- **Data availability:** most assets likely have plain subtitles or intermittent SDH labels, not stable per-cue speaker ids.
+- **False certainty:** color, lanes, and chat alignment can imply identity or position that the caption file did not actually say.
+- **Format loss:** metadata may exist upstream but be stripped during packaging, conversion, or platform playback.
+- **Accessibility:** color-only speaker identity fails; labels must remain textual.
+- **Product drift:** a large retained multi-speaker region can become a transcript viewer if not bounded.
+
+Mitigations:
+
+- confidence tiers: `authored`, `fixtureAnnotated`, `inferredWeak`, `unknown`;
+- full speaker chrome only for `authored` or clearly marked local fixtures;
+- neutral fallback for everything else;
+- docs/tests that prove no future cues and no geometry distortion;
+- demo labels that say sidecar speaker attribution is local PoC annotation.
+
+## Decision
+
+Build the feature as **progressive enhancement**:
+
+1. Prioritize text size, wrapping, and retained-caption readability because those work for almost every subtitle asset.
+2. Add speaker-chip rendering for authored visible labels and WebVTT voice spans.
+3. Keep Tears of Steel sidecar annotation as a demo/testing tool, not evidence of real-world metadata availability.
+4. Do not invest in TTML/IMSC agent parsing, diarization, or spatial speaker UI until we have real assets and a verified app ingestion path.
+
+The possible is not the practical. The practical product promise is: **Caption Theater makes captions easier to read in the unused cinema-layout space, and when trustworthy speaker identity exists, it preserves that identity in a clearer way.**
+
+## Source notes checked
+
+- WebVTT spec: voice spans, cue wrapping, regions, and speaker examples are part of the format: https://www.w3.org/TR/webvtt1/
+- HLS RFC 8216: HLS carries subtitle renditions and WebVTT subtitle segments, but speaker identity is inside subtitle content, not the manifest: https://www.rfc-editor.org/rfc/rfc8216
+- Apple HLS authoring appendix: recognizes WebVTT (`wvtt`) and IMSC text subtitle (`stpp.ttml.im1t`) codec identifiers: https://developer.apple.com/documentation/http-live-streaming/hls-authoring-specification-for-apple-devices-appendixes
+- Netflix English USA Timed Text Style Guide: SDH speaker IDs are visible text conventions used when needed, not guaranteed per-cue structured speaker metadata: https://partnerhelp.netflixstudios.com/hc/en-us/articles/217350977-English-USA-Timed-Text-Style-Guide
+- TTML1 spec: `ttm:agent` metadata can associate content with speakers/agents, but this requires access to that TTML metadata in our pipeline: https://www.w3.org/TR/2018/PR-ttml1-20181004/
+- Mux caption docs/blog: commercial HLS workflows commonly ingest SRT/WebVTT and emit HLS subtitle renditions; their Tears of Steel example is plain WebVTT, not speaker-rich WebVTT: https://www.mux.com/docs/guides/add-subtitles-to-your-videos and https://www.mux.com/blog/subtitles-captions-webvtt-hls-and-those-magic-flags
+- Bitmovin subtitle support docs: HLS WebVTT is broadly supported; tvOS styling/positioning on the system UI path is restricted to AVFoundation: https://developer.bitmovin.com/playback/docs/subtitles-captions
+- AWS MediaConvert docs: IMSC, TTML, and WebVTT sidecar captions are normal packaging outputs, but this is delivery-format support, not proof of speaker metadata availability: https://docs.aws.amazon.com/mediaconvert/latest/ug/ttml-and-webvtt-output-captions.html
+- DCMP Captioning Key: speaker identification is important in captions and is often represented through visible placement/name conventions: https://dcmp.org/learn/captioningkey/603
+- Verbit live ASR speaker-identification report: reliable live named-speaker captions are emerging/differentiated, often output as visible speaker text: https://www.tvbeurope.com/media-consumption/verbit-introduces-industry-first-speaker-identification-for-live-asr-broadcast-subtitles

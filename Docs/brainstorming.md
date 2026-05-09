@@ -24,6 +24,32 @@ The key question for every idea:
 
 ## Design Principles
 
+1. **The movie remains primary.**  
+   The extra area should support the content, not compete with it.
+
+2. **No future spoilers by default.**  
+   Enhancements should not reveal future dialogue, plot points, outcomes, or jokes.
+
+3. **Opt-in by default.**  
+   Most enhancements should be user-selectable modes, not automatic overlays.
+
+4. **Context beats clutter.**  
+   One useful piece of information is better than a dashboard of noise.
+
+5. **Dynamic beats static.**  
+   Static metadata wastes the space unless the user explicitly asks for it. The strongest enhancements should react to the current shot, scene, caption gap, visual style, or playback state.
+
+6. **Distraction cost must be evaluated.**  
+   Every feature needs a distraction rating and a clear reason to exist.
+
+7. **Ads remain native/fullscreen.**  
+   Enhancements suspend during ads and resume or revalidate when content returns.
+
+8. **Metadata must be trusted.**  
+   Character names, trivia, recap content, emotional cues, and translations should come from trusted metadata, verified models, or controlled pipelines.
+
+---
+
 ## Accessibility Needs to Design For
 
 The extra screen area is most valuable when it solves a specific access need. W3C’s media accessibility requirements describe captions, transcripts, audio description, sign language, and synchronization as distinct ways people access time-based media. Apple’s media accessibility guidance also emphasizes respecting systemwide caption and audio-description preferences. Caption Theater should build on those ideas by using safe cinema-layout space to make existing access features more readable, discoverable, and configurable.
@@ -44,31 +70,6 @@ The extra area should not become a catch-all dashboard. It should become a user-
 
 ---
 
-1. **The movie remains primary.**  
-   The extra area should support the content, not compete with it.
-
-2. **No future spoilers by default.**  
-   Enhancements should not reveal future dialogue, plot points, outcomes, or jokes.
-
-3. **Opt-in by default.**  
-   Most enhancements should be user-selectable modes, not automatic overlays.
-
-4. **Context beats clutter.**  
-   One useful piece of information is better than a dashboard of noise.
-
-4A. **Dynamic beats static.**  
-    Static metadata wastes the space unless the user explicitly asks for it. The strongest enhancements should react to the current shot, scene, caption gap, visual style, or playback state.
-
-5. **Distraction cost must be evaluated.**  
-   Every feature needs a distraction rating and a clear reason to exist.
-
-6. **Ads remain native/fullscreen.**  
-   Enhancements suspend during ads and resume or revalidate when content returns.
-
-7. **Metadata must be trusted.**  
-   Character names, trivia, recap content, emotional cues, and translations should come from trusted metadata, verified models, or controlled pipelines.
-
----
 
 ## Feasibility Scale
 
@@ -861,6 +862,47 @@ Implementation notes:
 ---
 
 ### 18G. Subtitle-Gap Visual Context
+
+During gaps between subtitle cues, use the extra space to describe important visual action, setting, or object changes.
+
+Value:
+
+- Uses otherwise quiet text moments to add context without competing with dialogue.
+- Helps viewers who are reading captions and may miss visual details.
+- Helps accessibility users follow silent visual storytelling.
+- Gives the extra region a dynamic purpose beyond captions.
+
+Feasibility: Medium with visual analysis; high with authored metadata.  
+Distraction risk: Low to medium if only used during subtitle gaps.  
+MVP fit: Strong research candidate.
+
+Examples:
+
+```text
+Establishing shot: wide view of a domestic Los Angeles house
+```
+
+```text
+Silent beat: she notices the cracked phone screen
+```
+
+```text
+Action: the train leaves before he reaches the platform
+```
+
+Implementation notes:
+
+- Trigger only when there is enough subtitle silence.
+- Use shot-boundary detection to avoid stale descriptions.
+- Suppress when captions are dense.
+- Use authored descriptions when available.
+- Generated descriptions must be short and confidence-gated.
+
+Distraction guidance:
+
+- This is one of the strongest dynamic accessibility ideas.
+- It should never compete with active dialogue captions.
+- Best used as an optional “visual context between captions” mode.
 
 ---
 

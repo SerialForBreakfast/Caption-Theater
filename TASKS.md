@@ -38,14 +38,72 @@ The Caption Theater Xcode project currently ships **tvOS-only** targets (`Captio
 - **Phase 1 exit:** Satisfied for fixture-driven explainability (**CT-0103** Debug tab). Coordinator-driven “live” transitions on device remain future work.
 - **Phase 2 → playback:** **Partial:** bundled playback scenarios now fuse `HLSManifestInspector`, `ProviderMetadataInspector`, and `SubtitleMetadataClassifier` via `CaptionTheaterPlaybackEvidenceAssembler` on device (`PlaybackScenarios` resources). **Remaining CT-0502:** live `AVPlayerItem`/selection observers, timeline segments (native-only ranges), and ad-state hooks—not static fixtures alone.
 
-**Reasonable next forks (pick one driving sequence)**
+**Recommended next driving sequence**
 
-1. **CT-0303 / cinematic MVP** — Harden layout (safe area, overscan, animations) and ship readable captions into the computed caption band (Phase 4 slice).
-2. **CT-0502 (finish)** — `AVPlayerItem` track selection + periodic snapshot refresh.
-3. **CT-0301** — viewport preclassification feeding evidence before pixels return.
-4. **CT-0001 / CT-0002** — hero narrative + broaden fixture inventory when demo readiness matters.
+The project should now optimize for a narrow, demonstrable tvOS MVP before expanding detector, DRM, ads, or cross-platform complexity.
 
-**Phase 0:** **CT-0002** is **partial** (`Docs/Fixture-Inventory.md` + manifest/subtitle/provider/decision JSON + bundled sample MP4 for the playback shell); synthetic frames and full demo matrix still TODO.
+1. **CT-MVP-000 / cinematic gold path** — Lock the first shippable proof path: known-safe ultra-widescreen content, WebVTT sidecar captions, deterministic offline playback, top-pinned presentation, and persistent caption rendering inside the computed reading band.
+2. **CT-0401 → CT-0404 / caption persistence slice** — Define the internal cue model, adapt WebVTT fixtures, implement bounded cue history, and render current/retained captions into `CaptionTheaterLayoutGeometry.captionReadingRect`.
+3. **CT-0303 follow-through** — Harden layout polish around safe areas, overscan, transition animation, typography, and caption-band ergonomics rather than prioritizing pixel detection first.
+4. **CT-0502 finish line** — Incrementally replace static playback scenario inputs with live `AVPlayerItem` / selected subtitle / timed metadata observations only after the gold-path renderer exists.
+5. **CT-0002 / CT-0005 support work** — Fill only the fixtures needed to prove the gold path and renderer behavior. Keep broad synthetic detector coverage deferred until CT-0302 resumes.
+
+**Git-informed planning checkpoint**
+
+Before each task grooming pass, capture a short repo snapshot so task status reflects the actual working tree rather than memory or roadmap assumptions.
+
+Suggested local commands:
+
+```bash
+git status --short
+git log --oneline --decorate -12
+git diff --stat
+git diff --name-only
+```
+
+Use the output to update:
+
+- task status (`TODO`, `IN PROGRESS`, `DONE`, `BLOCKED`);
+- implementation notes that mention concrete files already changed;
+- acceptance criteria that are already satisfied by current code;
+- follow-up tasks created by uncommitted work;
+- risk notes when code exists but tests, fixtures, or docs are missing.
+## 4A. MVP Focus: Cinematic Gold Path
+
+### Goal
+
+Ship the smallest compelling Caption Theater proof that demonstrates the product value without requiring detector accuracy, DRM access, ad SDK integration, or cross-platform shells.
+
+### MVP Definition
+
+The first proof should be considered successful when the tvOS app can play a deterministic offline ultra-widescreen fixture, enter Caption Theater mode intentionally, top-pin the active picture without crop/stretch, and render current plus recently expired WebVTT captions inside the lower reading region without ever showing future cues.
+
+### Non-Goals for the MVP
+
+- Do not require pixel-region detection before the cinematic layout proof works.
+- Do not require FairPlay/DRM stream validation before the metadata-first policy is demonstrated.
+- Do not require real ad SDK integration before the core content experience works.
+- Do not require iOS or macOS targets before tvOS proves the interaction model.
+- Do not require CEA-608/708, IMSC/TTML, or image-subtitle rendering before the WebVTT adapter proves the internal cue model.
+
+### Product Quality Bar
+
+- The video remains primary.
+- Captions feel intentionally composed, not like a debug overlay.
+- Current speech is visually dominant.
+- Retained captions are clearly historical context.
+- The lower band never becomes a transcript wall.
+- The transition into Caption Theater feels deliberate rather than like an aspect-ratio bug.
+- The user can understand why the mode appeared, what it does, and how to leave it.
+
+### Engineering Quality Bar
+
+- The MVP remains deterministic and reproducible from bundled fixtures.
+- Core cue persistence logic is testable without `AVPlayer`.
+- UI rendering consumes layout geometry rather than duplicating layout math.
+- Caption history clears on explicit playback boundaries once those hooks exist.
+- All new models that cross concurrency boundaries conform to `Sendable` where appropriate.
+- Comments describe intent and concurrency requirements for async or playback-observation code.
 
 ---
 
@@ -182,6 +240,29 @@ Define the controlled world where Caption Theater can be tested before real-stre
 - Define baseline vs. Caption Theater demo criteria.
 
 ### Key Tasks
+
+#### CT-MVP-000 [TODO]: Define and Protect the Cinematic Gold Path
+
+User Story:
+As a product and engineering team, we need one narrow proof path so Caption Theater can become emotionally compelling before broader feasibility work expands the scope.
+
+Tasks:
+
+- Define the canonical MVP scenario using the bundled offline ultra-widescreen fixture.
+- Document the exact expected user flow from native playback to Caption Theater mode and back.
+- Identify the minimum fixture set required for the MVP.
+- Identify which existing modules participate in the MVP path.
+- Identify which roadmap items are explicitly deferred from the MVP.
+- Add a short “gold path” checklist to the README or demo documentation.
+- Update task statuses from a git-informed snapshot before each grooming pass.
+
+Acceptance Criteria:
+
+- The MVP path can be explained in one paragraph.
+- The MVP path uses tvOS, deterministic local playback, WebVTT, top-pinned layout, and persistent caption rendering.
+- Deferred work is explicitly listed so detector, DRM, ads, and platform expansion do not block the first proof.
+- The task plan reflects current git status and recent commits at the time of grooming.
+- Any uncommitted work that affects the MVP is either assigned to an existing task or captured as a new follow-up.
 
 #### CT-0001 [DONE]: Define Hero Demo Narrative
 
@@ -701,7 +782,7 @@ Acceptance Criteria:
 
 #### CT-0302 [TODO]: Implement Pixel Region Detector
 
-**Milestone sequencing (native ultra-wide MVP):** Ship **presentation-aspect + layout math** (`CaptionTheaterLayoutEngine`) and **`resizeAspect`-only** presentation first. **Defer CT-0302** until that MVP is demonstrated; pixel sampling then validates encoded-letterbox ambiguity, burned-in risk in bars, and logos—not the first proof of top-aligned scope on a 16:9 panel.
+**Milestone sequencing:** Keep CT-0302 deferred until the cinematic gold path is working end-to-end. Pixel sampling should validate ambiguous streams, unsafe inactive regions, burned-in risk, logos, and false positives. It should not block the first proof of top-pinned ultra-widescreen presentation with known-safe offline fixtures.
 
 User Story:
 As a playback engineer, I need a bounded detector that can identify safe inactive regions where pixel analysis is allowed.
@@ -796,6 +877,9 @@ Tasks:
 - Define cue intent.
 - Define authored positioning hints.
 - Define persistence eligibility.
+- Define whether each cue is allowed to persist, render only during authored timing, or force native fallback.
+- Define a stable ordering rule for current and retained cues.
+- Define how cue history should be cleared by future playback-boundary hooks.
 
 Acceptance Criteria:
 
@@ -803,6 +887,8 @@ Acceptance Criteria:
 - Cue model can represent dialogue, SDH, forced, lyrics, legal, ad, and unknown cue types.
 - Cue model preserves authored time.
 - Cue model is not WebVTT-specific and can support future IMSC/TTML, CEA-608/708, and app-owned cue adapters.
+- Cue model supports the MVP renderer without exposing WebVTT parser details to the view layer.
+- Cue model can be evaluated in pure unit tests without `AVPlayer`.
 
 #### CT-0402 [TODO]: Implement WebVTT Fixture Adapter
 
@@ -862,6 +948,9 @@ Tasks:
 - Clear history on audio track change.
 - Clear history on ad boundary.
 - Clear history on discontinuity.
+- Enforce a maximum retained cue count.
+- Enforce a maximum retained word or character budget to prevent transcript-wall behavior.
+- Distinguish current, retained, and expired-hidden cue states.
 
 Acceptance Criteria:
 
@@ -870,6 +959,9 @@ Acceptance Criteria:
 - Expired eligible cue can persist within configured bounds.
 - Ineligible cue types do not persist by default.
 - Boundary events clear retained history.
+- Retained cues never exceed the configured count and text budget.
+- Current cue presentation always wins over retained cue presentation.
+- Persistence behavior is covered by deterministic unit tests using fixture cue timelines.
 
 #### CT-0404 [TODO]: Implement Caption Renderer View
 
@@ -880,6 +972,10 @@ Tasks:
 
 - Render current cue prominently.
 - Render retained cues in a de-emphasized style.
+- Apply the persisted caption text size preset from `CaptionTheaterCaptionTextPreferences`.
+- Consume `CaptionTheaterLayoutGeometry.captionReadingRect` rather than recomputing geometry in the renderer.
+- Define visual treatment for current, retained, and empty states.
+- Define motion/fade behavior for retained cue aging.
 - Enforce reading-region bounds.
 - Handle large text mode strategy.
 - Avoid transcript-wall behavior.
@@ -892,6 +988,9 @@ Acceptance Criteria:
 - Renderer handles empty state.
 - Renderer handles pause state.
 - Snapshot tests cover current-only, retained, large-text, and cleared-history states.
+- Renderer does not create focusable passive caption elements on tvOS.
+- Renderer remains readable inside overscan-safe caption regions.
+- Renderer has a documented strategy for avoiding transcript-wall behavior.
 
 ### Phase 4 Exit Criteria
 
@@ -966,6 +1065,7 @@ Tasks:
 
 **Still open**
 
+- Wire the MVP caption renderer to the playback shell using deterministic fixture cue timelines before live subtitle extraction is required.
 - Live `AVPlayer`/`AVPlayerItem` legible-track selection + timed metadata feeding the assembler (replace static scenario bundles incrementally).
 - Provider timeline segments (`nativeOnly` ranges) tied to `CMTime`/playback hooks.
 - Ad / promo lifecycle inputs into snapshots.
@@ -1348,6 +1448,14 @@ Direction:
 
 ## 17. Updated Critical Questions
 
+### MVP Grooming and Repo Status
+
+0. What changed in the latest git snapshot (`git status`, recent commits, and current diff)?
+0. Which task statuses should change based on the working tree rather than roadmap memory?
+0. Which uncommitted files represent real implementation progress?
+0. Which uncommitted files are experiments that should not update task status yet?
+0. Which tests prove the current MVP path, and which MVP claims are still untested?
+
 ### Hero Demo and UX
 
 1. What exact prompt copy should be used for Caption Theater entry?
@@ -1408,14 +1516,15 @@ Direction:
 
 ## 18. Revised Immediate Sprint Decisions
 
-Before implementation begins, lock these decisions:
+1. The immediate sprint optimizes for the tvOS cinematic gold path before broader feasibility work.
+2. Hero demo uses deterministic offline ultra-widescreen content on a 16:9 screen.
+3. User is prompted before Caption Theater mode activates.
+4. Caption Theater top-aligns eligible ultra-widescreen active picture and uses lower safe space for current plus recently retained captions.
+5. WebVTT renders first through an internal cue model designed for the main subtitle/caption formats.
+6. The MVP renderer proves no future cue display, bounded persistence, and no transcript-wall behavior.
+7. Pixel detection remains deferred until the known-safe layout and caption persistence experience works end-to-end.
+8. DRM receives a feasibility study rather than being excluded, but DRM does not block the first proof.
+9. 4:3, variable-aspect, and burned-in subtitle cases remain stretch-goal fixtures.
+10. Ads render normally fullscreen/native, Caption Theater suspends during ads, and content resumes/revalidates after ads, but real ad integration does not block the MVP.
+11. Each grooming pass should use current git status, recent commits, and diffs to update task status honestly.
 
-1. Hero demo uses ultra-widescreen content on a 16:9 screen.
-2. User is prompted before Caption Theater mode activates.
-3. Caption Theater top-aligns eligible ultra-widescreen active picture and uses lower safe space for persistent captions.
-4. WebVTT renders first, but the internal cue model is designed for the main subtitle/caption formats.
-5. DRM receives a feasibility study rather than being excluded.
-6. 4:3, variable-aspect, and burned-in subtitle cases remain stretch-goal fixtures.
-7. Ads render normally fullscreen/native, Caption Theater suspends during ads, and content resumes/revalidates after ads.
-
-These decisions keep the first sprint focused while preserving the larger product ambition.

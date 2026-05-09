@@ -2,7 +2,8 @@
 //  CaptionTheaterLayoutEngine.swift
 //  CaptionTheater
 //
-//  Computes aspect-fit geometry for native vs top-pinned cinematic MVP layouts (CT-0303 slice).
+//  Computes aspect-fit geometry for native vs top-pinned cinematic MVP layouts with optional safe-area / overscan
+//  padding (CT-0303).
 //
 
 import CoreGraphics
@@ -20,6 +21,8 @@ nonisolated enum CaptionTheaterLayoutPresentationMode: Equatable, Sendable {
 ///
 /// **Policy:** MVP relies on **mathematical aspect-fit** only—no pixel classification (CT-0302). Pair with
 /// ``AVPlayerLayer`` using ``AVLayerVideoGravity/resizeAspect`` exclusively; aspect-fill is excluded from this milestone.
+/// **Insets:** When ``CaptionTheaterLayoutInputs/contentInsets`` is non-zero, all math runs inside the inset region; output
+/// rects are still expressed in the host container’s coordinate space.
 nonisolated struct CaptionTheaterLayoutEngine: Sendable {
 
     init() {}
@@ -32,8 +35,12 @@ nonisolated struct CaptionTheaterLayoutEngine: Sendable {
             return nil
         }
 
-        let wc = inputs.containerWidth
-        let hc = inputs.containerHeight
+        let inset = inputs.contentInsets
+        let ox = inset.left
+        let oy = inset.top
+
+        let wc = inputs.containerWidth - inset.left - inset.right
+        let hc = inputs.containerHeight - inset.top - inset.bottom
         let ar = inputs.pictureAspectRatioWidthOverHeight
 
         let containerAspect = wc / hc
@@ -60,15 +67,20 @@ nonisolated struct CaptionTheaterLayoutEngine: Sendable {
         }
 
         let pictureRect = CGRect(
-            x: horizontalInset,
-            y: originY,
+            x: ox + horizontalInset,
+            y: oy + originY,
             width: pictureWidth,
             height: pictureHeight
         )
 
-        let captionTop = originY + pictureHeight
-        let captionHeight = max(0, hc - captionTop)
-        let captionRect = CGRect(x: 0, y: captionTop, width: wc, height: captionHeight)
+        let captionTopInner = originY + pictureHeight
+        let captionHeight = max(0, hc - captionTopInner)
+        let captionRect = CGRect(
+            x: ox,
+            y: oy + captionTopInner,
+            width: wc,
+            height: captionHeight
+        )
 
         return CaptionTheaterLayoutGeometry(activePictureRect: pictureRect, captionReadingRect: captionRect)
     }

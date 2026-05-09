@@ -731,6 +731,8 @@ Acceptance Criteria:
 
 **Partially shipped:** `CaptionTheaterLayoutInputs`, `CaptionTheaterLayoutGeometry`, `CaptionTheaterLayoutEngine`, and `CaptionTheaterLayoutEngineTests` implement native-centered vs **top-pinned** aspect-fit rects from **container size + picture aspect (w÷h)**; Playback tab integrates via `CaptionTheaterPlaybackShellViewModel.layoutGeometry` and `tvOSCaptionTheaterPlayerContainer` ( **`AVLayerVideoGravity.resizeAspect` only**). **Caption text size** presets persist via `@AppStorage` (`CaptionTheaterCaptionTextPreferences.textSizePresetStorageKey`) for MVP overlay + future Phase 4 renderer.
 
+**CT-0303 update (safe area / overscan / tests):** `CaptionTheaterLayoutContentInsets` trims the layout region; `GeometryReader` supplies `safeAreaInsets` into `layoutGeometry(container:contentInsets:)`. Uniform insets in unit tests model tvOS-style overscan slack. Top-pinned shell uses `captionReadingRect` horizontal placement when insets shrink width. Layout changes animate (~0.2s ease) via a stable rect identity string. Reference container sizes (phone / tablet / TV / desktop-class) covered in layout tests.
+
 User Story:
 As a UI engineer, I need deterministic geometry for native and Caption Theater presentation modes.
 

@@ -2,13 +2,16 @@
 //  CaptionTheaterLayoutGeometry.swift
 //  CaptionTheater
 //
-//  Deterministic rectangles for video and caption regions in container coordinates.
+//  Deterministic rectangles for video and caption regions in host container coordinates (including safe-area padding).
 //
 
 import CoreGraphics
 import Foundation
 
-/// Output rectangles for video pinning and caption overlay placement (points).
+/// Output rectangles for video pinning and caption overlay placement (points), in **container** coordinates.
+///
+/// When ``CaptionTheaterLayoutInputs/contentInsets`` trim the layout region, origins shift away from the container edges
+/// while aspect-fit math stays confined to the inset area.
 nonisolated struct CaptionTheaterLayoutGeometry: Equatable, Sendable {
 
     /// Aspect-fit picture rectangle inside the container (matches ``AVLayerVideoGravity/resizeAspect`` framing).

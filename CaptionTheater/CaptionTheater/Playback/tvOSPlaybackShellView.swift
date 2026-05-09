@@ -96,7 +96,13 @@ struct tvOSPlaybackShellView: View {
                 )
             } else {
                 GeometryReader { geo in
-                    playbackStage(model: model, containerSize: geo.size)
+                    let contentInsets = CaptionTheaterLayoutContentInsets(
+                        top: Double(geo.safeAreaInsets.top),
+                        left: Double(geo.safeAreaInsets.leading),
+                        bottom: Double(geo.safeAreaInsets.bottom),
+                        right: Double(geo.safeAreaInsets.trailing)
+                    )
+                    playbackStage(model: model, containerSize: geo.size, contentInsets: contentInsets)
                 }
                 .ignoresSafeArea()
             }
@@ -139,8 +145,13 @@ struct tvOSPlaybackShellView: View {
     }
 
     @ViewBuilder
-    private func playbackStage(model: CaptionTheaterPlaybackShellViewModel, containerSize: CGSize) -> some View {
-        let layout = model.layoutGeometry(containerSize: containerSize)
+    private func playbackStage(
+        model: CaptionTheaterPlaybackShellViewModel,
+        containerSize: CGSize,
+        contentInsets: CaptionTheaterLayoutContentInsets
+    ) -> some View {
+        let layout = model.layoutGeometry(containerSize: containerSize, contentInsets: contentInsets)
+        let layoutAnimationIdentity = Self.layoutAnimationIdentity(layout)
 
         if model.captionTheaterOptInAccepted,
            model.captionTheaterTopPinnedLayoutEnabled,
@@ -148,6 +159,7 @@ struct tvOSPlaybackShellView: View {
            layout.captionReadingRect.height > 0.5
         {
             topPinnedVideoWithCaptionColumn(model: model, containerSize: containerSize, layout: layout)
+                .animation(.easeInOut(duration: 0.2), value: layoutAnimationIdentity)
         } else {
             ZStack(alignment: .topLeading) {
                 tvOSCaptionTheaterPlayerContainer(
@@ -162,7 +174,18 @@ struct tvOSPlaybackShellView: View {
 
                 debugHudOverlay(model: model, containerSize: containerSize)
             }
+            .animation(.easeInOut(duration: 0.2), value: layoutAnimationIdentity)
         }
+    }
+
+    /// Stable string for SwiftUI layout transitions when picture/caption rects change size or origin.
+    private static func layoutAnimationIdentity(_ layout: CaptionTheaterLayoutGeometry?) -> String {
+        guard let layout else {
+            return "nil"
+        }
+        let p = layout.activePictureRect
+        let c = layout.captionReadingRect
+        return "\(p.origin.x),\(p.origin.y),\(p.size.width),\(p.size.height)|\(c.origin.y),\(c.size.height)"
     }
 
     /// Top-pinned letterbox math with a **physical** lower ``VStack`` column for caption rendering (debug stroked).
@@ -173,33 +196,40 @@ struct tvOSPlaybackShellView: View {
     ) -> some View {
         let pictureHeight = layout.activePictureRect.height
         let captionHeight = max(0, layout.captionReadingRect.height)
+        let columnLeading = layout.captionReadingRect.minX
+        let columnWidth = layout.captionReadingRect.width
+        let columnTrailingGutter = max(0, containerSize.width - layout.captionReadingRect.maxX)
 
         return ZStack(alignment: .topTrailing) {
-            VStack(spacing: 0) {
-                ZStack {
-                    Color.black
-                    tvOSCaptionTheaterPlayerContainer(
-                        player: model.player,
-                        videoDisplayRect: CGRect(
-                            x: layout.activePictureRect.minX,
-                            y: 0,
-                            width: layout.activePictureRect.width,
-                            height: layout.activePictureRect.height
+            HStack(alignment: .top, spacing: 0) {
+                Color.clear.frame(width: columnLeading)
+                VStack(spacing: 0) {
+                    ZStack {
+                        Color.black
+                        tvOSCaptionTheaterPlayerContainer(
+                            player: model.player,
+                            videoDisplayRect: CGRect(
+                                x: layout.activePictureRect.minX - columnLeading,
+                                y: 0,
+                                width: layout.activePictureRect.width,
+                                height: layout.activePictureRect.height
+                            )
                         )
-                    )
-                    .frame(width: containerSize.width, height: pictureHeight)
-                    .overlay {
-                        Rectangle()
-                            .strokeBorder(Color.green, lineWidth: 4)
+                        .frame(width: columnWidth, height: pictureHeight)
+                        .overlay {
+                            Rectangle()
+                                .strokeBorder(Color.green, lineWidth: 4)
+                        }
                     }
-                }
-                .frame(width: containerSize.width, height: pictureHeight)
+                    .frame(width: columnWidth, height: pictureHeight)
 
-                captionTheaterCaptionColumn(
-                    model: model,
-                    width: containerSize.width,
-                    height: captionHeight
-                )
+                    captionTheaterCaptionColumn(
+                        model: model,
+                        width: columnWidth,
+                        height: captionHeight
+                    )
+                }
+                Color.clear.frame(width: columnTrailingGutter)
             }
             .frame(width: containerSize.width, height: containerSize.height, alignment: .top)
 

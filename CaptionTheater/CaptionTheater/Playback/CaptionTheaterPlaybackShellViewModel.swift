@@ -56,7 +56,7 @@ final class CaptionTheaterPlaybackShellViewModel {
     /// Observation for the active item’s ``AVPlayerItem/status`` (replaced when ``AVPlayer/currentItem`` changes).
     private var itemStatusObservation: NSKeyValueObservation?
 
-    /// Coalesces repetitive ``layoutGeometry(container:)`` diagnostic logs across SwiftUI layout passes.
+    /// Coalesces repetitive ``layoutGeometry(container:contentInsets:)`` diagnostic logs across SwiftUI layout passes.
     private var lastLayoutGeometryDiagnosticToken: String?
 
     /// Logs once when Caption Theater layout uses cinematic fallback because pixels are still unknown.
@@ -452,7 +452,13 @@ final class CaptionTheaterPlaybackShellViewModel {
     }
 
     /// Computes layout rects for the video stage; returns `nil` until presentation aspect loads or inputs are invalid.
-    func layoutGeometry(containerSize: CGSize) -> CaptionTheaterLayoutGeometry? {
+    ///
+    /// Pass ``CaptionTheaterLayoutContentInsets`` from the host—typically ``GeometryProxy/safeAreaInsets`` on tvOS—so
+    /// aspect-fit math and the caption band stay inside the interactive safe region (CT-0303).
+    func layoutGeometry(
+        containerSize: CGSize,
+        contentInsets: CaptionTheaterLayoutContentInsets = .zero
+    ) -> CaptionTheaterLayoutGeometry? {
         let mode: CaptionTheaterLayoutPresentationMode =
             captionTheaterOptInAccepted && captionTheaterTopPinnedLayoutEnabled
                 ? .captionTheaterAspectFitTopPinned
@@ -469,7 +475,8 @@ final class CaptionTheaterPlaybackShellViewModel {
 
         let inputs = CaptionTheaterLayoutInputs(
             containerSize: containerSize,
-            pictureAspectRatioWidthOverHeight: aspect
+            pictureAspectRatioWidthOverHeight: aspect,
+            contentInsets: contentInsets
         )
 
         guard let geometry = CaptionTheaterLayoutEngine().geometry(for: inputs, mode: mode) else {

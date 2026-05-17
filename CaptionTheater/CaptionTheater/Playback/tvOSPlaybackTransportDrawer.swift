@@ -12,8 +12,9 @@ import UIKit
 // MARK: - Timeline scrub control (tvOS)
 
 /// Horizontal scrub bar for tvOS playback. `UISlider` and SwiftUI `Slider` are unavailable here, so this `UIControl`
-/// uses touch-surface pans (Siri Remote) when focused, exposes an adjustable accessibility path, and forwards
-/// ``UIControl.Event/valueChanged`` while the user scrubs.
+/// uses `UIControl` **touch tracking** (Siri Remote touch surface + Simulator click-drag). `UIPanGestureRecognizer` alone
+/// is a poor match for Simulator and some indirect inputs; accessibility adjustable nudges still apply.
+/// Emits ``UIControl.Event/valueChanged`` while the user adjusts the playhead.
 ///
 /// **Concurrency:** All API is main-thread only; used only from `UIViewRepresentable` on the main actor.
 private final class TVPlaybackTimelineScrubControl: UIControl {
@@ -21,15 +22,10 @@ private final class TVPlaybackTimelineScrubControl: UIControl {
     private let trackBackground = UIView()
     private let trackFill = UIView()
     private let thumbView = UIView()
+    private let focusChrome = UIView()
 
-    private let trackHeight: CGFloat = 6
-    private let thumbDiameter: CGFloat = 28
-
-    private lazy var panGesture: UIPanGestureRecognizer = {
-        let gesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
-        gesture.delegate = self
-        return gesture
-    }()
+    private let trackHeight: CGFloat = 8
+    private let thumbDiameter: CGFloat = 32
 
     /// Normalized 0...1; updated by playback sync and user scrubbing.
     private(set) var scrubNormalizedValue: CGFloat = 0
@@ -70,15 +66,19 @@ private final class TVPlaybackTimelineScrubControl: UIControl {
         thumbView.layer.shadowRadius = 4
         thumbView.layer.shadowOffset = .zero
 
+        focusChrome.isUserInteractionEnabled = false
+        focusChrome.layer.cornerRadius = 12
+        focusChrome.layer.cornerCurve = .continuous
+        focusChrome.layer.borderWidth = 0
+
         addSubview(trackBackground)
         addSubview(trackFill)
         addSubview(thumbView)
-
-        addGestureRecognizer(panGesture)
+        insertSubview(focusChrome, belowSubview: thumbView)
     }
 
     override var intrinsicContentSize: CGSize {
-        CGSize(width: UIView.noIntrinsicMetric, height: 44)
+        CGSize(width: UIView.noIntrinsicMetric, height: 52)
     }
 
     /// Applies read-only playhead updates from ``CaptionTheaterPlaybackShellViewModel`` without emitting `valueChanged`.
@@ -111,6 +111,37 @@ private final class TVPlaybackTimelineScrubControl: UIControl {
             width: thumbDiameter,
             height: thumbDiameter
         )
+
+        let chromeOutset: CGFloat = 8
+        focusChrome.frame = bounds.insetBy(dx: -chromeOutset, dy: -chromeOutset)
+    }
+
+    override func beginTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
+        guard isUserInteractionEnabled else { return false }
+        isTrackingScrub = true
+        let value = normalizedValue(atHorizontalLocation: touch.location(in: self).x)
+        setScrubNormalizedValueFromUser(value)
+        return true
+    }
+
+    override func continueTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
+        let value = normalizedValue(atHorizontalLocation: touch.location(in: self).x)
+        setScrubNormalizedValueFromUser(value)
+        return true
+    }
+
+    override func endTracking(_ touch: UITouch?, with event: UIEvent?) {
+        isTrackingScrub = false
+        if let touch {
+            let value = normalizedValue(atHorizontalLocation: touch.location(in: self).x)
+            setScrubNormalizedValueFromUser(value)
+        }
+        super.endTracking(touch, with: event)
+    }
+
+    override func cancelTracking(with event: UIEvent?) {
+        isTrackingScrub = false
+        super.cancelTracking(with: event)
     }
 
     override func didUpdateFocus(in context: UIFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
@@ -120,6 +151,8 @@ private final class TVPlaybackTimelineScrubControl: UIControl {
         CaptionTheaterPlaybackLogger.playbackFocus(
             "TVPlaybackTimelineScrubControl didUpdateFocus isFocused=\(isFocused) nextType=\(nextType) prevType=\(prevType)"
         )
+        focusChrome.layer.borderColor = UIColor.white.cgColor
+        focusChrome.layer.borderWidth = isFocused ? 4 : 0
         coordinator.addCoordinatedAnimations {
             let scale: CGFloat = self.isFocused ? 1.12 : 1
             self.thumbView.transform = CGAffineTransform(scaleX: scale, y: scale)
@@ -143,23 +176,6 @@ private final class TVPlaybackTimelineScrubControl: UIControl {
         return min(1, max(0, (clampedX - trackStart) / usableWidth))
     }
 
-    @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
-        switch gesture.state {
-        case .began:
-            isTrackingScrub = true
-            fallthrough
-        case .changed:
-            let value = normalizedValue(atHorizontalLocation: gesture.location(in: self).x)
-            setScrubNormalizedValueFromUser(value)
-        case .ended, .cancelled, .failed:
-            isTrackingScrub = false
-            let value = normalizedValue(atHorizontalLocation: gesture.location(in: self).x)
-            setScrubNormalizedValueFromUser(value)
-        default:
-            break
-        }
-    }
-
     private func setScrubNormalizedValueFromUser(_ value: CGFloat) {
         let clamped = min(1, max(0, value))
         scrubNormalizedValue = clamped
@@ -175,19 +191,13 @@ private final class TVPlaybackTimelineScrubControl: UIControl {
     }
 }
 
-extension TVPlaybackTimelineScrubControl: UIGestureRecognizerDelegate {
-    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
-        false
-    }
-}
-
 /// Bridges the custom scrub control into SwiftUI. `Slider` / `UISlider` are unavailable on tvOS.
 private struct tvOSPlaybackTimelineScrubber: UIViewRepresentable {
 
     /// Normalized playhead 0...1; writes propagate to the host via ``CaptionTheaterPlaybackShellViewModel/seekToNormalizedProgress``.
     @Binding var normalizedProgress: Double
 
-    /// Mirrors SwiftUI `.disabled`; pans are ignored when false and the control is dimmed by the host.
+    /// Mirrors SwiftUI `.disabled`; scrub gestures are inactive when duration is unknown.
     var isUserInteractionEnabled: Bool = true
 
     func makeCoordinator() -> Coordinator {
@@ -220,8 +230,8 @@ private struct tvOSPlaybackTimelineScrubber: UIViewRepresentable {
 
 /// Collapsed trailing affordance that expands into play/pause, skip, scrubber, and scrolling-caption toggle.
 ///
-/// **Focus:** All controls are focusable for Siri Remote; keep the collapsed glyph small in the lower-trailing safe area
-/// so it does not sit atop the primary picture on most layouts.
+/// **Focus:** Uses white 4 pt focus chrome on controls. **Menu / Back** (`onExitCommand`) collapses the expanded panel;
+/// **Close** is an explicit ``Label`` for Select.
 struct tvOSPlaybackTransportDrawer: View {
 
     /// Persists “retain scrolling caption history” vs “latest line only” across launches.
@@ -271,6 +281,7 @@ struct tvOSPlaybackTransportDrawer: View {
                 .background(.ultraThinMaterial, in: Circle())
         }
         .buttonStyle(.card)
+        .tvOSHighContrastFocusCircleBorder()
         .logTVOSFocusTransitions("transportDrawer.collapsedGlyph")
         .accessibilityLabel("Playback and caption settings")
         .accessibilityHint("Opens transport, caption size, and scrolling options")
@@ -278,20 +289,22 @@ struct tvOSPlaybackTransportDrawer: View {
 
     private var expandedPanel: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
+            HStack(alignment: .center) {
                 Text("Playback")
                     .font(.headline)
-                Spacer()
+                Spacer(minLength: 8)
                 Button {
-                    isExpanded = false
-                    CaptionTheaterPlaybackLogger.playbackFlow("Transport drawer collapsed")
+                    collapseTransportDrawer(reason: "Transport drawer collapsed (Close)")
                 } label: {
-                    Label("Close", systemImage: "chevron.right")
-                        .labelStyle(.iconOnly)
+                    Label("Close", systemImage: "xmark.circle.fill")
+                        .font(.body.weight(.semibold))
+                        .labelStyle(.titleAndIcon)
                 }
                 .buttonStyle(.card)
+                .tvOSHighContrastFocusBorder(cornerRadius: 14)
                 .logTVOSFocusTransitions("transportDrawer.close")
-                .accessibilityLabel("Close controls")
+                .accessibilityLabel("Close")
+                .accessibilityHint("Closes playback and caption settings")
             }
 
             HStack(spacing: 20) {
@@ -302,6 +315,7 @@ struct tvOSPlaybackTransportDrawer: View {
                         .font(.title2)
                 }
                 .buttonStyle(.card)
+                .tvOSHighContrastFocusBorder(cornerRadius: 14)
                 .logTVOSFocusTransitions("transportDrawer.rewind15")
                 .accessibilityLabel("Rewind 15 seconds")
 
@@ -312,6 +326,7 @@ struct tvOSPlaybackTransportDrawer: View {
                         .font(.title)
                 }
                 .buttonStyle(.card)
+                .tvOSHighContrastFocusBorder(cornerRadius: 14)
                 .logTVOSFocusTransitions("transportDrawer.playPause")
                 .accessibilityLabel(model.timeControlStatus == .playing ? "Pause" : "Play")
 
@@ -322,6 +337,7 @@ struct tvOSPlaybackTransportDrawer: View {
                         .font(.title2)
                 }
                 .buttonStyle(.card)
+                .tvOSHighContrastFocusBorder(cornerRadius: 14)
                 .logTVOSFocusTransitions("transportDrawer.ffwd15")
                 .accessibilityLabel("Fast forward 15 seconds")
             }
@@ -340,7 +356,7 @@ struct tvOSPlaybackTransportDrawer: View {
                     normalizedProgress: scrubberBinding,
                     isUserInteractionEnabled: model.durationSeconds > 0
                 )
-                    .frame(height: 36)
+                    .frame(height: 52)
                     .opacity(model.durationSeconds <= 0 ? 0.35 : 1)
                     .logTVOSFocusTransitions("transportDrawer.scrubberHost")
             }
@@ -348,6 +364,7 @@ struct tvOSPlaybackTransportDrawer: View {
             Toggle(isOn: $captionScrollingHistoryEnabled) {
                 Label("Scrolling captions", systemImage: "list.bullet.rectangle")
             }
+            .tvOSHighContrastFocusBorder(cornerRadius: 10)
             .logTVOSFocusTransitions("transportDrawer.scrollingToggle")
             .accessibilityHint("When on, recent lines stay visible in a scrollable column")
 
@@ -357,11 +374,15 @@ struct tvOSPlaybackTransportDrawer: View {
                 }
             }
             .pickerStyle(.menu)
+            .tvOSHighContrastFocusBorder(cornerRadius: 10)
             .logTVOSFocusTransitions("transportDrawer.captionSizePicker")
             .accessibilityHint("Larger sizes use the caption band below the picture")
         }
+        .onExitCommand {
+            collapseTransportDrawer(reason: "Transport drawer collapsed (Menu / back)")
+        }
         .padding(20)
-        .frame(width: 380, alignment: .leading)
+        .frame(width: 420, alignment: .leading)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
@@ -388,6 +409,14 @@ struct tvOSPlaybackTransportDrawer: View {
 
     private static var skipSeconds: Double {
         CaptionTheaterPlaybackShellViewModel.playbackTransportSkipSeconds
+    }
+
+    private func collapseTransportDrawer(reason: String) {
+        guard isExpanded else {
+            return
+        }
+        isExpanded = false
+        CaptionTheaterPlaybackLogger.playbackFlow(reason)
     }
 
     private func formatClock(_ seconds: Double) -> String {

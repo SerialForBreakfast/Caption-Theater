@@ -30,4 +30,54 @@ extension View {
     func logTVOSFocusTransitions(_ label: String) -> some View {
         modifier(TVOSPlaybackFocusTransitionLogger(label: label))
     }
+
+    /// Rounded-rectangle outline in **white** (4 pt) when ``EnvironmentValues/isFocused`` is true.
+    func tvOSHighContrastFocusBorder(cornerRadius: CGFloat = 12) -> some View {
+        modifier(TVOSHighContrastFocusRectBorder(cornerRadius: cornerRadius))
+    }
+
+    /// Circular outline in **white** (4 pt) when focused (collapsed transport affordance).
+    func tvOSHighContrastFocusCircleBorder() -> some View {
+        modifier(TVOSHighContrastFocusCircleBorderModifier())
+    }
+}
+
+// MARK: - High-contrast focus chrome (tvOS)
+
+private struct TVOSHighContrastFocusRectBorder: ViewModifier {
+
+    let cornerRadius: CGFloat
+
+    @Environment(\.isFocused)
+    private var isFocused
+
+    func body(content: Content) -> some View {
+        content
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(
+                        isFocused ? Color.white : Color.clear,
+                        lineWidth: isFocused ? 4 : 0
+                    )
+                    .allowsHitTesting(false)
+            }
+    }
+}
+
+private struct TVOSHighContrastFocusCircleBorderModifier: ViewModifier {
+
+    @Environment(\.isFocused)
+    private var isFocused
+
+    func body(content: Content) -> some View {
+        content
+            .overlay {
+                Circle()
+                    .strokeBorder(
+                        isFocused ? Color.white : Color.clear,
+                        lineWidth: isFocused ? 4 : 0
+                    )
+                    .allowsHitTesting(false)
+            }
+    }
 }

@@ -10,8 +10,12 @@ import SwiftUI
 /// Fullscreen playback surface: Caption Theater offer when cues qualify, then optional top-stacked caption column.
 ///
 /// Touches **playback** via ``tvOSCaptionTheaterPlayerContainer`` (``AVPlayerLayer`` + ``AVLayerVideoGravity/resizeAspect``—no aspect-fill),
-/// **layout** via ``CaptionTheaterLayoutEngine``, Play/Pause via the Siri Remote command, and **engineering telemetry** via ``CaptionTheaterPlaybackLogger``.
+/// **layout** via ``CaptionTheaterLayoutEngine``, Play/Pause via the Siri Remote command, **transport** via ``tvOSPlaybackTransportDrawer`` (CT-0504),
+/// and **engineering telemetry** via ``CaptionTheaterPlaybackLogger``.
 struct tvOSPlaybackShellView: View {
+
+    /// `Namespace` id for ``View/focusScope(_:)`` so **playback** keeps tvOS default focus while directional moves can still reach the **transport drawer** (separate ``View/focusSection()``).
+    @Namespace private var transportFocusNamespace
 
     @AppStorage(CaptionTheaterCaptionTextPreferences.textSizePresetStorageKey)
     private var captionTextSizeRaw = CaptionTheaterCaptionTextPreferences.defaultTextSizeRawValue
@@ -19,7 +23,12 @@ struct tvOSPlaybackShellView: View {
     @AppStorage("CaptionTheater.playbackDebugHUD")
     private var playbackDebugHUD = false
 
+    @AppStorage(tvOSPlaybackTransportDrawer.captionScrollingHistoryStorageKey)
+    private var captionScrollingHistoryEnabled = true
+
     @State private var model: CaptionTheaterPlaybackShellViewModel?
+
+    @State private var transportDrawerExpanded = false
 
     /// After the user chooses an option—or bundled non-scope content skips the offer—prompt logic stops for this shell instance.
     @State private var captionTheaterOfferResolvedForSession = false
@@ -85,34 +94,65 @@ struct tvOSPlaybackShellView: View {
     }
 
     private func fullscreenPlayback(model: CaptionTheaterPlaybackShellViewModel) -> some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
+        ZStack(alignment: .bottomTrailing) {
+            // Keep `.focusable` / Play-Pause **only** on the stage. Wrapping the whole `ZStack` (including the
+            // transport drawer) makes tvOS deliver the Siri Remote **Select** action to the wrong focus
+            // environment, so drawer `Button`s highlight but never run their actions (CT-0504).
+            ZStack {
+                Color.black.ignoresSafeArea()
 
-            if let failure = model.playbackFailureDescription {
-                ContentUnavailableView(
-                    "Playback failed",
-                    systemImage: "exclamationmark.triangle",
-                    description: Text(failure)
-                )
-            } else {
-                GeometryReader { geo in
-                    let contentInsets = CaptionTheaterLayoutContentInsets(
-                        top: Double(geo.safeAreaInsets.top),
-                        left: Double(geo.safeAreaInsets.leading),
-                        bottom: Double(geo.safeAreaInsets.bottom),
-                        right: Double(geo.safeAreaInsets.trailing)
+                if let failure = model.playbackFailureDescription {
+                    ContentUnavailableView(
+                        "Playback failed",
+                        systemImage: "exclamationmark.triangle",
+                        description: Text(failure)
                     )
-                    playbackStage(model: model, containerSize: geo.size, contentInsets: contentInsets)
+                    .focusable(true) { focused in
+                        CaptionTheaterPlaybackLogger.playbackFocus(
+                            "playbackFailureView.focusable focused=\(focused) drawerExpanded=\(transportDrawerExpanded)"
+                        )
+                    }
+                    .prefersDefaultFocus(true, in: transportFocusNamespace)
+                } else {
+                    GeometryReader { geo in
+                        let contentInsets = CaptionTheaterLayoutContentInsets(
+                            top: Double(geo.safeAreaInsets.top),
+                            left: Double(geo.safeAreaInsets.leading),
+                            bottom: Double(geo.safeAreaInsets.bottom),
+                            right: Double(geo.safeAreaInsets.trailing)
+                        )
+                        playbackStage(model: model, containerSize: geo.size, contentInsets: contentInsets)
+                    }
+                    .ignoresSafeArea()
                 }
-                .ignoresSafeArea()
+            }
+            .focusSection()
+
+            if model.playbackFailureDescription == nil {
+                tvOSPlaybackTransportDrawer(model: model, isExpanded: $transportDrawerExpanded)
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 20)
+                    .prefersDefaultFocus(false, in: transportFocusNamespace)
+                    .focusSection()
             }
         }
-        .focusable(true)
+        .focusScope(transportFocusNamespace)
+        .onMoveCommand { direction in
+            CaptionTheaterPlaybackLogger.playbackFocus(
+                "fullscreenPlayback.onMoveCommand direction=\(direction) drawerExpanded=\(transportDrawerExpanded)"
+            )
+        }
+        .onChange(of: transportDrawerExpanded) { _, expanded in
+            CaptionTheaterPlaybackLogger.playbackFocus("transportDrawerExpanded changed -> \(expanded)")
+        }
         .onPlayPauseCommand {
             model.togglePlayPause()
         }
         .onChange(of: model.presentationAspectGeneration) { _, _ in
             considerCaptionTheaterOffer(model: model)
+        }
+        .onChange(of: showCaptionTheaterOfferAlert) { _, presented in
+            CaptionTheaterPlaybackLogger.playbackFocus("Caption Theater offer alert presented=\(presented)")
         }
         .alert("Caption Theater", isPresented: $showCaptionTheaterOfferAlert) {
             Button("Use Caption Theater") {
@@ -167,6 +207,12 @@ struct tvOSPlaybackShellView: View {
                     videoDisplayRect: layout?.activePictureRect
                 )
                 .frame(width: containerSize.width, height: containerSize.height)
+                .focusable(true) { videoFocused in
+                    CaptionTheaterPlaybackLogger.playbackFocus(
+                        "centeredLayout.player.focusable focused=\(videoFocused) drawerExpanded=\(transportDrawerExpanded)"
+                    )
+                }
+                .prefersDefaultFocus(true, in: transportFocusNamespace)
                 .overlay {
                     Rectangle()
                         .strokeBorder(Color.green, lineWidth: 4)
@@ -216,6 +262,12 @@ struct tvOSPlaybackShellView: View {
                             )
                         )
                         .frame(width: columnWidth, height: pictureHeight)
+                        .focusable(true) { videoFocused in
+                            CaptionTheaterPlaybackLogger.playbackFocus(
+                                "topPinned.player.focusable focused=\(videoFocused) drawerExpanded=\(transportDrawerExpanded)"
+                            )
+                        }
+                        .prefersDefaultFocus(true, in: transportFocusNamespace)
                         .overlay {
                             Rectangle()
                                 .strokeBorder(Color.green, lineWidth: 4)
@@ -226,7 +278,8 @@ struct tvOSPlaybackShellView: View {
                     captionTheaterCaptionColumn(
                         model: model,
                         width: columnWidth,
-                        height: captionHeight
+                        height: captionHeight,
+                        captionScrollingHistoryEnabled: captionScrollingHistoryEnabled
                     )
                 }
                 Color.clear.frame(width: columnTrailingGutter)
@@ -240,25 +293,38 @@ struct tvOSPlaybackShellView: View {
         .frame(width: containerSize.width, height: containerSize.height, alignment: .top)
     }
 
-    /// Scrolling caption band: **newest cue at the top**, older cues below via ``CaptionTheaterPlaybackShellViewModel/captionScrollingCueEntries``.
+    /// Caption band: either a scrolling history (**newest-first**) or a single latest line (traditional-style).
     private func captionTheaterCaptionColumn(
         model: CaptionTheaterPlaybackShellViewModel,
         width: CGFloat,
-        height: CGFloat
+        height: CGFloat,
+        captionScrollingHistoryEnabled: Bool
     ) -> some View {
+        Group {
+            if captionScrollingHistoryEnabled {
+                captionScrollingHistoryColumn(model: model)
+            } else {
+                captionSingleLineColumn(model: model)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .focusable(false)
+        .frame(width: width, height: height, alignment: .top)
+        .background(Color(red: 0.06, green: 0.06, blue: 0.08))
+        .overlay {
+            Rectangle()
+                .strokeBorder(Color.blue, lineWidth: 4)
+        }
+    }
+
+    /// Scrolling history: older cues remain visible below the newest row.
+    private func captionScrollingHistoryColumn(model: CaptionTheaterPlaybackShellViewModel) -> some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: true) {
                 VStack(alignment: .center, spacing: 12) {
                     if model.captionScrollingCueEntries.isEmpty {
-                        Text(
-                            "Waiting for captions…"
-                        )
-                        .font(captionTextSizePreset.captionOverlayFont)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .minimumScaleFactor(0.65)
-                        .lineLimit(8)
-                        .padding(.horizontal, 4)
+                        captionPlaceholderText
                     } else {
                         ForEach(model.captionScrollingCueEntries) { entry in
                             Text(entry.text)
@@ -275,6 +341,7 @@ struct tvOSPlaybackShellView: View {
                 .padding(.vertical, 10)
                 .frame(maxWidth: .infinity)
             }
+            .focusable(false)
             .onChange(of: model.captionScrollingCueEntries.first?.id) { _, newId in
                 guard let newId else {
                     return
@@ -284,15 +351,35 @@ struct tvOSPlaybackShellView: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .focusable(false)
-        .frame(width: width, height: height, alignment: .top)
-        .background(Color(red: 0.06, green: 0.06, blue: 0.08))
-        .overlay {
-            Rectangle()
-                .strokeBorder(Color.blue, lineWidth: 4)
+    }
+
+    /// Latest cue only; same legible pipeline, without scroll history chrome.
+    private func captionSingleLineColumn(model: CaptionTheaterPlaybackShellViewModel) -> some View {
+        VStack(alignment: .center, spacing: 8) {
+            if let text = model.captionScrollingCueEntries.first?.text {
+                Text(text)
+                    .font(captionTextSizePreset.captionOverlayFont)
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.65)
+                    .lineLimit(12)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            } else {
+                captionPlaceholderText
+            }
         }
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    private var captionPlaceholderText: some View {
+        Text("Waiting for captions…")
+            .font(captionTextSizePreset.captionOverlayFont)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .minimumScaleFactor(0.65)
+            .lineLimit(8)
+            .padding(.horizontal, 4)
     }
 
     private func considerCaptionTheaterOffer(model: CaptionTheaterPlaybackShellViewModel) {

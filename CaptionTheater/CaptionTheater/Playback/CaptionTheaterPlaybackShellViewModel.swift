@@ -71,7 +71,13 @@ final class CaptionTheaterPlaybackShellViewModel {
     /// Current playhead in seconds (updates periodically while presented).
     private(set) var currentSeconds: Double = 0
 
-    /// Scrolling subtitle rows (**newest-first**): each distinct legible payload prepends a row; older rows move down.
+    /// Mirrors ``AVPlayer/timeControlStatus`` for transport UI (play vs pause icon).
+    ///
+    /// **Concurrency:** Updated on the main actor from KVO; read-only for views.
+    private(set) var timeControlStatus: AVPlayer.TimeControlStatus = .paused
+
+    /// Skip interval for transport rewind/fast-forward (seconds).
+    static let playbackTransportSkipSeconds: Double = 15
     ///
     /// **Concurrency:** Updated from ``AVPlayerItemLegibleOutput`` on the main queue. Empty deliveries do not trim history;
     /// ``outputSequenceWasFlushed`` clears the list (seek / discontinuity).
@@ -152,6 +158,7 @@ final class CaptionTheaterPlaybackShellViewModel {
         )
         player = AVPlayer(url: url)
         player.audiovisualBackgroundPlaybackPolicy = .automatic
+        timeControlStatus = player.timeControlStatus
         /// Required so tvOS can auto-enable legible media when user prefs ask for captions; explicit ``AVPlayerItem/select(_:in:)`` still overrides stale Off states after Caption Theater attaches.
         player.appliesMediaSelectionCriteriaAutomatically = true
 
@@ -324,6 +331,7 @@ final class CaptionTheaterPlaybackShellViewModel {
         keyPathObservations.append(player.observe(\.timeControlStatus, options: [.new]) { [weak self] playerItem, _ in
             guard let self else { return }
             Task { @MainActor in
+                self.timeControlStatus = playerItem.timeControlStatus
                 CaptionTheaterPlaybackLogger.playbackFlow(
                     "AVPlayer.timeControlStatus=\(self.describeTimeControlStatus(playerItem.timeControlStatus)) reasonForWaiting=\(String(describing: playerItem.reasonForWaitingToPlay))"
                 )

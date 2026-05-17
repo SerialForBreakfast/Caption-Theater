@@ -37,6 +37,7 @@ The Caption Theater Xcode project currently ships **tvOS-only** targets (`Captio
 
 - **Phase 1 exit:** Satisfied for fixture-driven explainability (**CT-0103** Debug tab). Coordinator-driven “live” transitions on device remain future work.
 - **Phase 2 → playback:** **Partial:** bundled playback scenarios now fuse `HLSManifestInspector`, `ProviderMetadataInspector`, and `SubtitleMetadataClassifier` via `CaptionTheaterPlaybackEvidenceAssembler` on device (`PlaybackScenarios` resources). **Remaining CT-0502:** live `AVPlayerItem`/selection observers, timeline segments (native-only ranges), and ad-state hooks—not static fixtures alone.
+- **Phase 5 transport UI:** **CT-0504** (slide-out playback drawer, on-screen scrubber, scrolling-caption mode toggle) is **TODO**; Siri Remote Play/Pause and `CaptionTheaterPlaybackShellViewModel` transport APIs (`togglePlayPause`, `seek(by:)`, `seekToNormalizedProgress`) already exist.
 
 **Recommended next driving sequence**
 
@@ -45,8 +46,9 @@ The project should now optimize for a narrow, demonstrable tvOS MVP before expan
 1. **CT-MVP-000 / cinematic gold path** — Lock the first shippable proof path: known-safe ultra-widescreen content, WebVTT sidecar captions, deterministic offline playback, top-pinned presentation, and persistent caption rendering inside the computed reading band.
 2. **CT-0401 → CT-0404 / caption persistence slice** — Define the internal cue model, adapt WebVTT fixtures, implement bounded cue history, and render current/retained captions into `CaptionTheaterLayoutGeometry.captionReadingRect`.
 3. **CT-0303 follow-through** — Harden layout polish around safe areas, overscan, transition animation, typography, and caption-band ergonomics rather than prioritizing pixel detection first.
-4. **CT-0502 finish line** — Incrementally replace static playback scenario inputs with live `AVPlayerItem` / selected subtitle / timed metadata observations only after the gold-path renderer exists.
-5. **CT-0002 / CT-0005 support work** — Fill only the fixtures needed to prove the gold path and renderer behavior. Keep broad synthetic detector coverage deferred until CT-0302 resumes.
+4. **CT-0504** — Slide-out playback transport drawer (SF Symbols, scrubber, scrolling vs single-line captions) on the tvOS playback shell.
+5. **CT-0502 finish line** — Incrementally replace static playback scenario inputs with live `AVPlayerItem` / selected subtitle / timed metadata observations only after the gold-path renderer exists.
+6. **CT-0002 / CT-0005 support work** — Fill only the fixtures needed to prove the gold path and renderer behavior. Keep broad synthetic detector coverage deferred until CT-0302 resumes.
 
 **Git-informed planning checkpoint**
 
@@ -1015,6 +1017,7 @@ Prove the user value in a playable demo on **tvOS**, matching the current Xcode 
 - Include safe and unsafe examples.
 - Include debug overlay and fallback reasons.
 - Include pause, resume, and seek behavior.
+- Include an on-screen **transport drawer** (expand/collapse) for scrub/skip/pause and caption presentation mode once **CT-0504** lands (Siri Remote alone is not sufficient for stakeholder demos).
 
 ### Key Tasks
 
@@ -1100,11 +1103,37 @@ Acceptance Criteria:
 - Demo states that future captions are not shown.
 - Demo shows at least one fail-closed case.
 
+#### CT-0504 [TODO]: tvOS Playback Transport Drawer and Caption Mode Toggle
+
+User Story:
+As a viewer on Apple TV, I need visible playback controls and a caption presentation choice without blocking the picture, so I can scrub, skip, pause, and switch between a scrolling caption column and a simpler “latest line only” view while using Caption Theater layout space.
+
+Context:
+
+- **Shell today:** [`tvOSPlaybackShellView`](CaptionTheater/CaptionTheater/Playback/tvOSPlaybackShellView.swift) (`GeometryReader` + top-pinned column); [`CaptionTheaterPlaybackShellViewModel`](CaptionTheater/CaptionTheater/Playback/CaptionTheaterPlaybackShellViewModel.swift) owns `AVPlayer` and periodic `currentSeconds` / `durationSeconds`.
+- **Note:** CT-0501 acceptance text historically mentioned avoiding `Slider` on tvOS; this task **explicitly** adds a focusable scrub control for the playback shell—validate against current tvOS SwiftUI guidance and adjust the CT-0501 doc bullet if it is obsolete.
+
+Tasks:
+
+1. **New view type** — Add `tvOSPlaybackTransportDrawer.swift` (tvOS target, OS-prefixed name): collapsed trailing affordance (SF Symbol, e.g. `slider.horizontal.3`); expanded compact panel with `Label` / `Button` using SF Symbols (`play.fill` / `pause.fill`, `gobackward.15`, `goforward.15`), scrubber bound to `currentSeconds`/`durationSeconds` via `seekToNormalizedProgress` (seek on release acceptable MVP), and accessibility strings.
+2. **Shell integration** — Overlay drawer in a `ZStack` with [`fullscreenPlayback`](CaptionTheater/CaptionTheater/Playback/tvOSPlaybackShellView.swift) so it appears in both top-pinned and centered layouts; respect safe area; use `@FocusState` or equivalent so focus moves predictably between stage and drawer on Siri Remote.
+3. **Scrolling toggle** — Persist with `@AppStorage` (e.g. `CaptionTheater.captionScrollingHistoryEnabled`, default `true`). When **on**, keep current [`captionTheaterCaptionColumn`](CaptionTheater/CaptionTheater/Playback/tvOSPlaybackShellView.swift) `ScrollView` history. When **off**, show only the **newest** cue line (same legible pipeline; presentational-only MVP per ADR persistence intent—document if behavior changes later).
+4. **Optional follow-up (deferrable)** — Feed measured drawer width into [`CaptionTheaterLayoutContentInsets`](CaptionTheater/CaptionTheater/Layout/CaptionTheaterLayoutInputs.swift) / [`playbackStage`](CaptionTheater/CaptionTheater/Playback/tvOSPlaybackShellView.swift) so `captionReadingRect` widens when the drawer is **collapsed** (subtitle band optimization); Phase 1 may ship overlay-only.
+
+Acceptance Criteria:
+
+- Collapsed state: small focused control in lower-trailing region; selecting it expands the panel without permanently obscuring the active picture (overlay or gutter-aware placement).
+- Expanded state: Play/Pause, rewind, fast-forward (fixed skip interval, e.g. ±15s), and scrubber update playhead when duration is known; controls call existing ViewModel APIs.
+- **Scrolling** toggle persists across launches; both modes respect no-future-cues policy and existing legible output wiring.
+- Siri Remote global Play/Pause continues to work ([`onPlayPauseCommand`](CaptionTheater/CaptionTheater/Playback/tvOSPlaybackShellView.swift)).
+- Manual tvOS pass: focus order, Reduce Motion (avoid gratuitous drawer motion), VoiceOver labels on icon buttons.
+
 ### Phase 5 Exit Criteria
 
 - tvOS showcase is repeatable (this repository).
 - Product value is visible without explaining implementation details first.
 - Unsafe fallback behavior is visible.
+- playback transport is usable on-device for demos (**CT-0504**): visible play/pause, skip, and scrub (or documented step-based seek if scrub is deferred), plus Caption Theater caption mode toggle.
 
 ---
 

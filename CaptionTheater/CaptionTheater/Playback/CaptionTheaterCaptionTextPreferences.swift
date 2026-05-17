@@ -37,12 +37,12 @@ enum CaptionTheaterCaptionTextSizePreset: String, CaseIterable, Identifiable, Se
 
     /// SwiftUI font for MVP caption overlays; Phase 4 renderer should honor the same semantic steps with Dynamic Type.
     ///
-    /// ``standard`` uses the resolved **Caption 1** text style plus **2 pt** so the default band stays readable without jumping to the next semantic notch (``.large`` / ``.callout``).
+    /// ``standard`` maps to **Subheadline** so letterboxed caption bands use more reading width without jumping to ``.large``.
     var captionOverlayFont: Font {
         switch self {
         case .standard:
-            let basePoints = UIFont.preferredFont(forTextStyle: .caption1).pointSize
-            return Font.system(size: basePoints + 2, weight: .regular, design: .default)
+            let basePoints = UIFont.preferredFont(forTextStyle: .subheadline).pointSize
+            return Font.system(size: basePoints, weight: .regular, design: .default)
         case .large:
             return .callout
         case .extraLarge:
@@ -64,6 +64,6 @@ enum CaptionTheaterCaptionTextPreferences {
     /// `UserDefaults` / `@AppStorage` key for ``CaptionTheaterCaptionTextSizePreset/rawValue``.
     static let textSizePresetStorageKey = "CaptionTheaterCaptionTextSizePreset"
 
-    /// Default stored value when unset.
-    static let defaultTextSizeRawValue = CaptionTheaterCaptionTextSizePreset.standard.rawValue
+    /// Default stored value when unset (new installs favor **Large** for ultra-wide layouts with extra band space).
+    static let defaultTextSizeRawValue = CaptionTheaterCaptionTextSizePreset.large.rawValue
 }

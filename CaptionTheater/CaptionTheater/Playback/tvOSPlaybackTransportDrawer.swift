@@ -230,8 +230,7 @@ private struct tvOSPlaybackTimelineScrubber: UIViewRepresentable {
 
 /// Collapsed trailing affordance that expands into play/pause, skip, scrubber, and scrolling-caption toggle.
 ///
-/// **Focus:** Uses white 4 pt focus chrome on controls. **Menu / Back** (`onExitCommand`) collapses the expanded panel;
-/// **Close** is an explicit ``Label`` for Select.
+/// **Focus:** Uses white 4 pt focus chrome on controls. **Close** is a full-width ``Button`` (not trailing in an `HStack`) so tvOS can reach it; opening the sheet assigns ``FocusState`` to **Close** after mount. **Menu / Back** (`onExitCommand`) still collapses the panel.
 struct tvOSPlaybackTransportDrawer: View {
 
     /// Persists “retain scrolling caption history” vs “latest line only” across launches.
@@ -248,6 +247,14 @@ struct tvOSPlaybackTransportDrawer: View {
 
     @Environment(\.accessibilityReduceMotion)
     private var accessibilityReduceMotion
+
+    /// Dismiss-target for programmatic focus when the sheet opens (`expandedPanel` must be in the hierarchy first).
+    private enum TransportDrawerPanelFocus: Hashable {
+        case close
+    }
+
+    /// Programs initial focus onto **Close** when the sheet opens; trailing `HStack` + `Spacer` layouts frequently skip the button on tvOS.
+    @FocusState private var transportPanelFocus: TransportDrawerPanelFocus?
 
     private var collapseAnimation: Animation {
         accessibilityReduceMotion ? .default : .easeInOut(duration: 0.22)
@@ -266,6 +273,14 @@ struct tvOSPlaybackTransportDrawer: View {
         .animation(collapseAnimation, value: isExpanded)
         .onChange(of: isExpanded) { _, expanded in
             CaptionTheaterPlaybackLogger.playbackFocus("transportDrawer.root isExpanded=\(expanded)")
+            guard expanded else {
+                transportPanelFocus = nil
+                return
+            }
+            // Apply after this run loop so `expandedPanel` (and `.focused`) exist before the focus engine resolves `.close`.
+            Task { @MainActor in
+                transportPanelFocus = .close
+            }
         }
     }
 
@@ -289,23 +304,25 @@ struct tvOSPlaybackTransportDrawer: View {
 
     private var expandedPanel: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .center) {
-                Text("Playback")
-                    .font(.headline)
-                Spacer(minLength: 8)
-                Button {
-                    collapseTransportDrawer(reason: "Transport drawer collapsed (Close)")
-                } label: {
-                    Label("Close", systemImage: "xmark.circle.fill")
-                        .font(.body.weight(.semibold))
-                        .labelStyle(.titleAndIcon)
-                }
-                .buttonStyle(.card)
-                .tvOSHighContrastFocusBorder(cornerRadius: 14)
-                .logTVOSFocusTransitions("transportDrawer.close")
-                .accessibilityLabel("Close")
-                .accessibilityHint("Closes playback and caption settings")
+            Text("Playback")
+                .font(.headline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Full-width row: tvOS focus routing often drops trailing controls in `HStack { Text; Spacer; Button }`.
+            Button {
+                collapseTransportDrawer(reason: "Transport drawer collapsed (Close)")
+            } label: {
+                Label("Close", systemImage: "xmark.circle.fill")
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .labelStyle(.titleAndIcon)
             }
+            .buttonStyle(.bordered)
+            .focused($transportPanelFocus, equals: .close)
+            .tvOSHighContrastFocusBorder(cornerRadius: 14)
+            .logTVOSFocusTransitions("transportDrawer.close")
+            .accessibilityLabel("Close")
+            .accessibilityHint("Closes playback and caption settings")
 
             HStack(spacing: 20) {
                 Button {

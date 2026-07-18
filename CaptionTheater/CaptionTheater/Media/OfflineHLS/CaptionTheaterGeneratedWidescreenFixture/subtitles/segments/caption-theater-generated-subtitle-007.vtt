@@ -1,0 +1,10 @@
+WEBVTT
+X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:0
+
+CT-008
+00:00:40.000 --> 00:00:45.500
+Cue CT-008 is also burned into the picture for rendered-caption comparison.
+
+CT-009
+00:00:46.000 --> 00:00:53.500
+Retention check: already-presented cues may remain visible, but future cues must not appear early.

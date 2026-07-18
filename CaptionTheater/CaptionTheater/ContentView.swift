@@ -15,10 +15,10 @@ struct ContentView: View {
 
     /// Persisted demo media choice; changing it recreates the shell via `.id(...)`.
     @AppStorage(CaptionTheaterLaunchConfiguration.playbackDemoSourceStorageKey)
-    private var playbackDemoSourceRawValue = CaptionTheaterPlaybackDemoSource.muxTearsOfSteelHLS.rawValue
+    private var playbackDemoSourceRawValue = CaptionTheaterPlaybackDemoSource.bundledGeneratedWidescreenFixture.rawValue
 
     private var playbackDemoSource: CaptionTheaterPlaybackDemoSource {
-        CaptionTheaterPlaybackDemoSource(rawValue: playbackDemoSourceRawValue) ?? .muxTearsOfSteelHLS
+        CaptionTheaterPlaybackDemoSource(rawValue: playbackDemoSourceRawValue) ?? .bundledGeneratedWidescreenFixture
     }
 
     init() {

@@ -9,12 +9,20 @@ import Testing
 
 struct CaptionTheaterLaunchConfigurationTests {
 
-    @Test func offlineShortcutSelectsBundledOfflineHLSMock() {
+    @Test func offlineShortcutSelectsBundledGeneratedWidescreenFixture() {
         let overrides = CaptionTheaterLaunchConfiguration.resolvedOverrides(
             arguments: ["CaptionTheater", "--caption-theater-offline-hls"]
         )
 
-        #expect(overrides.playbackDemoSource == .bundledOfflineHLSMock)
+        #expect(overrides.playbackDemoSource == .bundledGeneratedWidescreenFixture)
+    }
+
+    @Test func generatedShortcutSelectsBundledGeneratedWidescreenFixture() {
+        let overrides = CaptionTheaterLaunchConfiguration.resolvedOverrides(
+            arguments: ["CaptionTheater", "--caption-theater-generated-hls"]
+        )
+
+        #expect(overrides.playbackDemoSource == .bundledGeneratedWidescreenFixture)
     }
 
     @Test func xcodeStylePlaybackDemoSourceArgumentIsResolved() {
@@ -22,11 +30,11 @@ struct CaptionTheaterLaunchConfigurationTests {
             arguments: [
                 "CaptionTheater",
                 "-CaptionTheater.playbackDemoSource",
-                CaptionTheaterPlaybackDemoSource.bundledOfflineHLSMock.rawValue
+                CaptionTheaterPlaybackDemoSource.bundledGeneratedWidescreenFixture.rawValue
             ]
         )
 
-        #expect(overrides.playbackDemoSource == .bundledOfflineHLSMock)
+        #expect(overrides.playbackDemoSource == .bundledGeneratedWidescreenFixture)
     }
 
     @Test func longFormDebugHUDArgumentIsResolved() {
@@ -40,6 +48,28 @@ struct CaptionTheaterLaunchConfigurationTests {
         #expect(overrides.playbackDebugHUD == true)
     }
 
+    @Test func longFormLayoutBorderArgumentIsResolved() {
+        let overrides = CaptionTheaterLaunchConfiguration.resolvedOverrides(
+            arguments: [
+                "CaptionTheater",
+                "--caption-theater-playback-layout-border=off"
+            ]
+        )
+
+        #expect(overrides.playbackLayoutBorder == false)
+    }
+
+    @Test func longFormMacStartupAspectArgumentIsResolved() {
+        let overrides = CaptionTheaterLaunchConfiguration.resolvedOverrides(
+            arguments: [
+                "CaptionTheater",
+                "--caption-theater-mac-startup-aspect=twentyOneByNine"
+            ]
+        )
+
+        #expect(overrides.macStartupAspectPresetRawValue == "twentyOneByNine")
+    }
+
     @Test func invalidPlaybackDemoSourceIsIgnored() {
         let overrides = CaptionTheaterLaunchConfiguration.resolvedOverrides(
             arguments: ["CaptionTheater", "--caption-theater-playback-demo-source=not-a-source"]
@@ -48,9 +78,9 @@ struct CaptionTheaterLaunchConfigurationTests {
         #expect(overrides.playbackDemoSource == nil)
     }
 
-    @Test func offlineHLSMockMasterPlaylistIsBundled() {
-        let url = CaptionTheaterPlaybackDemoSource.bundledOfflineHLSMock.playbackURL(bundle: .main)
+    @Test func generatedHLSMasterPlaylistIsBundled() {
+        let url = CaptionTheaterPlaybackDemoSource.bundledGeneratedWidescreenFixture.playbackURL(bundle: .main)
 
-        #expect(url?.lastPathComponent == "master.m3u8")
+        #expect(url?.lastPathComponent == "caption-theater-generated-master.m3u8")
     }
 }

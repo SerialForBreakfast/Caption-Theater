@@ -18,10 +18,10 @@ import SwiftUI
 ///   and return you to the baseline scenario list when you come back.
 struct CaptionTheaterDebugDecisionInspectorView: View {
 
-    @AppStorage("CaptionTheater.playbackDemoSource")
-    private var playbackDemoSourceRawValue = CaptionTheaterPlaybackDemoSource.muxTearsOfSteelHLS.rawValue
+    @AppStorage(CaptionTheaterLaunchConfiguration.playbackDemoSourceStorageKey)
+    private var playbackDemoSourceRawValue = CaptionTheaterPlaybackDemoSource.bundledGeneratedWidescreenFixture.rawValue
 
-    @AppStorage("CaptionTheater.playbackDebugHUD")
+    @AppStorage(CaptionTheaterLaunchConfiguration.playbackDebugHUDStorageKey)
     private var playbackDebugHUD = false
 
     /// Plain-language context for stakeholders who do not read the test bundle.

@@ -10,9 +10,19 @@ The result is a cleaner caption experience for fast dialogue, translated subtitl
 
 The project explores how to build this as a modular playback add-on for native iOS, tvOS, and macOS players using AVFoundation, AVKit-adjacent integrations, HLS metadata, timed-text analysis, active-picture layout, and runtime safety guardrails.
 
-**Implementation note:** The Xcode repository currently ships **tvOS-only** targets. Cross-platform goals below remain valid; new playback and showcase code should land on **tvOS** first until additional targets are added.
+**Implementation note:** The Xcode repository currently ships native **tvOS** and **macOS** targets. The tvOS target remains the primary living-room prototype; the macOS target is a native demo/QA surface for offline HLS playback, Caption Theater layout review, and window aspect-ratio presets.
 
-**POC media note:** Any downloaded third-party media, HLS segments, subtitle files, or copied public-stream content in this repository is for private proof-of-concept use only unless its license and attribution terms explicitly allow broader redistribution. Before changing this repository to public visibility, review local media fixtures and either confirm redistribution rights, replace them with generated/open fixtures, or remove them.
+**Open source readiness note:** Caption Theater source code is licensed under Apache License 2.0. Third-party media, HLS segments, subtitle files, and copied public-stream content may have separate terms. Before changing this repository to public visibility, review `Docs/OpenSourceReleaseChecklist.md` and either confirm redistribution rights for retained media or remove/replace those assets. The generated widescreen fixture is project-owned and intended to be the safe default demo asset.
+
+**POC media note:** Any downloaded third-party media, HLS segments, subtitle files, or copied public-stream content in this repository is for private proof-of-concept use only unless its license and attribution terms explicitly allow broader redistribution. The bundled offline HLS mock should not be treated as release media without a separate rights review.
+
+---
+
+## License
+
+Caption Theater source code is licensed under the Apache License, Version 2.0. See `LICENSE` and `NOTICE`.
+
+Third-party media and sample assets are not automatically covered by the source license. See `THIRD_PARTY_NOTICES.md` and `Docs/OpenSourceReleaseChecklist.md` before publishing, redistributing, or packaging demo media.
 
 ---
 
@@ -22,19 +32,25 @@ Launch arguments can preselect demo and engineering settings:
 
 ```text
 --caption-theater-offline-hls
--CaptionTheater.playbackDemoSource bundledOfflineHLSMock
---caption-theater-playback-demo-source=bundledOfflineHLSMock
+--caption-theater-generated-hls
+-CaptionTheater.playbackDemoSource bundledGeneratedWidescreenFixture
+--caption-theater-playback-demo-source=bundledGeneratedWidescreenFixture
 --caption-theater-playback-debug-hud=yes
 -CaptionTheater.playbackDebugHUD YES
+--caption-theater-playback-layout-border=yes
+--caption-theater-mac-startup-aspect=twentyOneByNine
 ```
 
 Available demo media raw values:
 
+- `bundledGeneratedWidescreenFixture`
 - `muxTearsOfSteelHLS`
 - `bundledOfflineHLSMock`
 - `bundledSyntheticSample`
 
-`bundledOfflineHLSMock` uses the repo-local five-minute HLS package under `CaptionTheater/CaptionTheater/Media/OfflineHLS/TearsOfSteelFiveMinuteMock/`.
+`bundledGeneratedWidescreenFixture` uses the repo-owned no-audio HLS package under `CaptionTheater/CaptionTheater/Media/OfflineHLS/CaptionTheaterGeneratedWidescreenFixture/`. It contains 1920x800 generated video plus timed WebVTT captions for offline layout and caption QA.
+
+`bundledOfflineHLSMock` uses the repo-local five-minute HLS package under `CaptionTheater/CaptionTheater/Media/OfflineHLS/TearsOfSteelFiveMinuteMock/`. Treat it as private proof-of-concept media until redistribution is cleared.
 
 ---
 
@@ -160,15 +176,17 @@ The **iOS** proof of concept remains the strongest handheld stakeholder demo pat
 - pause/resume/seek behavior;
 - native fallback for unsafe fixtures.
 
-### macOS (roadmap)
+### macOS (current QA target)
 
-macOS validation should focus on:
+macOS validation focuses on:
 
 - resizable player windows;
 - full-screen playback;
 - keyboard shortcuts;
 - backing scale changes;
 - shared core module compatibility.
+- offline HLS fixture playback;
+- native menu-bar aspect presets for 4:3, 16:9, 21:9, 2.39:1, and source aspect.
 
 ---
 

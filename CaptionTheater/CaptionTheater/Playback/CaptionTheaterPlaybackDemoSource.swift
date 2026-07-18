@@ -9,15 +9,17 @@ import Foundation
 
 /// Selectable demo playback origins documented in ``Docs/Sources.md``.
 ///
-/// The **Mux** URL is a public HLS test asset (*Tears of Steel*) with **true ultra-wide variants**
-/// (for example `1920×800`) and declared WebVTT subtitle renditions—ideal for exercising non-zero
-/// Caption Theater bands on-device. Requires network access and depends on Mux continuing to host the asset.
+/// The generated fixture is the preferred local/offline source for demos and tests because the project owns
+/// the visual media and timed WebVTT captions. The **Mux** URL remains useful as a networked comparison source.
 enum CaptionTheaterPlaybackDemoSource: String, CaseIterable, Identifiable {
 
     /// Bundled synthetic clip from ``CaptionTheaterPlaybackFixture`` (offline; typically ~16:9 presentation).
     case bundledSyntheticSample
 
-    /// Bundled five-minute local HLS mock: true ultra-wide video + English WebVTT subtitles.
+    /// Bundled project-owned generated HLS fixture: true ultra-wide video + English WebVTT subtitles, no audio.
+    case bundledGeneratedWidescreenFixture
+
+    /// Bundled five-minute local HLS mock: true ultra-wide video + English WebVTT subtitles, private POC only.
     case bundledOfflineHLSMock
 
     /// Public Mux VOD stream: ultra-wide ladder + sidecar subtitles (see ``Docs/Sources.md`` candidate #1).
@@ -30,8 +32,10 @@ enum CaptionTheaterPlaybackDemoSource: String, CaseIterable, Identifiable {
         switch self {
         case .bundledSyntheticSample:
             return "Bundled synthetic sample"
+        case .bundledGeneratedWidescreenFixture:
+            return "Generated widescreen fixture (UW + captions)"
         case .bundledOfflineHLSMock:
-            return "Offline HLS mock (5 min, UW + subs)"
+            return "Legacy offline HLS mock (private POC)"
         case .muxTearsOfSteelHLS:
             return "Mux: Tears of Steel (HLS, UW + subs)"
         }
@@ -42,6 +46,8 @@ enum CaptionTheaterPlaybackDemoSource: String, CaseIterable, Identifiable {
         switch self {
         case .bundledSyntheticSample:
             return "Add \(CaptionTheaterPlaybackFixture.sampleVideoResourceName).\(CaptionTheaterPlaybackFixture.sampleVideoExtension) to the app target Media folder."
+        case .bundledGeneratedWidescreenFixture:
+            return "Add \(CaptionTheaterPlaybackFixture.generatedWidescreenFixtureMasterPlaylistSubdirectory)/\(CaptionTheaterPlaybackFixture.generatedWidescreenFixtureMasterPlaylistResourceName).\(CaptionTheaterPlaybackFixture.generatedWidescreenFixtureMasterPlaylistExtension) to the app target Media folder."
         case .bundledOfflineHLSMock:
             return "Add \(CaptionTheaterPlaybackFixture.offlineHLSMockMasterPlaylistSubdirectory)/\(CaptionTheaterPlaybackFixture.offlineHLSMockMasterPlaylistResourceName).\(CaptionTheaterPlaybackFixture.offlineHLSMockMasterPlaylistExtension) to the app target Media folder."
         case .muxTearsOfSteelHLS:
@@ -54,6 +60,8 @@ enum CaptionTheaterPlaybackDemoSource: String, CaseIterable, Identifiable {
         switch self {
         case .bundledSyntheticSample:
             CaptionTheaterPlaybackFixture.sampleVideoURL(bundle: bundle)
+        case .bundledGeneratedWidescreenFixture:
+            CaptionTheaterPlaybackFixture.generatedWidescreenFixtureMasterPlaylistURL(bundle: bundle)
         case .bundledOfflineHLSMock:
             CaptionTheaterPlaybackFixture.offlineHLSMockMasterPlaylistURL(bundle: bundle)
         case .muxTearsOfSteelHLS:

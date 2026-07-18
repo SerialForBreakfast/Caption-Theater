@@ -1,0 +1,6 @@
+WEBVTT
+X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:0
+
+CT-009
+00:00:46.000 --> 00:00:53.500
+Retention check: already-presented cues may remain visible, but future cues must not appear early.

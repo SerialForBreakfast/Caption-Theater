@@ -6,7 +6,11 @@
 //
 
 import SwiftUI
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 
 /// Named caption sizes for Caption Theater overlays when ``CaptionTheaterLayoutGeometry/captionReadingRect`` supplies extra vertical space.
 ///
@@ -41,7 +45,11 @@ enum CaptionTheaterCaptionTextSizePreset: String, CaseIterable, Identifiable, Se
     var captionOverlayFont: Font {
         switch self {
         case .standard:
+            #if os(macOS)
+            let basePoints = NSFont.systemFontSize
+            #else
             let basePoints = UIFont.preferredFont(forTextStyle: .subheadline).pointSize
+            #endif
             return Font.system(size: basePoints, weight: .regular, design: .default)
         case .large:
             return .callout

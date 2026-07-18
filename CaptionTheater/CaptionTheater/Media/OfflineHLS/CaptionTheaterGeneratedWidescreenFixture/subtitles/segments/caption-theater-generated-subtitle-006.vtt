@@ -1,0 +1,10 @@
+WEBVTT
+X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:0
+
+CT-007
+00:00:34.000 --> 00:00:39.500
+[silent visual pulse] The screen flashes without audio in v1.
+
+CT-008
+00:00:40.000 --> 00:00:45.500
+Cue CT-008 is also burned into the picture for rendered-caption comparison.

@@ -1,0 +1,10 @@
+WEBVTT
+X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:0
+
+CT-004
+00:00:16.000 --> 00:00:21.500
+Long wrapping cue: this deliberately verbose sentence should fill the caption reading band without covering the active picture.
+
+CT-005
+00:00:22.000 --> 00:00:27.500
+LED panel scene: numbered tiles make crop, scale, and top-pinned layout errors easy to see.

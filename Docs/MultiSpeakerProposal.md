@@ -72,7 +72,7 @@ If any requirement fails, the asset can still be useful for parser tests or layo
 
 ## Backup chain
 
-1. **Primary baseline demo:** offline mock via `CaptionTheaterPlaybackDemoSource.bundledOfflineHLSMock`; verify bundle integrity with `CaptionTheaterOfflineHLSBundleTests`.
+1. **Primary baseline demo:** generated offline fixture via `CaptionTheaterPlaybackDemoSource.bundledGeneratedWidescreenFixture`; verify bundle integrity with `CaptionTheaterOfflineHLSBundleTests`.
 2. **If offline bundle breaks:** fix resource packaging until tests pass. Do not fall back to network for the primary offline claim.
 3. **Network fallback:** `muxTearsOfSteelHLS` may show layout only; do not claim speaker attribution without raw subtitle proof.
 4. **Smoke fallback:** bundled sample MP4 may prove app launch/playback only; it is not a multi-speaker demo.
@@ -90,7 +90,7 @@ Use these as issue/PR bullets. Stop at the first failed gate unless the task say
 | **MS-GATE-02** | Inspect raw subtitle files for each candidate. Search for WebVTT `<v Speaker>`, `Speaker:`, `>> Speaker:`, `[Speaker]`, and TTML/IMSC `ttm:agent`. | At least one candidate either passes the speaker requirement or is explicitly rejected with evidence. |
 | **MS-GATE-03** | Verify backup feasibility for any candidate that passes subtitle inspection. | Candidate has downloadable source/HLS, local subtitle preservation, playlist rewrite path, provenance note, and checksum plan. |
 | **MS-GATE-04** | Make a go/no-go decision. | If no asset passes, mark SMS/balloon UI as parked and proceed only with baseline caption readability and authored-label chips. |
-| **MS-BASE-01** | Preserve baseline offline demo path. | `bundledOfflineHLSMock` launches local `master.m3u8` with no network; bundle tests remain green. |
+| **MS-BASE-01** | Preserve baseline offline demo path. | `bundledGeneratedWidescreenFixture` launches the local generated master playlist with no network; bundle tests remain green. |
 | **MS-BASE-02** | Add authored-label parser tests using synthetic text fixtures, not demo claims. | Visible SDH labels parse into speaker chips; false positives fall back to neutral captions. |
 | **MS-POC-01** | Optional internal-only `speaker-map.json` for Tears of Steel. | Clearly labeled fixture annotation; transcript rail only; not used to justify SMS/balloon UI or product claims. |
 | **MS-POC-02** | Optional PoC transcript rail renderer. | Shows speaker chip + text for `fixtureAnnotated`; neutral fallback unchanged; no chat alignment. |

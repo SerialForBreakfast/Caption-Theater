@@ -10,13 +10,18 @@ import Foundation
 /// Applies launch-argument overrides to the same persisted keys used by engineering configurations.
 ///
 /// Supported forms:
-/// - `-CaptionTheater.playbackDemoSource bundledOfflineHLSMock`
-/// - `--caption-theater-playback-demo-source=bundledOfflineHLSMock`
+/// - `-CaptionTheater.playbackDemoSource bundledGeneratedWidescreenFixture`
+/// - `--caption-theater-playback-demo-source=bundledGeneratedWidescreenFixture`
+/// - `--caption-theater-playback-layout-border=true`
+/// - `--caption-theater-mac-startup-aspect=twentyOneByNine`
+/// - `--caption-theater-generated-hls`
 /// - `--caption-theater-offline-hls`
 enum CaptionTheaterLaunchConfiguration {
 
     static let playbackDemoSourceStorageKey = "CaptionTheater.playbackDemoSource"
     static let playbackDebugHUDStorageKey = "CaptionTheater.playbackDebugHUD"
+    static let playbackLayoutBorderStorageKey = "CaptionTheater.playbackLayoutBorder"
+    static let macStartupAspectPresetStorageKey = "CaptionTheaterMac.startupAspectPreset"
 
     /// Applies recognized launch arguments to `defaults`.
     static func apply(arguments: [String] = ProcessInfo.processInfo.arguments, defaults: UserDefaults = .standard) {
@@ -28,6 +33,12 @@ enum CaptionTheaterLaunchConfiguration {
         if let playbackDebugHUD = overrides.playbackDebugHUD {
             defaults.set(playbackDebugHUD, forKey: playbackDebugHUDStorageKey)
         }
+        if let playbackLayoutBorder = overrides.playbackLayoutBorder {
+            defaults.set(playbackLayoutBorder, forKey: playbackLayoutBorderStorageKey)
+        }
+        if let macStartupAspectPresetRawValue = overrides.macStartupAspectPresetRawValue {
+            defaults.set(macStartupAspectPresetRawValue, forKey: macStartupAspectPresetStorageKey)
+        }
     }
 
     /// Resolves typed overrides without mutating defaults; useful for tests.
@@ -37,17 +48,25 @@ enum CaptionTheaterLaunchConfiguration {
         for index in arguments.indices {
             let argument = arguments[index]
 
-            if argument == "--caption-theater-offline-hls" {
-                overrides.playbackDemoSource = .bundledOfflineHLSMock
+            if argument == "--caption-theater-generated-hls" || argument == "--caption-theater-offline-hls" {
+                overrides.playbackDemoSource = .bundledGeneratedWidescreenFixture
             } else if argument.hasPrefix("--caption-theater-playback-demo-source=") {
                 let rawValue = value(afterEqualsIn: argument)
                 overrides.playbackDemoSource = CaptionTheaterPlaybackDemoSource(rawValue: rawValue)
             } else if argument.hasPrefix("--caption-theater-playback-debug-hud=") {
                 overrides.playbackDebugHUD = boolValue(from: value(afterEqualsIn: argument))
+            } else if argument.hasPrefix("--caption-theater-playback-layout-border=") {
+                overrides.playbackLayoutBorder = boolValue(from: value(afterEqualsIn: argument))
+            } else if argument.hasPrefix("--caption-theater-mac-startup-aspect=") {
+                overrides.macStartupAspectPresetRawValue = value(afterEqualsIn: argument)
             } else if argument == "-CaptionTheater.playbackDemoSource" {
                 overrides.playbackDemoSource = nextDemoSource(in: arguments, after: index)
             } else if argument == "-CaptionTheater.playbackDebugHUD" {
                 overrides.playbackDebugHUD = nextBool(in: arguments, after: index)
+            } else if argument == "-CaptionTheater.playbackLayoutBorder" {
+                overrides.playbackLayoutBorder = nextBool(in: arguments, after: index)
+            } else if argument == "-CaptionTheaterMac.startupAspectPreset" {
+                overrides.macStartupAspectPresetRawValue = nextString(in: arguments, after: index)
             }
         }
 
@@ -77,6 +96,14 @@ enum CaptionTheaterLaunchConfiguration {
         return boolValue(from: arguments[valueIndex])
     }
 
+    private static func nextString(in arguments: [String], after index: Int) -> String? {
+        let valueIndex = arguments.index(after: index)
+        guard arguments.indices.contains(valueIndex) else {
+            return nil
+        }
+        return arguments[valueIndex]
+    }
+
     private static func boolValue(from rawValue: String) -> Bool? {
         switch rawValue.lowercased() {
         case "1", "true", "yes", "y", "on":
@@ -93,4 +120,6 @@ enum CaptionTheaterLaunchConfiguration {
 struct CaptionTheaterLaunchOverrides: Equatable, Sendable {
     var playbackDemoSource: CaptionTheaterPlaybackDemoSource?
     var playbackDebugHUD: Bool?
+    var playbackLayoutBorder: Bool?
+    var macStartupAspectPresetRawValue: String?
 }

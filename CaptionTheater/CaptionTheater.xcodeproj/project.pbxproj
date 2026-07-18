@@ -8,6 +8,28 @@
 
 /* Begin PBXBuildFile section */
 		444A16012FAB4A0000AB9131 /* OfflineHLS in Resources */ = {isa = PBXBuildFile; fileRef = 444A16002FAB4A0000AB9131 /* OfflineHLS */; };
+		444A17082FB0000000AB9131 /* OfflineHLS in Resources */ = {isa = PBXBuildFile; fileRef = 444A16002FAB4A0000AB9131 /* OfflineHLS */; };
+		444A17102FB0000000AB9131 /* CaptionTheater/Mac/MacWindowAspectPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A17302FB0000000AB9131 /* CaptionTheater/Mac/MacWindowAspectPreset.swift */; };
+		444A17112FB0000000AB9131 /* CaptionTheater/Mac/MacWindowAspectController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A17312FB0000000AB9131 /* CaptionTheater/Mac/MacWindowAspectController.swift */; };
+		444A17122FB0000000AB9131 /* CaptionTheater/Mac/MacCaptionTheaterPlayerContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A17322FB0000000AB9131 /* CaptionTheater/Mac/MacCaptionTheaterPlayerContainer.swift */; };
+		444A17132FB0000000AB9131 /* CaptionTheater/Mac/MacPlaybackShellViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A17332FB0000000AB9131 /* CaptionTheater/Mac/MacPlaybackShellViewModel.swift */; };
+		444A17142FB0000000AB9131 /* CaptionTheater/Mac/MacPlaybackShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A17342FB0000000AB9131 /* CaptionTheater/Mac/MacPlaybackShellView.swift */; };
+		444A17152FB0000000AB9131 /* CaptionTheater/Mac/MacContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A17352FB0000000AB9131 /* CaptionTheater/Mac/MacContentView.swift */; };
+		444A17162FB0000000AB9131 /* CaptionTheater/Mac/CaptionTheaterMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A17362FB0000000AB9131 /* CaptionTheater/Mac/CaptionTheaterMacApp.swift */; };
+		444A17172FB0000000AB9131 /* CaptionTheater/Layout/CaptionTheaterLayoutInputs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A17372FB0000000AB9131 /* CaptionTheater/Layout/CaptionTheaterLayoutInputs.swift */; };
+		444A17182FB0000000AB9131 /* CaptionTheater/Layout/CaptionTheaterLayoutGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A17382FB0000000AB9131 /* CaptionTheater/Layout/CaptionTheaterLayoutGeometry.swift */; };
+		444A17192FB0000000AB9131 /* CaptionTheater/Layout/CaptionTheaterLayoutEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A17392FB0000000AB9131 /* CaptionTheater/Layout/CaptionTheaterLayoutEngine.swift */; };
+		444A171A2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A173A2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackFixture.swift */; };
+		444A171B2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackDemoSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A173B2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackDemoSource.swift */; };
+		444A171C2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterLaunchConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A173C2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterLaunchConfiguration.swift */; };
+		444A171D2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A173D2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackLogger.swift */; };
+		444A171E2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterLegibleCaptionSink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A173E2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterLegibleCaptionSink.swift */; };
+		444A171F2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterLegibleCaptionFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A173F2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterLegibleCaptionFormatting.swift */; };
+		444A17202FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterScrollingCueEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A17402FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterScrollingCueEntry.swift */; };
+		444A17212FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterScrollingCaptionPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A17412FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterScrollingCaptionPolicy.swift */; };
+		444A17222FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterCaptionTextPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A17422FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterCaptionTextPreferences.swift */; };
+		444A17232FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackUILayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A17432FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackUILayout.swift */; };
+		444A17242FB0000000AB9131 /* CaptionTheater/Mac/MacPlaybackStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444A17452FB0000000AB9131 /* CaptionTheater/Mac/MacPlaybackStateStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,6 +54,28 @@
 		444A157B2FAA585D00AB9131 /* CaptionTheaterTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CaptionTheaterTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		444A15852FAA585D00AB9131 /* CaptionTheaterUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CaptionTheaterUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		444A16002FAB4A0000AB9131 /* OfflineHLS */ = {isa = PBXFileReference; lastKnownFileType = folder; name = OfflineHLS; path = CaptionTheater/Media/OfflineHLS; sourceTree = "<group>"; };
+		444A17002FB0000000AB9131 /* CaptionTheaterMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CaptionTheaterMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		444A17302FB0000000AB9131 /* CaptionTheater/Mac/MacWindowAspectPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Mac/MacWindowAspectPreset.swift; sourceTree = "<group>"; };
+		444A17312FB0000000AB9131 /* CaptionTheater/Mac/MacWindowAspectController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Mac/MacWindowAspectController.swift; sourceTree = "<group>"; };
+		444A17322FB0000000AB9131 /* CaptionTheater/Mac/MacCaptionTheaterPlayerContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Mac/MacCaptionTheaterPlayerContainer.swift; sourceTree = "<group>"; };
+		444A17332FB0000000AB9131 /* CaptionTheater/Mac/MacPlaybackShellViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Mac/MacPlaybackShellViewModel.swift; sourceTree = "<group>"; };
+		444A17342FB0000000AB9131 /* CaptionTheater/Mac/MacPlaybackShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Mac/MacPlaybackShellView.swift; sourceTree = "<group>"; };
+		444A17352FB0000000AB9131 /* CaptionTheater/Mac/MacContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Mac/MacContentView.swift; sourceTree = "<group>"; };
+		444A17362FB0000000AB9131 /* CaptionTheater/Mac/CaptionTheaterMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Mac/CaptionTheaterMacApp.swift; sourceTree = "<group>"; };
+		444A17372FB0000000AB9131 /* CaptionTheater/Layout/CaptionTheaterLayoutInputs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Layout/CaptionTheaterLayoutInputs.swift; sourceTree = "<group>"; };
+		444A17382FB0000000AB9131 /* CaptionTheater/Layout/CaptionTheaterLayoutGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Layout/CaptionTheaterLayoutGeometry.swift; sourceTree = "<group>"; };
+		444A17392FB0000000AB9131 /* CaptionTheater/Layout/CaptionTheaterLayoutEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Layout/CaptionTheaterLayoutEngine.swift; sourceTree = "<group>"; };
+		444A173A2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Playback/CaptionTheaterPlaybackFixture.swift; sourceTree = "<group>"; };
+		444A173B2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackDemoSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Playback/CaptionTheaterPlaybackDemoSource.swift; sourceTree = "<group>"; };
+		444A173C2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterLaunchConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Playback/CaptionTheaterLaunchConfiguration.swift; sourceTree = "<group>"; };
+		444A173D2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Playback/CaptionTheaterPlaybackLogger.swift; sourceTree = "<group>"; };
+		444A173E2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterLegibleCaptionSink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Playback/CaptionTheaterLegibleCaptionSink.swift; sourceTree = "<group>"; };
+		444A173F2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterLegibleCaptionFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Playback/CaptionTheaterLegibleCaptionFormatting.swift; sourceTree = "<group>"; };
+		444A17402FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterScrollingCueEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Playback/CaptionTheaterScrollingCueEntry.swift; sourceTree = "<group>"; };
+		444A17412FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterScrollingCaptionPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Playback/CaptionTheaterScrollingCaptionPolicy.swift; sourceTree = "<group>"; };
+		444A17422FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterCaptionTextPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Playback/CaptionTheaterCaptionTextPreferences.swift; sourceTree = "<group>"; };
+		444A17432FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackUILayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Playback/CaptionTheaterPlaybackUILayout.swift; sourceTree = "<group>"; };
+		444A17452FB0000000AB9131 /* CaptionTheater/Mac/MacPlaybackStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionTheater/Mac/MacPlaybackStateStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -74,6 +118,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		444A17612FB0000000AB9131 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -81,6 +132,7 @@
 			isa = PBXGroup;
 			children = (
 				444A15702FAA585A00AB9131 /* CaptionTheater */,
+				444A17442FB0000000AB9131 /* CaptionTheaterMac Sources */,
 				444A16002FAB4A0000AB9131 /* OfflineHLS */,
 				444A157E2FAA585D00AB9131 /* CaptionTheaterTests */,
 				444A15882FAA585D00AB9131 /* CaptionTheaterUITests */,
@@ -92,10 +144,39 @@
 			isa = PBXGroup;
 			children = (
 				444A156E2FAA585A00AB9131 /* CaptionTheater.app */,
+				444A17002FB0000000AB9131 /* CaptionTheaterMac.app */,
 				444A157B2FAA585D00AB9131 /* CaptionTheaterTests.xctest */,
 				444A15852FAA585D00AB9131 /* CaptionTheaterUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		444A17442FB0000000AB9131 /* CaptionTheaterMac Sources */ = {
+			isa = PBXGroup;
+			children = (
+				444A17362FB0000000AB9131 /* CaptionTheater/Mac/CaptionTheaterMacApp.swift */,
+				444A17352FB0000000AB9131 /* CaptionTheater/Mac/MacContentView.swift */,
+				444A17342FB0000000AB9131 /* CaptionTheater/Mac/MacPlaybackShellView.swift */,
+				444A17332FB0000000AB9131 /* CaptionTheater/Mac/MacPlaybackShellViewModel.swift */,
+				444A17452FB0000000AB9131 /* CaptionTheater/Mac/MacPlaybackStateStore.swift */,
+				444A17322FB0000000AB9131 /* CaptionTheater/Mac/MacCaptionTheaterPlayerContainer.swift */,
+				444A17312FB0000000AB9131 /* CaptionTheater/Mac/MacWindowAspectController.swift */,
+				444A17302FB0000000AB9131 /* CaptionTheater/Mac/MacWindowAspectPreset.swift */,
+				444A17372FB0000000AB9131 /* CaptionTheater/Layout/CaptionTheaterLayoutInputs.swift */,
+				444A17382FB0000000AB9131 /* CaptionTheater/Layout/CaptionTheaterLayoutGeometry.swift */,
+				444A17392FB0000000AB9131 /* CaptionTheater/Layout/CaptionTheaterLayoutEngine.swift */,
+				444A173A2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackFixture.swift */,
+				444A173B2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackDemoSource.swift */,
+				444A173C2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterLaunchConfiguration.swift */,
+				444A173D2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackLogger.swift */,
+				444A173E2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterLegibleCaptionSink.swift */,
+				444A173F2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterLegibleCaptionFormatting.swift */,
+				444A17402FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterScrollingCueEntry.swift */,
+				444A17412FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterScrollingCaptionPolicy.swift */,
+				444A17422FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterCaptionTextPreferences.swift */,
+				444A17432FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackUILayout.swift */,
+			);
+			name = "CaptionTheaterMac Sources";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -169,6 +250,25 @@
 			productReference = 444A15852FAA585D00AB9131 /* CaptionTheaterUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		444A17502FB0000000AB9131 /* CaptionTheaterMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 444A17722FB0000000AB9131 /* Build configuration list for PBXNativeTarget "CaptionTheaterMac" */;
+			buildPhases = (
+				444A17602FB0000000AB9131 /* Sources */,
+				444A17612FB0000000AB9131 /* Frameworks */,
+				444A17622FB0000000AB9131 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CaptionTheaterMac;
+			packageProductDependencies = (
+			);
+			productName = CaptionTheaterMac;
+			productReference = 444A17002FB0000000AB9131 /* CaptionTheaterMac.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -190,6 +290,9 @@
 						CreatedOnToolsVersion = 26.4.1;
 						TestTargetID = 444A156D2FAA585A00AB9131;
 					};
+					444A17502FB0000000AB9131 = {
+						CreatedOnToolsVersion = 26.4.1;
+					};
 				};
 			};
 			buildConfigurationList = 444A15692FAA585A00AB9131 /* Build configuration list for PBXProject "CaptionTheater" */;
@@ -207,6 +310,7 @@
 			projectRoot = "";
 			targets = (
 				444A156D2FAA585A00AB9131 /* CaptionTheater */,
+				444A17502FB0000000AB9131 /* CaptionTheaterMac */,
 				444A157A2FAA585D00AB9131 /* CaptionTheaterTests */,
 				444A15842FAA585D00AB9131 /* CaptionTheaterUITests */,
 			);
@@ -236,6 +340,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		444A17622FB0000000AB9131 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				444A17082FB0000000AB9131 /* OfflineHLS in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -257,6 +369,34 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		444A17602FB0000000AB9131 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				444A17162FB0000000AB9131 /* CaptionTheater/Mac/CaptionTheaterMacApp.swift in Sources */,
+				444A17152FB0000000AB9131 /* CaptionTheater/Mac/MacContentView.swift in Sources */,
+				444A17142FB0000000AB9131 /* CaptionTheater/Mac/MacPlaybackShellView.swift in Sources */,
+				444A17132FB0000000AB9131 /* CaptionTheater/Mac/MacPlaybackShellViewModel.swift in Sources */,
+				444A17242FB0000000AB9131 /* CaptionTheater/Mac/MacPlaybackStateStore.swift in Sources */,
+				444A17122FB0000000AB9131 /* CaptionTheater/Mac/MacCaptionTheaterPlayerContainer.swift in Sources */,
+				444A17112FB0000000AB9131 /* CaptionTheater/Mac/MacWindowAspectController.swift in Sources */,
+				444A17102FB0000000AB9131 /* CaptionTheater/Mac/MacWindowAspectPreset.swift in Sources */,
+				444A17172FB0000000AB9131 /* CaptionTheater/Layout/CaptionTheaterLayoutInputs.swift in Sources */,
+				444A17182FB0000000AB9131 /* CaptionTheater/Layout/CaptionTheaterLayoutGeometry.swift in Sources */,
+				444A17192FB0000000AB9131 /* CaptionTheater/Layout/CaptionTheaterLayoutEngine.swift in Sources */,
+				444A171A2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackFixture.swift in Sources */,
+				444A171B2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackDemoSource.swift in Sources */,
+				444A171C2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterLaunchConfiguration.swift in Sources */,
+				444A171D2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackLogger.swift in Sources */,
+				444A171E2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterLegibleCaptionSink.swift in Sources */,
+				444A171F2FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterLegibleCaptionFormatting.swift in Sources */,
+				444A17202FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterScrollingCueEntry.swift in Sources */,
+				444A17212FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterScrollingCaptionPolicy.swift in Sources */,
+				444A17222FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterCaptionTextPreferences.swift in Sources */,
+				444A17232FB0000000AB9131 /* CaptionTheater/Playback/CaptionTheaterPlaybackUILayout.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -539,6 +679,64 @@
 			};
 			name = Release;
 		};
+		444A17702FB0000000AB9131 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = RWZ25NGH8K;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
+				INFOPLIST_KEY_NSHighResolutionCapable = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.showblender.CaptionTheaterMac;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		444A17712FB0000000AB9131 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = RWZ25NGH8K;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
+				INFOPLIST_KEY_NSHighResolutionCapable = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.showblender.CaptionTheaterMac;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -574,6 +772,15 @@
 			buildConfigurations = (
 				444A15962FAA585D00AB9131 /* Debug */,
 				444A15972FAA585D00AB9131 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		444A17722FB0000000AB9131 /* Build configuration list for PBXNativeTarget "CaptionTheaterMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				444A17702FB0000000AB9131 /* Debug */,
+				444A17712FB0000000AB9131 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

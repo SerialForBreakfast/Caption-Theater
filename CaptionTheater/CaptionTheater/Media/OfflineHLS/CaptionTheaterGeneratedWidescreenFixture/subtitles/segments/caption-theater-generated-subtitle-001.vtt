@@ -1,0 +1,10 @@
+WEBVTT
+X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:0
+
+CT-002
+00:00:05.200 --> 00:00:09.200
+This v1 asset has timed captions and no audio, so every media right is project-owned.
+
+CT-003
+00:00:10.000 --> 00:00:15.500
+Alignment grid: the moving scan line should stay straight, sharp, and undistorted.

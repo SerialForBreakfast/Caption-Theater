@@ -83,7 +83,7 @@ struct tvOSPlaybackShellView: View {
                 .task(id: url.absoluteString) {
                     CaptionTheaterPlaybackLogger.playbackFlow("tvOSPlaybackShellView creating ViewModel for playbackBody")
                     model?.detachPlaybackObservers()
-                    model = CaptionTheaterPlaybackShellViewModel(url: url)
+                    model = CaptionTheaterPlaybackShellViewModel(url: url, demoSource: demoSource)
                 }
             }
         }
@@ -323,18 +323,12 @@ struct tvOSPlaybackShellView: View {
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: true) {
                 VStack(alignment: .center, spacing: 12) {
-                    if model.captionScrollingCueEntries.isEmpty {
+                    if model.visibleCaptionRows.isEmpty {
                         captionPlaceholderText
                     } else {
-                        ForEach(model.captionScrollingCueEntries) { entry in
-                            Text(entry.text)
-                                .font(captionTextSizePreset.captionOverlayFont)
-                                .foregroundStyle(.primary)
-                                .multilineTextAlignment(.center)
-                                .minimumScaleFactor(0.65)
-                                .lineLimit(8)
-                                .frame(maxWidth: .infinity)
-                                .id(entry.id)
+                        ForEach(model.visibleCaptionRows) { row in
+                            captionRow(row)
+                                .id(row.id)
                         }
                     }
                 }
@@ -342,7 +336,7 @@ struct tvOSPlaybackShellView: View {
                 .frame(maxWidth: .infinity)
             }
             .focusable(false)
-            .onChange(of: model.captionScrollingCueEntries.first?.id) { _, newId in
+            .onChange(of: model.visibleCaptionRows.first?.id) { _, newId in
                 guard let newId else {
                     return
                 }
@@ -356,13 +350,8 @@ struct tvOSPlaybackShellView: View {
     /// Latest cue only; same legible pipeline, without scroll history chrome.
     private func captionSingleLineColumn(model: CaptionTheaterPlaybackShellViewModel) -> some View {
         VStack(alignment: .center, spacing: 8) {
-            if let text = model.captionScrollingCueEntries.first?.text {
-                Text(text)
-                    .font(captionTextSizePreset.captionOverlayFont)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.65)
-                    .lineLimit(12)
+            if let row = model.visibleCaptionRows.first {
+                captionRow(row)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             } else {
                 captionPlaceholderText
@@ -380,6 +369,19 @@ struct tvOSPlaybackShellView: View {
             .minimumScaleFactor(0.65)
             .lineLimit(8)
             .padding(.horizontal, 4)
+    }
+
+    private func captionRow(_ row: CaptionTheaterVisibleCueRow) -> some View {
+        Text(row.text)
+            .font(captionTextSizePreset.captionOverlayFont)
+            .fontWeight(row.state == .current ? .semibold : .regular)
+            .foregroundStyle(row.state == .current ? Color.primary : Color.secondary)
+            .multilineTextAlignment(.center)
+            .minimumScaleFactor(0.65)
+            .lineLimit(row.state == .current ? 8 : 4)
+            .frame(maxWidth: .infinity)
+            .opacity(row.state == .current ? 1 : 0.72)
+            .accessibilityHidden(true)
     }
 
     private func considerCaptionTheaterOffer(model: CaptionTheaterPlaybackShellViewModel) {

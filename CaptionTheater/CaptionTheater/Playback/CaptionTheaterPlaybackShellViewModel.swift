@@ -48,6 +48,9 @@ final class CaptionTheaterPlaybackShellViewModel {
     /// pixel raster (letterboxed scope inside the frame). The playback shell uses this flag to still offer Caption Theater.
     let playbackUsesRemoteURL: Bool
 
+    /// Demo source selected by launch args/defaults; generated fixture uses deterministic local WebVTT parsing.
+    private let demoSource: CaptionTheaterPlaybackDemoSource
+
     private var timeObserverToken: Any?
 
     /// Key-path observations for player/item lifecycle logging.
@@ -83,6 +86,12 @@ final class CaptionTheaterPlaybackShellViewModel {
     /// ``outputSequenceWasFlushed`` clears the list (seek / discontinuity).
     private(set) var captionScrollingCueEntries: [CaptionTheaterScrollingCueEntry] = []
 
+    /// Rows rendered by the Caption Theater caption band.
+    ///
+    /// For the generated fixture these are computed from the parsed WebVTT cue timeline and playback clock. For other
+    /// sources they mirror AVFoundation legible-output deliveries as a compatibility path.
+    private(set) var visibleCaptionRows: [CaptionTheaterVisibleCueRow] = []
+
     /// Most recently accepted newest-row plain text (mirror of ``captionScrollingCueEntries/first``).
     ///
     /// Useful for lightweight logging; primary UI binds to ``captionScrollingCueEntries``.
@@ -96,6 +105,9 @@ final class CaptionTheaterPlaybackShellViewModel {
 
     /// Player item that currently owns ``captionLegibleOutput`` (used for teardown).
     private weak var legibleOutputHostItem: AVPlayerItem?
+
+    /// Parsed WebVTT cue timeline for deterministic generated-fixture playback.
+    private var deterministicCueTimeline: [CaptionTheaterCue] = []
 
     /// Bundled inspector scenarios feeding ``CaptionTheaterPlaybackEvidenceAssembler``.
     var scenarioKind: CaptionTheaterPlaybackScenarioKind = .eligibleUltraWideLetterbox
@@ -151,7 +163,8 @@ final class CaptionTheaterPlaybackShellViewModel {
         return String(format: "Picture aspect (w÷h): %.3f", ar)
     }
 
-    init(url: URL) {
+    init(url: URL, demoSource: CaptionTheaterPlaybackDemoSource = .bundledSyntheticSample) {
+        self.demoSource = demoSource
         playbackUsesRemoteURL = url.isRemoteHTTPPlaybackURL
         CaptionTheaterPlaybackLogger.playbackFlow(
             "CaptionTheaterPlaybackShellViewModel init url=\(url.absoluteString) remote=\(playbackUsesRemoteURL)"
@@ -169,6 +182,7 @@ final class CaptionTheaterPlaybackShellViewModel {
             Task { @MainActor in
                 let seconds = time.seconds
                 self.currentSeconds = seconds.isFinite ? seconds : 0
+                self.refreshVisibleCueRowsForCurrentPlaybackTime()
             }
         }
 
@@ -183,12 +197,14 @@ final class CaptionTheaterPlaybackShellViewModel {
         )
         wireLegibleCaptionSinkHandlers()
         applyScenarioSync(scenarioKind)
+        loadDeterministicCueTimelineIfNeeded()
     }
 
     /// Attaches ``AVPlayerItemLegibleOutput``, selects a default legible media option, and starts vending cues into ``captionScrollingCueEntries``.
     ///
     /// **Concurrency:** Main-actor entry point; awaits asset media-selection loads without blocking observers.
     func refreshCaptionTheaterLegiblePipeline(reason: String) {
+        refreshVisibleCueRowsForCurrentPlaybackTime()
         Task { @MainActor in
             await attachCaptionTheaterLegibleOutputIfNeeded(reason: reason)
         }
@@ -228,12 +244,22 @@ final class CaptionTheaterPlaybackShellViewModel {
         }
 
         captionScrollingCueEntries = Array(updated)
-        captionBandDisplayText = captionScrollingCueEntries.first?.text ?? ""
+        visibleCaptionRows = captionScrollingCueEntries.enumerated().map { index, entry in
+            CaptionTheaterVisibleCueRow(
+                cue: CaptionTheaterCue(
+                    id: entry.id.uuidString,
+                    startSeconds: 0,
+                    endSeconds: 0,
+                    text: entry.text
+                ),
+                state: index == 0 ? .current : .retained
+            )
+        }
+        captionBandDisplayText = visibleCaptionRows.first?.text ?? ""
     }
 
     private func handleLegibleOutputSequenceFlush() {
-        captionScrollingCueEntries = []
-        captionBandDisplayText = ""
+        clearCaptionRows()
     }
 
     private func detachCaptionTheaterLegibleOutput(reason: String) {
@@ -252,8 +278,13 @@ final class CaptionTheaterPlaybackShellViewModel {
     private func attachCaptionTheaterLegibleOutputIfNeeded(reason: String) async {
         guard captionTheaterOptInAccepted, captionTheaterTopPinnedLayoutEnabled else {
             detachCaptionTheaterLegibleOutput(reason: "\(reason) caption theater layout off")
-            captionScrollingCueEntries = []
-            captionBandDisplayText = ""
+            clearCaptionRows()
+            return
+        }
+
+        guard deterministicCueTimeline.isEmpty else {
+            detachCaptionTheaterLegibleOutput(reason: "\(reason) generated fixture uses deterministic WebVTT timeline")
+            refreshVisibleCueRowsForCurrentPlaybackTime()
             return
         }
 
@@ -304,6 +335,56 @@ final class CaptionTheaterPlaybackShellViewModel {
         }
 
         CaptionTheaterPlaybackLogger.playbackFlow("Caption Theater legible output attached (\(reason))")
+    }
+
+    private func loadDeterministicCueTimelineIfNeeded() {
+        guard demoSource == .bundledGeneratedWidescreenFixture else {
+            return
+        }
+
+        guard let subtitlePlaylistURL = CaptionTheaterPlaybackFixture.generatedWidescreenFixtureSubtitlePlaylistURL() else {
+            CaptionTheaterPlaybackLogger.playbackFailure(
+                "Generated fixture WebVTT playlist missing; falling back to AVFoundation legible output"
+            )
+            return
+        }
+
+        do {
+            deterministicCueTimeline = try CaptionTheaterWebVTTFixtureAdapter.cues(
+                fromSegmentPlaylistURL: subtitlePlaylistURL
+            )
+            CaptionTheaterPlaybackLogger.playbackFlow(
+                "Loaded generated fixture deterministic WebVTT cues count=\(deterministicCueTimeline.count)"
+            )
+        } catch {
+            deterministicCueTimeline = []
+            CaptionTheaterPlaybackLogger.playbackFailure(
+                "Generated fixture WebVTT parse failed error=\(error)"
+            )
+        }
+    }
+
+    private func refreshVisibleCueRowsForCurrentPlaybackTime() {
+        guard !deterministicCueTimeline.isEmpty else {
+            return
+        }
+
+        guard captionTheaterOptInAccepted, captionTheaterTopPinnedLayoutEnabled else {
+            clearCaptionRows()
+            return
+        }
+
+        visibleCaptionRows = CaptionTheaterCuePersistencePolicyEngine.visibleRows(
+            cues: deterministicCueTimeline,
+            playbackSeconds: currentSeconds
+        )
+        captionBandDisplayText = visibleCaptionRows.first?.text ?? ""
+    }
+
+    private func clearCaptionRows() {
+        captionScrollingCueEntries = []
+        visibleCaptionRows = []
+        captionBandDisplayText = ""
     }
 
     private func selectCaptionTheaterLegibleMediaOption(for item: AVPlayerItem) async throws {
@@ -609,8 +690,7 @@ final class CaptionTheaterPlaybackShellViewModel {
     func detachPlaybackObservers() {
         CaptionTheaterPlaybackLogger.playbackFlow("detachPlaybackObservers: removing time observer and KVO tokens")
         detachCaptionTheaterLegibleOutput(reason: "detachPlaybackObservers")
-        captionScrollingCueEntries = []
-        captionBandDisplayText = ""
+        clearCaptionRows()
 
         if let token = timeObserverToken {
             player.removeTimeObserver(token)
@@ -639,6 +719,7 @@ final class CaptionTheaterPlaybackShellViewModel {
     func seek(by deltaSeconds: Double) {
         let base = player.currentTime()
         let target = CMTimeAdd(base, CMTime(seconds: deltaSeconds, preferredTimescale: base.timescale))
+        clearCaptionRows()
         player.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero)
     }
 
@@ -646,6 +727,7 @@ final class CaptionTheaterPlaybackShellViewModel {
         guard durationSeconds > 0 else { return }
         let clamped = max(0, min(1, progress))
         let target = CMTime(seconds: clamped * durationSeconds, preferredTimescale: 600)
+        clearCaptionRows()
         player.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero)
     }
 

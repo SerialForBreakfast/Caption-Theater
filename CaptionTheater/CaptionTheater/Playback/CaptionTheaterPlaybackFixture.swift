@@ -37,6 +37,16 @@ enum CaptionTheaterPlaybackFixture {
     /// Master playlist extension for ``generatedWidescreenFixtureMasterPlaylistURL(bundle:)``.
     static let generatedWidescreenFixtureMasterPlaylistExtension = "m3u8"
 
+    /// Subtitle playlist subdirectory for the generated fixture.
+    static let generatedWidescreenFixtureSubtitlePlaylistSubdirectory =
+        generatedWidescreenFixtureMasterPlaylistSubdirectory + "/subtitles"
+
+    /// Subtitle playlist filename for ``generatedWidescreenFixtureSubtitlePlaylistURL(bundle:)``.
+    static let generatedWidescreenFixtureSubtitlePlaylistResourceName = "caption-theater-generated-english"
+
+    /// Subtitle playlist extension for ``generatedWidescreenFixtureSubtitlePlaylistURL(bundle:)``.
+    static let generatedWidescreenFixtureSubtitlePlaylistExtension = "m3u8"
+
     /// Repo-local five-minute HLS mock derived from the Mux Tears of Steel demo stream for private POC use.
     static let offlineHLSMockMasterPlaylistSubdirectory = "OfflineHLS/TearsOfSteelFiveMinuteMock"
 
@@ -64,6 +74,22 @@ enum CaptionTheaterPlaybackFixture {
         return bundle.url(
             forResource: generatedWidescreenFixtureMasterPlaylistResourceName,
             withExtension: generatedWidescreenFixtureMasterPlaylistExtension
+        )
+    }
+
+    /// URL of the packaged generated HLS fixture subtitle playlist, when present in the bundle.
+    static func generatedWidescreenFixtureSubtitlePlaylistURL(bundle: Bundle = .main) -> URL? {
+        if let preservedSubdirectoryURL = bundle.url(
+            forResource: generatedWidescreenFixtureSubtitlePlaylistResourceName,
+            withExtension: generatedWidescreenFixtureSubtitlePlaylistExtension,
+            subdirectory: generatedWidescreenFixtureSubtitlePlaylistSubdirectory
+        ) {
+            return preservedSubdirectoryURL
+        }
+
+        return bundle.url(
+            forResource: generatedWidescreenFixtureSubtitlePlaylistResourceName,
+            withExtension: generatedWidescreenFixtureSubtitlePlaylistExtension
         )
     }
 

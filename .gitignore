@@ -8,3 +8,4 @@ CaptionTheater/CaptionTheater.xcodeproj/project.xcworkspace/xcuserdata/josephmcc
 
 # Large cached masters downloaded by Scripts/build_ct0005_cinematic_open_hls.py
 Fixtures/SourceDownloads/
+/Build

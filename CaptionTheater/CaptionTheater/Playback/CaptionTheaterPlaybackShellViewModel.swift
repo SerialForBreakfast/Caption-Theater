@@ -79,6 +79,14 @@ final class CaptionTheaterPlaybackShellViewModel {
     /// **Concurrency:** Updated on the main actor from KVO; read-only for views.
     private(set) var timeControlStatus: AVPlayer.TimeControlStatus = .paused
 
+    /// Whether the caption renderer should treat playback as paused (CT-0404 empty-state messaging).
+    ///
+    /// Keeps `AVPlayer.TimeControlStatus` out of SwiftUI call sites; anything short of actively playing
+    /// (paused or waiting to play) reads as "paused" for caption-band purposes.
+    var isPlaybackPaused: Bool {
+        timeControlStatus != .playing
+    }
+
     /// Skip interval for transport rewind/fast-forward (seconds).
     static let playbackTransportSkipSeconds: Double = 15
     ///

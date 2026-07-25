@@ -31,24 +31,23 @@ The Caption Theater Xcode project currently ships **tvOS-only** targets (`Captio
 - **Phase 1 core:** Stateless `CaptionTheaterDecisionEngine`, eligibility snapshot + evidence types (`CaptionTheaterEvidence`, sources, polarities), JSON decision fixtures, broad unit coverage.
 - **Phase 2 foundations:** `HLSManifestInspector`, `ProviderMetadataInspector`, `SubtitleMetadataClassifier` with sanitized fixtures and tests.
 - **DRM study:** `Docs/DRM-Feasibility-Study.md` + CT-0204 metadata-first stream inventory (live streams still gated).
-- **Phase 5 shell (partial):** Bundled sample MP4 + **`PlaybackScenarios/`** inspector fusion + **`CaptionTheaterLayoutEngine`** / **`CaptionTheaterLayoutInputs`** (presentation aspect from `AVAssetTrack`, not pixels) + Playback tab **`tvOSCaptionTheaterPlayerContainer`** locked to **`resizeAspect`** with optional **top-pin MVP** + caption placeholder band + **caption text size menu** (`CaptionTheaterCaptionTextPreferences`). Safe-area/overscan refinement and cross-platform layout matrices remain **CT-0303** follow-through.
+- **Phase 4 caption persistence slice (CT-0401 → CT-0404): DONE.** `CaptionTheaterCue` normalized cue model, `CaptionTheaterWebVTTFixtureAdapter` (parses the generated fixture's segmented WebVTT playlist deterministically), `CaptionTheaterCuePersistencePolicyEngine` (bounded retention by age/row-count/character budget, current-cue precedence, no future cues), and `CaptionTheaterCaptionRendererPolicy` / `CaptionTheaterCaptionRendererView` (dedicated renderer: current vs. retained emphasis, per-text-size-preset line budgets, paused vs. waiting empty states). Wired into `CaptionTheaterPlaybackShellViewModel` for the `bundledGeneratedWidescreenFixture` demo source (deterministic path, bypasses AVFoundation legible output for that source) and into `tvOSPlaybackShellView`. Full unit coverage in `CaptionTheaterCuePersistencePolicyTests`, `CaptionTheaterWebVTTFixtureAdapterTests`, `CaptionTheaterCaptionRendererPlanTests`. Native/other-format adapters (IMSC/TTML, CEA-608/708) remain **CT-0402A** documentation-only follow-through.
+- **Phase 5 shell:** Bundled sample MP4 + **`PlaybackScenarios/`** inspector fusion + **`CaptionTheaterLayoutEngine`** / **`CaptionTheaterLayoutInputs`** (presentation aspect from `AVAssetTrack`, not pixels) + Playback tab **`tvOSCaptionTheaterPlayerContainer`** locked to **`resizeAspect`** with optional **top-pin MVP** + caption text size menu (`CaptionTheaterCaptionTextPreferences`) + **`tvOSPlaybackTransportDrawer`** (**CT-0504**, done — collapsed glyph, expanded panel with play/pause, ±15s skip, tvOS-native scrub control, scrolling-vs-single-line caption toggle persisted via `@AppStorage`, VoiceOver labels, focus handling). Safe-area/overscan refinement and cross-platform layout matrices remain **CT-0303** follow-through.
 
 **Formal gaps**
 
 - **Phase 1 exit:** Satisfied for fixture-driven explainability (**CT-0103** Debug tab). Coordinator-driven “live” transitions on device remain future work.
 - **Phase 2 → playback:** **Partial:** bundled playback scenarios now fuse `HLSManifestInspector`, `ProviderMetadataInspector`, and `SubtitleMetadataClassifier` via `CaptionTheaterPlaybackEvidenceAssembler` on device (`PlaybackScenarios` resources). **Remaining CT-0502:** live `AVPlayerItem`/selection observers, timeline segments (native-only ranges), and ad-state hooks—not static fixtures alone.
-- **Phase 5 transport UI:** **CT-0504** (slide-out playback drawer, on-screen scrubber, scrolling-caption mode toggle) is **TODO**; Siri Remote Play/Pause and `CaptionTheaterPlaybackShellViewModel` transport APIs (`togglePlayPause`, `seek(by:)`, `seekToNormalizedProgress`) already exist.
 
 **Recommended next driving sequence**
 
 The project should now optimize for a narrow, demonstrable tvOS MVP before expanding detector, DRM, ads, or cross-platform complexity.
 
-1. **CT-MVP-000 / cinematic gold path** — Lock the first shippable proof path: known-safe ultra-widescreen content, WebVTT sidecar captions, deterministic offline playback, top-pinned presentation, and persistent caption rendering inside the computed reading band.
-2. **CT-0401 → CT-0404 / caption persistence slice** — Define the internal cue model, adapt WebVTT fixtures, implement bounded cue history, and render current/retained captions into `CaptionTheaterLayoutGeometry.captionReadingRect`.
-3. **CT-0303 follow-through** — Harden layout polish around safe areas, overscan, transition animation, typography, and caption-band ergonomics rather than prioritizing pixel detection first.
-4. **CT-0504** — Slide-out playback transport drawer (SF Symbols, scrubber, scrolling vs single-line captions) on the tvOS playback shell.
-5. **CT-0502 finish line** — Incrementally replace static playback scenario inputs with live `AVPlayerItem` / selected subtitle / timed metadata observations only after the gold-path renderer exists.
-6. **CT-0002 / CT-0005 support work** — Fill only the fixtures needed to prove the gold path and renderer behavior. Keep broad synthetic detector coverage deferred until CT-0302 resumes.
+1. **CT-MVP-000 / cinematic gold path** — Lock the first shippable proof path: known-safe ultra-widescreen content, WebVTT sidecar captions, deterministic offline playback, top-pinned presentation, and persistent caption rendering inside the computed reading band. Caption persistence renderer is now in place (**CT-0401 → CT-0404** done); remaining gold-path work is mostly narrative/demo documentation (**CT-MVP-000**, **CT-0503**).
+2. **CT-0303 follow-through** — Harden layout polish around safe areas, overscan, transition animation, typography, and caption-band ergonomics rather than prioritizing pixel detection first.
+3. **CT-0502 finish line** — Incrementally replace static playback scenario inputs with live `AVPlayerItem` / selected subtitle / timed metadata observations now that the gold-path renderer exists.
+4. **CT-0402A** — Document IMSC/TTML, CEA-608/708, and app-owned adapter requirements so the cue model's format-agnostic claim has a written follow-through path, not just WebVTT in practice.
+5. **CT-0002 / CT-0005 support work** — Fill only the fixtures needed to prove the gold path and renderer behavior. Keep broad synthetic detector coverage deferred until CT-0302 resumes.
 
 **Git-informed planning checkpoint**
 
@@ -865,7 +864,7 @@ Render already-presented text cues with bounded persistence and no future cue di
 
 ### Key Tasks
 
-#### CT-0401 [TODO]: Define Internal Cue Model
+#### CT-0401 [DONE]: Define Internal Cue Model
 
 User Story:
 As a caption engineer, I need a normalized cue model so persistence logic is not tied directly to one parser.
@@ -892,7 +891,13 @@ Acceptance Criteria:
 - Cue model supports the MVP renderer without exposing WebVTT parser details to the view layer.
 - Cue model can be evaluated in pure unit tests without `AVPlayer`.
 
-#### CT-0402 [TODO]: Implement WebVTT Fixture Adapter
+Implementation Status:
+
+- Shipped in `CaptionTheaterCue.swift`: `CaptionTheaterCue` (id/start/end/text/intent/persistencePolicy, `Sendable`), `CaptionTheaterCueIntent` (dialogue/sdh/forced/lyrics/legal/unknown), `CaptionTheaterCuePersistencePolicy` (eligibleForRetention/authoredTimingOnly/nativeFallback), and `CaptionTheaterVisibleCueRow` (render-ready row with stable `id` combining state + cue id for ordering).
+- WebVTT is the only implemented adapter today; the model itself carries no WebVTT-specific fields, so IMSC/TTML, CEA-608/708, and app-owned adapters remain additive (**CT-0402A** documentation still open).
+- Fully covered by `CaptionTheaterCuePersistencePolicyTests` and `CaptionTheaterWebVTTFixtureAdapterTests` without `AVPlayer`.
+
+#### CT-0402 [DONE]: Implement WebVTT Fixture Adapter
 
 #### CT-0402A [TODO]: Define Main Subtitle Format Adapter Requirements
 
@@ -914,6 +919,10 @@ Acceptance Criteria:
 - Unsupported formats have explicit fallback behavior.
 - The architecture does not require WebVTT-specific cue assumptions in the renderer.
 
+Implementation Status (CT-0402A remains **TODO**):
+
+- Not yet written. `CaptionTheaterCue` is already format-agnostic (**CT-0401**), so this task is now pure documentation — IMSC/TTML and CEA-608/708 adapter requirements, native-only/unsupported-format fallback behavior, and roll-up/forced/lyrics/legal semantic-risk notes — rather than blocking implementation work.
+
 User Story:
 As a developer, I need WebVTT fixture cues converted into the internal cue model.
 
@@ -933,7 +942,14 @@ Acceptance Criteria:
 - SDH fixture preserves speaker and sound-effect text.
 - Forced/lyrics/legal fixtures are marked authored-timing-only by default.
 
-#### CT-0403 [TODO]: Implement Persistence Window
+Implementation Status:
+
+- Shipped in `CaptionTheaterWebVTTFixtureAdapter.swift`: parses a local WebVTT media playlist (`cues(fromSegmentPlaylistURL:)`) by walking referenced `.vtt` segments, and a lower-level `cues(fromWebVTTText:)` block parser (cue id, `-->` timing in `MM:SS.mmm` / `HH:MM:SS.mmm`, multiline text, basic markup stripped via regex, de-duplicated across segments).
+- Cue intent inference is heuristic (bracketed `[...]` or `[silent`/`[low rumble` text → `.sdh`, else `.dialogue`); forced/lyrics/legal intents are not yet inferred from WebVTT cue settings, so authored-timing-only fixtures require explicit fixture metadata rather than automatic classification today.
+- Wired into `CaptionTheaterPlaybackShellViewModel.loadDeterministicCueTimelineIfNeeded()` for the `bundledGeneratedWidescreenFixture` demo source; other sources still fall back to AVFoundation legible output.
+- Covered by `CaptionTheaterWebVTTFixtureAdapterTests` (multiline/markup stripping, invalid-timestamp/empty-text skipping, deterministic conversion of the actual bundled generated-fixture playlist).
+
+#### CT-0403 [DONE]: Implement Persistence Window
 
 User Story:
 As a viewer, I want recent captions to remain visible briefly after they appeared so I can finish reading them.
@@ -965,7 +981,14 @@ Acceptance Criteria:
 - Current cue presentation always wins over retained cue presentation.
 - Persistence behavior is covered by deterministic unit tests using fixture cue timelines.
 
-#### CT-0404 [TODO]: Implement Caption Renderer View
+Implementation Status:
+
+- Shipped in `CaptionTheaterCuePersistencePolicy.swift`: `CaptionTheaterCuePersistenceConfiguration` (age bound, max visible rows, retained character budget; `.default` is 12s / 4 rows / 360 characters) and `CaptionTheaterCuePersistencePolicyEngine.visibleRows(cues:playbackSeconds:configuration:)` — a pure function selecting current cues (`start <= now < end`, excluding `nativeFallback`), then filling remaining row slots with the most-recent `eligibleForRetention` cues within the age bound and character budget, oldest-dropped-first.
+- Current rows always precede retained rows; `authoredTimingOnly` cues (forced/lyrics/legal) never persist past their end time.
+- Seek (`seek(by:)`, `seekToNormalizedProgress(_:)`) clears the row cache immediately via `clearCaptionRows()` on `CaptionTheaterPlaybackShellViewModel`. Subtitle-track-change, audio-track-change, ad-boundary, and discontinuity clearing remain **CT-0502** coordinator work — there is no live coordinator driving those signals yet, only the deterministic single-timeline path.
+- Covered by `CaptionTheaterCuePersistencePolicyTests`: current-during-authored-timing, future-cue-never-appears, retention within/past the age bound, row-count + character-budget transcript-wall prevention, current-precedes-retained ordering, authored-timing-only non-persistence, seek-equivalent history reset.
+
+#### CT-0404 [DONE]: Implement Caption Renderer View
 
 User Story:
 As a viewer, I need current and retained captions to be readable and visually distinct.
@@ -994,11 +1017,21 @@ Acceptance Criteria:
 - Renderer remains readable inside overscan-safe caption regions.
 - Renderer has a documented strategy for avoiding transcript-wall behavior.
 
+Implementation Status:
+
+- Shipped `CaptionTheaterCaptionRendererPlan.swift` (pure, SwiftUI-free): `CaptionTheaterCaptionRenderRow` (text, current/retained emphasis, opacity, per-preset `maximumLines`), `CaptionTheaterCaptionRenderEmptyReason` (`waitingForCues` vs. `playbackPaused`), and `CaptionTheaterCaptionRendererPolicy.plan(rows:textSizePreset:isPlaybackPaused:)`.
+- **Large text mode strategy:** line budgets step down per `CaptionTheaterCaptionTextSizePreset` (`standard`/`large` → 8/4 lines current/retained; `extraLarge`/`maxReadability` → 5/2) so bigger glyphs still fit the reading band instead of relying on `minimumScaleFactor` alone — this is the documented transcript-wall-avoidance strategy at the renderer layer, layered on top of the row-count/character-budget bound already enforced upstream by **CT-0403**.
+- **Empty/pause states:** empty band shows "Waiting for captions…" while playing and "Paused" while paused (`CaptionTheaterPlaybackShellViewModel.isPlaybackPaused`, derived from `AVPlayer.TimeControlStatus`), so a blank band never reads as broken.
+- Shipped `CaptionTheaterCaptionRendererView.swift` (SwiftUI): consumes the plan only, takes no geometry input — the caller (`tvOSPlaybackShellView.captionTheaterCaptionColumn`) sizes/positions it from `CaptionTheaterLayoutGeometry.captionReadingRect`. `.focusable(false)` throughout so Siri Remote focus never lands on caption text.
+- Retained rows are visually de-emphasized (opacity 0.72, regular weight, secondary color) vs. current (opacity 1, semibold, primary color); row identity/scroll-to-top logic reused from the prior inline implementation.
+- Snapshot-style coverage (pure-model assertions, no image/XCUI snapshot library is set up in this project) in `CaptionTheaterCaptionRendererPlanTests`: current-only, current-precedes-retained, large-text line-budget reduction, cleared-history-while-playing, cleared-history-while-paused, row identity/text preservation.
+
 ### Phase 4 Exit Criteria
 
 - Caption persistence works with fixture cues.
 - No future cue display is possible in default policy.
 - Renderer can operate without AVPlayer.
+- All of the above hold for the bundled generated widescreen fixture end-to-end (**CT-0401 → CT-0404** done); wiring a second, non-bundled cue source is **CT-0502** follow-through, not a Phase 4 gap.
 
 ---
 
@@ -1017,7 +1050,7 @@ Prove the user value in a playable demo on **tvOS**, matching the current Xcode 
 - Include safe and unsafe examples.
 - Include debug overlay and fallback reasons.
 - Include pause, resume, and seek behavior.
-- Include an on-screen **transport drawer** (expand/collapse) for scrub/skip/pause and caption presentation mode once **CT-0504** lands (Siri Remote alone is not sufficient for stakeholder demos).
+- Include an on-screen **transport drawer** (expand/collapse) for scrub/skip/pause and caption presentation mode — shipped via **CT-0504** (Siri Remote alone is not sufficient for stakeholder demos).
 
 ### Key Tasks
 
@@ -1065,13 +1098,14 @@ Tasks:
 - `CaptionTheaterPlaybackScenarioKind` covers encrypted-vs-clear manifests, full-frame manifest hints, burned-in subtitles, and variable-aspect provider warnings.
 - `ProviderMetadataInspector` maps `variableAspectRatio` warnings to ``CaptionTheaterViewportState/variableAspectRatio`` before other policy branches.
 - Unit coverage: `CaptionTheaterPlaybackEvidenceAssemblerTests` + `variable-aspect-warning` provider fixture test.
+- **MVP caption renderer wired to the playback shell (was the top "still open" bullet here; now done via CT-0401 → CT-0404):** the `bundledGeneratedWidescreenFixture` demo source parses its bundled WebVTT playlist once at load and drives `visibleCaptionRows` from the deterministic timeline + playback clock, rendered by `CaptionTheaterCaptionRendererView`. This is a deterministic-fixture path, not live subtitle-track extraction — see remaining bullets below.
 
 **Still open**
 
-- Wire the MVP caption renderer to the playback shell using deterministic fixture cue timelines before live subtitle extraction is required.
-- Live `AVPlayer`/`AVPlayerItem` legible-track selection + timed metadata feeding the assembler (replace static scenario bundles incrementally).
+- Live `AVPlayer`/`AVPlayerItem` legible-track selection + timed metadata feeding the assembler (replace static scenario bundles incrementally). Non-generated-fixture demo sources already bridge `AVPlayerItemLegibleOutput` deliveries into `visibleCaptionRows` (so CT-0404's renderer draws them too), but that bridge maps every delivered entry into a zero-duration `CaptionTheaterCue` rather than running it through `CaptionTheaterCuePersistencePolicyEngine`'s age/row/character-budget rules — the deterministic WebVTT path is the only one with real persistence policy today.
 - Provider timeline segments (`nativeOnly` ranges) tied to `CMTime`/playback hooks.
 - Ad / promo lifecycle inputs into snapshots.
+- Subtitle-track-change, audio-track-change, ad-boundary, and discontinuity cue-history clearing (seek already clears via `clearCaptionRows()`).
 
 Acceptance Criteria:
 
@@ -1103,7 +1137,7 @@ Acceptance Criteria:
 - Demo states that future captions are not shown.
 - Demo shows at least one fail-closed case.
 
-#### CT-0504 [TODO]: tvOS Playback Transport Drawer and Caption Mode Toggle
+#### CT-0504 [DONE]: tvOS Playback Transport Drawer and Caption Mode Toggle
 
 User Story:
 As a viewer on Apple TV, I need visible playback controls and a caption presentation choice without blocking the picture, so I can scrub, skip, pause, and switch between a scrolling caption column and a simpler “latest line only” view while using Caption Theater layout space.
@@ -1128,12 +1162,20 @@ Acceptance Criteria:
 - Siri Remote global Play/Pause continues to work ([`onPlayPauseCommand`](CaptionTheater/CaptionTheater/Playback/tvOSPlaybackShellView.swift)).
 - Manual tvOS pass: focus order, Reduce Motion (avoid gratuitous drawer motion), VoiceOver labels on icon buttons.
 
+Implementation Status:
+
+- Shipped in `tvOSPlaybackTransportDrawer.swift`: collapsed `slider.horizontal.3` glyph; expanded panel with Close (full-width, tvOS-focus-reliable), rewind/play-pause/fast-forward (±15s via `CaptionTheaterPlaybackShellViewModel.playbackTransportSkipSeconds`), a custom `UIControl`-based scrub bar (`TVPlaybackTimelineScrubControl` — `UISlider`/SwiftUI `Slider` are unavailable on tvOS; supports Siri Remote touch-surface tracking, Simulator click-drag, and `accessibilityIncrement`/`Decrement`), the scrolling-captions `Toggle` (`CaptionTheater.captionScrollingHistoryEnabled`, persisted via `@AppStorage`, default `true`), and the caption text-size `Picker`.
+- Overlaid via `ZStack` in `fullscreenPlayback`, `focusSection()`-scoped separately from the playback stage, `@FocusState` drives focus to Close on expand, `onExitCommand` (Menu/Back) collapses, `accessibilityReduceMotion` swaps to `.default` animation.
+- VoiceOver labels/hints on every control; Siri Remote global Play/Pause (`onPlayPauseCommand`) unaffected.
+- Deferred optional follow-up (drawer-width-aware `captionReadingRect` widening when collapsed) not yet implemented — overlay-only per the task's own "Phase 1 may ship overlay-only" allowance.
+- No dedicated automated tests (manual tvOS Simulator/VoiceOver pass only); acceptable for a SwiftUI/UIKit-bridging view with no pure-logic core to unit test.
+
 ### Phase 5 Exit Criteria
 
 - tvOS showcase is repeatable (this repository).
 - Product value is visible without explaining implementation details first.
 - Unsafe fallback behavior is visible.
-- playback transport is usable on-device for demos (**CT-0504**): visible play/pause, skip, and scrub (or documented step-based seek if scrub is deferred), plus Caption Theater caption mode toggle.
+- playback transport is usable on-device for demos (**CT-0504**, done): visible play/pause, skip, and scrub, plus Caption Theater caption mode toggle.
 
 ---
 

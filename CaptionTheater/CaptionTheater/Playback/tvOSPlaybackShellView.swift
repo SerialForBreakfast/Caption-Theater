@@ -294,19 +294,27 @@ struct tvOSPlaybackShellView: View {
     }
 
     /// Caption band: either a scrolling history (**newest-first**) or a single latest line (traditional-style).
+    ///
+    /// Builds the ``CaptionTheaterCaptionRenderPlan`` here (cue rows + pause state + text-size preset) and hands it
+    /// to ``CaptionTheaterCaptionRendererView`` (CT-0404), which owns no geometry of its own — this call site is
+    /// responsible for sizing the band from ``CaptionTheaterLayoutGeometry/captionReadingRect``.
     private func captionTheaterCaptionColumn(
         model: CaptionTheaterPlaybackShellViewModel,
         width: CGFloat,
         height: CGFloat,
         captionScrollingHistoryEnabled: Bool
     ) -> some View {
-        Group {
-            if captionScrollingHistoryEnabled {
-                captionScrollingHistoryColumn(model: model)
-            } else {
-                captionSingleLineColumn(model: model)
-            }
-        }
+        let plan = CaptionTheaterCaptionRendererPolicy.plan(
+            rows: model.visibleCaptionRows,
+            textSizePreset: captionTextSizePreset,
+            isPlaybackPaused: model.isPlaybackPaused
+        )
+
+        return CaptionTheaterCaptionRendererView(
+            plan: plan,
+            textSizePreset: captionTextSizePreset,
+            isScrollingHistoryEnabled: captionScrollingHistoryEnabled
+        )
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .focusable(false)
@@ -316,72 +324,6 @@ struct tvOSPlaybackShellView: View {
             Rectangle()
                 .strokeBorder(Color.blue, lineWidth: 4)
         }
-    }
-
-    /// Scrolling history: older cues remain visible below the newest row.
-    private func captionScrollingHistoryColumn(model: CaptionTheaterPlaybackShellViewModel) -> some View {
-        ScrollViewReader { proxy in
-            ScrollView(.vertical, showsIndicators: true) {
-                VStack(alignment: .center, spacing: 12) {
-                    if model.visibleCaptionRows.isEmpty {
-                        captionPlaceholderText
-                    } else {
-                        ForEach(model.visibleCaptionRows) { row in
-                            captionRow(row)
-                                .id(row.id)
-                        }
-                    }
-                }
-                .padding(.vertical, 10)
-                .frame(maxWidth: .infinity)
-            }
-            .focusable(false)
-            .onChange(of: model.visibleCaptionRows.first?.id) { _, newId in
-                guard let newId else {
-                    return
-                }
-                withAnimation(.easeOut(duration: 0.18)) {
-                    proxy.scrollTo(newId, anchor: .top)
-                }
-            }
-        }
-    }
-
-    /// Latest cue only; same legible pipeline, without scroll history chrome.
-    private func captionSingleLineColumn(model: CaptionTheaterPlaybackShellViewModel) -> some View {
-        VStack(alignment: .center, spacing: 8) {
-            if let row = model.visibleCaptionRows.first {
-                captionRow(row)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-            } else {
-                captionPlaceholderText
-            }
-        }
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-    }
-
-    private var captionPlaceholderText: some View {
-        Text("Waiting for captions…")
-            .font(captionTextSizePreset.captionOverlayFont)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
-            .minimumScaleFactor(0.65)
-            .lineLimit(8)
-            .padding(.horizontal, 4)
-    }
-
-    private func captionRow(_ row: CaptionTheaterVisibleCueRow) -> some View {
-        Text(row.text)
-            .font(captionTextSizePreset.captionOverlayFont)
-            .fontWeight(row.state == .current ? .semibold : .regular)
-            .foregroundStyle(row.state == .current ? Color.primary : Color.secondary)
-            .multilineTextAlignment(.center)
-            .minimumScaleFactor(0.65)
-            .lineLimit(row.state == .current ? 8 : 4)
-            .frame(maxWidth: .infinity)
-            .opacity(row.state == .current ? 1 : 0.72)
-            .accessibilityHidden(true)
     }
 
     private func considerCaptionTheaterOffer(model: CaptionTheaterPlaybackShellViewModel) {

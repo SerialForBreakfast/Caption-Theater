@@ -3,8 +3,11 @@
 # Caption Theater
 
 Normal Playback(Green Border represents playback view)
+
 <img width="2505" height="1420" alt="Screenshot 2026-07-26 at 10 28 04 AM" src="https://github.com/user-attachments/assets/e7c495c1-c40c-4541-8d60-201f83168fc7" />
+
 Caption Theater Mode(Blue Border represents Unobstructed Caption/Controls View)
+
 <img width="2560" height="1440" alt="Screenshot 2026-07-26 at 10 28 36 AM (2)" src="https://github.com/user-attachments/assets/f9f9c80e-88bb-4991-b46c-91b1bf2ee673" />
 
 Caption Theater transforms the unused space around cinema-aspect-ratio video into a premium, unobstructed reading area for captions.

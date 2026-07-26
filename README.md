@@ -2,6 +2,10 @@
 
 # Caption Theater
 
+<img width="2505" height="1420" alt="Screenshot 2026-07-26 at 10 28 04 AM" src="https://github.com/user-attachments/assets/e7c495c1-c40c-4541-8d60-201f83168fc7" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-26 at 10 28 36 AM (2)" src="https://github.com/user-attachments/assets/f9f9c80e-88bb-4991-b46c-91b1bf2ee673" />
+
 Caption Theater transforms the unused space around cinema-aspect-ratio video into a premium, unobstructed reading area for captions.
 
 Many ultra-widescreen films and shows are presented on 16:9 screens with black letterbox space above and below the active picture. Caption Theater uses that otherwise empty space to give subtitles and captions more room, more dwell time, and more context without covering the image. Instead of forcing viewers to choose between watching the scene and racing to read dense text, the active picture can shift into a theater-style layout while recent caption cues persist in the open lower region.

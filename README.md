@@ -50,7 +50,7 @@ Available demo media raw values:
 
 `bundledGeneratedWidescreenFixture` uses the repo-owned no-audio HLS package under `CaptionTheater/CaptionTheater/Media/OfflineHLS/CaptionTheaterGeneratedWidescreenFixture/`. It contains 1920x800 generated video plus timed WebVTT captions for offline layout and caption QA.
 
-`bundledOfflineHLSMock` uses the repo-local five-minute HLS package under `CaptionTheater/CaptionTheater/Media/OfflineHLS/TearsOfSteelFiveMinuteMock/`. Treat it as private proof-of-concept media until redistribution is cleared.
+`bundledOfflineHLSMock` pointed at a private, Mux-derived five-minute HLS package under `CaptionTheater/CaptionTheater/Media/OfflineHLS/TearsOfSteelFiveMinuteMock/`. That media has been removed from the public repository (redistribution rights were never cleared); the demo source still exists in code and fails closed with a missing-resource placeholder. Regenerate it locally with `Scripts/download_mux_offline_hls_mock.py` if you need it for private testing — see `Docs/Sources.md` and `THIRD_PARTY_NOTICES.md`.
 
 ---
 

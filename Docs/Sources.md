@@ -64,11 +64,10 @@ Expected use:
 
 Offline mock note:
 
-- A private POC-only five-minute offline HLS mock derived from this stream exists at `CaptionTheater/CaptionTheater/Media/OfflineHLS/TearsOfSteelFiveMinuteMock/`.
-- The mock includes one selected `1920x800` rendition with combined H.264/AAC media, matching English WebVTT subtitles, rewritten local playlists, and local segments.
-- Treat this tree as **development-only fixture media** (not production catalog content). Remove or replace it if licensing cannot be cleared for your distribution channel.
-- Do not treat that mock as release media.
-- Before making this repository public, re-check the source license, attribution terms, and redistribution rights; remove or replace the mock if redistribution is not explicitly allowed.
+- A private POC-only five-minute offline HLS mock derived from this stream previously existed at `CaptionTheater/CaptionTheater/Media/OfflineHLS/TearsOfSteelFiveMinuteMock/`. **Removed from the public repository** ahead of open-sourcing because redistribution rights were never cleared.
+- The mock included one selected `1920x800` rendition with combined H.264/AAC media, matching English WebVTT subtitles, rewritten local playlists, and local segments.
+- Regenerate it locally for private development with `Scripts/download_mux_offline_hls_mock.py` (network required); treat any regenerated copy as **development-only fixture media**, never release/redistributed media.
+- If you plan to redistribute a rebuilt copy, re-check the source license, attribution terms, and redistribution rights first — see `THIRD_PARTY_NOTICES.md`.
 
 ---
 
@@ -252,7 +251,7 @@ Alternate masters from the same directory (for example `ToS-4k-1920.mov`) can be
 
 **Licensing:** Re-verify Blender Foundation / *Tears of Steel* terms and attribution before publishing the repo or redistributing bundles. The blender.org `copyright.txt` in the demo folder primarily documents soundtrack licensing; confirm motion-picture reuse separately (`tearsofsteel.org`, Blender Foundation).
 
-**Related:** Re-encoded offline ladder pulled directly from the public Mux multivariant stream (no crop) lives under `Scripts/download_mux_offline_hls_mock.py` and `Media/OfflineHLS/TearsOfSteelFiveMinuteMock/`.
+**Related:** `Scripts/download_mux_offline_hls_mock.py` re-encodes an offline ladder pulled directly from the public Mux multivariant stream (no crop). Its output tree, `Media/OfflineHLS/TearsOfSteelFiveMinuteMock/`, has been removed from the public repository (redistribution was never cleared) — rerun the script locally to regenerate it for private development.
 
 ---
 

@@ -9,3 +9,16 @@ CaptionTheater/CaptionTheater.xcodeproj/project.xcworkspace/xcuserdata/josephmcc
 # Large cached masters downloaded by Scripts/build_ct0005_cinematic_open_hls.py
 Fixtures/SourceDownloads/
 /Build
+
+# Open Source Release Checklist (Docs/OpenSourceReleaseChecklist.md) recommended rules.
+# Note: xcuserdata/ and __pycache__/ paths already tracked in git stay tracked until
+# removed from the index (see the checklist's `git rm -r` cleanup commands).
+.DS_Store
+Build/
+DerivedData/
+Screenshots/
+Logs/
+*.xcuserstate
+xcuserdata/
+__pycache__/
+*.pyc

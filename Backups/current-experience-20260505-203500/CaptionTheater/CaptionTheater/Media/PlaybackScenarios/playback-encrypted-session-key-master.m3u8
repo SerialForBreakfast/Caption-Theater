@@ -1,5 +1,0 @@
-#EXTM3U
-#EXT-X-VERSION:7
-#EXT-X-SESSION-KEY:METHOD=SAMPLE-AES,KEYFORMAT="com.apple.streamingkeydelivery",URI="skd://caption-theater-fixture-key"
-#EXT-X-STREAM-INF:BANDWIDTH=4500000,RESOLUTION=1920x1080,CODECS="avc1.640028,mp4a.40.2",CLOSED-CAPTIONS=NONE
-video/protected-placeholder/prog_index.m3u8

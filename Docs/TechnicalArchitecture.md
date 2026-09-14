@@ -4,6 +4,7 @@ This document holds the modular-architecture sketch, policy tables, and state mo
 
 - [`ADR-0001-Letterbox-Aware-Top-Justified-Video-Viewport.md`](../ADR-0001-Letterbox-Aware-Top-Justified-Video-Viewport.md) is the authoritative decision record for viewport/layout architecture, detection strategy, and rollout phasing.
 - [`ADR-0002-Multi-Speaker-Caption-Presentation.md`](../ADR-0002-Multi-Speaker-Caption-Presentation.md) covers multi-speaker caption presentation decisions.
+- [`ADR-0003-Adjustable-Caption-Band-Below-Top-Pinned-Video.md`](../ADR-0003-Adjustable-Caption-Band-Below-Top-Pinned-Video.md) covers adjustable lower caption-band sizing and longer dwell-time behavior.
 
 Where this document and an ADR disagree on naming or detail, the ADR wins — this file is a working design reference, not a decision record. For **current, git-status-groomed implementation status**, see [`TASKS.md`](../TASKS.md) — this document describes the target architecture, not necessarily what's shipped today.
 

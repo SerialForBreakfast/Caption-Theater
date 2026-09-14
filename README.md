@@ -57,6 +57,7 @@ This README stays intentionally short. Deeper roadmap, architecture, and process
 | [`Docs/TechnicalArchitecture.md`](Docs/TechnicalArchitecture.md) | Component sketches, eligibility/evidence model, aspect-ratio and subtitle-format policy, state machine, testing strategy, platform goals, known risks. |
 | [`ADR-0001-Letterbox-Aware-Top-Justified-Video-Viewport.md`](ADR-0001-Letterbox-Aware-Top-Justified-Video-Viewport.md) | Architecture decision record for viewport detection and layout. |
 | [`ADR-0002-Multi-Speaker-Caption-Presentation.md`](ADR-0002-Multi-Speaker-Caption-Presentation.md) | Architecture decision record for multi-speaker caption presentation. |
+| [`ADR-0003-Adjustable-Caption-Band-Below-Top-Pinned-Video.md`](ADR-0003-Adjustable-Caption-Band-Below-Top-Pinned-Video.md) | Architecture decision record for adjustable lower caption bands and longer dwell time. |
 | [`Caption-Theater-Metadata-Feasibility-Deep-Dive.md`](Caption-Theater-Metadata-Feasibility-Deep-Dive.md) | Deep dive on manifest/metadata feasibility. |
 | [`Docs/DRM-Feasibility-Study.md`](Docs/DRM-Feasibility-Study.md) | DRM/FairPlay feasibility findings and safety gates. |
 | [`Docs/Fixture-Inventory.md`](Docs/Fixture-Inventory.md) | Canonical map of test fixtures and their expected decisions. |
